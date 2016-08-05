@@ -19,12 +19,13 @@ RUN \
     openssl-dev \
     perl \
     readline-dev \
+    yaml-dev \
     zlib-dev \
-
-  && apk add --virtual .tarantool-runtime-dependencies \
+  && apk add --no-cache --virtual .tarantool-runtime-dependencies \
     libgomp \
     libstdc++ \
     readline \
+    yaml \
 
   # Termcap
   && TERMCAP_VERSION="1.3.1" \
@@ -50,6 +51,8 @@ RUN \
 
   && cmake \
     -DCMAKE_BUILD_TYPE=${TARANTOOL_BUILD_TYPE} \
+    -DENABLE_DIST:BOOL=OFF \
+    -DENABLE_BUNDLED_LIBYAML:BOOL=OFF \
     . \
   && make -j "$(getconf _NPROCESSORS_ONLN)" \
   && make install \

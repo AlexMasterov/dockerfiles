@@ -25,8 +25,7 @@ RUN \
     patch \
     pcre-dev \
     zlib-dev \
-
-  && apk add --virtual .nginx-runtime-dependencies \
+  && apk add --no-cache --virtual .nginx-runtime-dependencies \
     ca-certificates \
     pcre \
 
