@@ -31,7 +31,7 @@ RUN \
   && apk del .redis-build-dependencies \
   && rm -rf /var/cache/apk/* /tmp/* /var/tmp/*
 
-ENV TINI_VERSION v0.9.0
+ENV TINI_VERSION v0.10.0
 ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini-static /sbin/tini
 RUN chmod +x /sbin/tini
 
