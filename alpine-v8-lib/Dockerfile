@@ -1,7 +1,7 @@
 FROM alpine:3.4
 MAINTAINER Alex Masterov <alex.masterow@gmail.com>
 
-ENV V8_BRANCH       5.4.303
+ENV V8_BRANCH       5.4.455
 ENV V8_ARCHITECTURE native
 ENV V8_OUTPUT_DIR   /usr/local/v8
 
@@ -19,7 +19,7 @@ RUN \
     perl \
     python \
     tar \
-  && apk add \
+  && apk add --no-cache \
     findutils \
 
   # depot tools
