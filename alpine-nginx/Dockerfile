@@ -38,7 +38,7 @@ RUN \
 
   # Install Nginx
   && NGINX_FILENAME="nginx-${NGINX_VERSION}.tar.gz" \
-  && NGINX_SOURCE="http://nginx.org/download/${NGINX_FILENAME}" \
+  && NGINX_SOURCE="https://nginx.org/download/${NGINX_FILENAME}" \
 
   && curl -fSL ${NGINX_SOURCE} -o /tmp/${NGINX_FILENAME} \
   && tar xzf /tmp/${NGINX_FILENAME} -C /tmp \

@@ -20,7 +20,7 @@ RUN \
 
   # Install Memcached
   && MEMCACHED_FILENAME="memcached-${MEMCACHED_VERSION}.tar.gz" \
-  && MEMCACHED_SOURCE="http://memcached.org/files/${MEMCACHED_FILENAME}" \
+  && MEMCACHED_SOURCE="https://memcached.org/files/${MEMCACHED_FILENAME}" \
 
   && curl -fSL ${MEMCACHED_SOURCE} -o /tmp/${MEMCACHED_FILENAME} \
   && tar xzf /tmp/${MEMCACHED_FILENAME} -C /tmp \
