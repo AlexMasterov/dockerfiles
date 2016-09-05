@@ -3,7 +3,7 @@ MAINTAINER Alex Masterov <alex.masterow@gmail.com>
 
 ENV V8_BRANCH       5.4.455
 ENV V8_ARCHITECTURE native
-ENV V8_OUTPUT_DIR   /usr/local/v8
+ENV V8_LIB_DIR      /usr/local/v8
 
 RUN \
   apk add --update --no-cache --virtual .v8-build-dependencies \
@@ -40,23 +40,23 @@ RUN \
   # Does not work correctly
   && rm /tmp/v8/third_party/binutils/Linux_x64/Release/bin/* \
   && export PATH="/usr/x86_64-alpine-linux-musl/bin:${PATH}" \
+  && export GYPFLAGS="-Dclang=0" \
 
-  # See: https://bugs.chromium.org/p/v8/issues/detail?id=5249
-  && export GYPFLAGS="-Dwerror= " \
-
-  && export GYPFLAGS="-Dv8_use_external_startup_data=0 -Dclang=0 ${GYPFLAGS}" \
   && make \
     ${V8_ARCHITECTURE} \
     library=shared \
-    snapshot=on \
+    werror=no \
     -j "$(getconf _NPROCESSORS_ONLN)" \
 
-  && mkdir -p ${V8_OUTPUT_DIR}/include ${V8_OUTPUT_DIR}/lib \
-  && cp -R /tmp/v8/include/* ${V8_OUTPUT_DIR}/include \
-  && cp /tmp/v8/out/${V8_ARCHITECTURE}/lib.target/lib* ${V8_OUTPUT_DIR}/lib \
-  && echo -e \
-    "create ${V8_OUTPUT_DIR}/lib/libv8_libplatform.a\naddlib /tmp/v8/out/${V8_ARCHITECTURE}/obj.target/src/libv8_libplatform.a\nsave\nend" \
-    | ar -M \
+  # Shared libraries
+  && V8_OUTPUT_DIR="/tmp/v8/out/${V8_ARCHITECTURE}" \
+
+  && mkdir -p ${V8_LIB_DIR}/include ${V8_LIB_DIR}/lib \
+  && cp -R /tmp/v8/include/* ${V8_LIB_DIR}/include \
+  && cp ${V8_OUTPUT_DIR}/lib.target/lib* ${V8_LIB_DIR}/lib \
+  && cp ${V8_OUTPUT_DIR}/*blob.bin ${V8_LIB_DIR}/lib \
+  && echo -e "create ${V8_LIB_DIR}/lib/libv8_libbase.a\naddlib ${V8_OUTPUT_DIR}/obj.target/src/libv8_libbase.a\nsave\nend" | ar -M \
+  && echo -e "create ${V8_LIB_DIR}/lib/libv8_libplatform.a\naddlib ${V8_OUTPUT_DIR}/obj.target/src/libv8_libplatform.a\nsave\nend" | ar -M \
 
   # Removing build dependencies, clean temporary files
   && apk del .v8-build-dependencies \
