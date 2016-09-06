@@ -45,16 +45,15 @@ RUN \
   && make \
     ${V8_ARCHITECTURE} \
     library=shared \
+    snapshot=off \
     werror=no \
     -j "$(getconf _NPROCESSORS_ONLN)" \
 
   # Shared libraries
   && V8_OUTPUT_DIR="/tmp/v8/out/${V8_ARCHITECTURE}" \
-
   && mkdir -p ${V8_LIB_DIR}/include ${V8_LIB_DIR}/lib \
   && cp -R /tmp/v8/include/* ${V8_LIB_DIR}/include \
-  && cp ${V8_OUTPUT_DIR}/lib.target/lib* ${V8_LIB_DIR}/lib \
-  && cp ${V8_OUTPUT_DIR}/*blob.bin ${V8_LIB_DIR}/lib \
+  && cp ${V8_OUTPUT_DIR}/lib.target/lib*.so ${V8_LIB_DIR}/lib \
   && echo -e "create ${V8_LIB_DIR}/lib/libv8_libbase.a\naddlib ${V8_OUTPUT_DIR}/obj.target/src/libv8_libbase.a\nsave\nend" | ar -M \
   && echo -e "create ${V8_LIB_DIR}/lib/libv8_libplatform.a\naddlib ${V8_OUTPUT_DIR}/obj.target/src/libv8_libplatform.a\nsave\nend" | ar -M \
 
