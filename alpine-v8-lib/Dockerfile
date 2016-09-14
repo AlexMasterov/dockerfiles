@@ -1,7 +1,7 @@
 FROM alpine:3.4
 MAINTAINER Alex Masterov <alex.masterow@gmail.com>
 
-ENV V8_BRANCH       5.4.455
+ENV V8_BRANCH       5.5.191
 ENV V8_ARCHITECTURE native
 ENV V8_LIB_DIR      /usr/local/v8
 
