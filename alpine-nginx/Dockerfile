@@ -1,7 +1,7 @@
 FROM alpine:3.4
 MAINTAINER Alex Masterov <alex.masterow@gmail.com>
 
-ENV NGINX_VERSION 1.11.3
+ENV NGINX_VERSION 1.11.4
 ENV NGINX_INI_DIR /etc/nginx
 
 ADD \
