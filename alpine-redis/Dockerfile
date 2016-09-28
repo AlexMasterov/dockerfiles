@@ -1,7 +1,7 @@
 FROM alpine:3.4
 MAINTAINER Alex Masterov <alex.masterow@gmail.com>
 
-ENV REDIS_VERSION 3.2.3
+ENV REDIS_VERSION 3.2.4
 
 RUN \
   addgroup -S redis \
