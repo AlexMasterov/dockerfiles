@@ -1,13 +1,8 @@
 FROM alpine:3.4
 MAINTAINER Alex Masterov <alex.masterow@gmail.com>
 
-ENV PHP_VERSION 7.0.11
-ENV PHP_INI_DIR /etc/php
-
-ADD \
-  # [1] github.com/AlexMasterov/dockerfiles/alpine-v8-lib/Dockerfile
-  # [2] docker run --rm -it -v $(pwd):/ alpine-v8-lib tar cvf /libs/alpine-v8-lib.tar /usr/local/v8
-  libs/alpine-v8-lib.tar /
+ENV PHP_VERSION="7.0.11" \
+    PHP_INI_DIR="/etc/php"
 
 RUN \
   addgroup -S www-data \
@@ -206,6 +201,12 @@ RUN \
   && ./configure \
   && make \
   && make install \
+
+  # V8 libs
+  # https://github.com/AlexMasterov/dockerfiles/blob/master/alpine-v8-lib/Dockerfile
+  && V8_LIB_SOURCE="https://www.dropbox.com/s/n9olfc3rf02azug/alpine-v8-lib_5.5.339.tar" \
+  && curl -fSL --connect-timeout 30 ${V8_LIB_SOURCE} -o /tmp/v8-lib.tar \
+  && tar xzf /tmp/v8-lib.tar -C / \
 
   # v8js
   && V8JS_BRANCH="php7" \
