@@ -1,13 +1,8 @@
 FROM alpine:3.4
 MAINTAINER Alex Masterov <alex.masterow@gmail.com>
 
-ENV NGINX_VERSION 1.11.4
-ENV NGINX_INI_DIR /etc/nginx
-
-ADD \
-  # See: https://blog.cloudflare.com/the-curious-case-of-slow-downloads/
-  https://raw.githubusercontent.com/cloudflare/cloudflare-blog/master/2016-03-slow-downloads/nginx_send_minimum_rate.patch \
-  /tmp/nginx-patches/
+ENV NGINX_VERSION="1.11.4" \
+    NGINX_INI_DIR="/etc/nginx"
 
 RUN \
   addgroup -S nginx \
@@ -29,14 +24,13 @@ RUN \
     ca-certificates \
     pcre \
 
-  # Install "Headers More" module
+  # Headers More
   && HEADERS_MORE_BRANCH="master" \
   && HEADERS_MORE_GIT="https://github.com/openresty/headers-more-nginx-module.git" \
   && HEADERS_MORE_DIR="/tmp/headers-more-nginx-module" \
-
   && git clone -b ${HEADERS_MORE_BRANCH} --depth 1 ${HEADERS_MORE_GIT} ${HEADERS_MORE_DIR} \
 
-  # Install Nginx
+  # Nginx
   && NGINX_FILENAME="nginx-${NGINX_VERSION}.tar.gz" \
   && NGINX_SOURCE="https://nginx.org/download/${NGINX_FILENAME}" \
 
@@ -44,8 +38,16 @@ RUN \
   && tar xzf /tmp/${NGINX_FILENAME} -C /tmp \
   && cd /tmp/nginx-${NGINX_VERSION} \
 
+  # Patches
+  && NGINX_PATCH_DIR="/tmp/nginx-patches/" \
+  && mkdir -p ${NGINX_PATCH_DIR} \
+
+  # See: https://blog.cloudflare.com/the-curious-case-of-slow-downloads/
+  && SEND_MINIMUM_RATE_PATCH="https://git.io/vPqHT" \
+  && curl -fSL --connect-timeout 30 ${SEND_MINIMUM_RATE_PATCH} -o ${NGINX_PATCH_DIR}/patch1.patch \
+
   # Applying patches
-  && patch -p0 -i /tmp/nginx-patches/* \
+  && patch -p0 -i ${NGINX_PATCH_DIR}* \
 
   && ./configure \
     --prefix=${NGINX_INI_DIR} \
