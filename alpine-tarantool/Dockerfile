@@ -1,8 +1,12 @@
 FROM alpine:3.4
 MAINTAINER Alex Masterov <alex.masterow@gmail.com>
 
-ENV TARANTOOL_BRANCH     1.7
-ENV TARANTOOL_BUILD_TYPE Release
+ENV TARANTOOL_BRANCH="1.7" \
+    # [ Release | RelWithDebInfo ]
+    TARANTOOL_BUILD_TYPE="Release" \
+    # [ YES | NO ]
+    TARANTOOL_DIST="NO" \
+    TARANTOOL_BACKTRACE="NO"
 
 RUN \
   addgroup -S tarantool \
@@ -30,7 +34,7 @@ RUN \
   # Termcap
   && TERMCAP_VERSION="1.3.1" \
   && TERMCAP_FILENAME="termcap-${TERMCAP_VERSION}.tar.gz" \
-  && TERMCAP_SOURCE="http://ftp.gnu.org/pub/gnu/termcap/${TERMCAP_FILENAME}" \
+  && TERMCAP_SOURCE="https://ftp.gnu.org/pub/gnu/termcap/${TERMCAP_FILENAME}" \
 
   && curl -fSL --connect-timeout 30 ${TERMCAP_SOURCE} -o /tmp/${TERMCAP_FILENAME} \
   && tar xzf /tmp/${TERMCAP_FILENAME} -C /tmp \
@@ -51,7 +55,8 @@ RUN \
 
   && cmake \
     -DCMAKE_BUILD_TYPE=${TARANTOOL_BUILD_TYPE} \
-    -DENABLE_DIST:BOOL=OFF \
+    -DENABLE_DIST:BOOL=${TARANTOOL_DIST} \
+    -DENABLE_BACKTRACE:BOOL=${TARANTOOL_BACKTRACE} \
     -DENABLE_BUNDLED_LIBYAML:BOOL=OFF \
     . \
   && make -j "$(getconf _NPROCESSORS_ONLN)" \
