@@ -24,7 +24,9 @@ RUN \
   && tar xzf /tmp/${REDIS_FILENAME} -C /tmp \
   && cd /tmp/redis-${REDIS_VERSION} \
 
-  && make -j "$(getconf _NPROCESSORS_ONLN)" \
+  && make \
+    MALLOC=jemalloc \
+    -j "$(getconf _NPROCESSORS_ONLN)" \
   && make install \
 
   # Removing build dependencies, clean temporary files
