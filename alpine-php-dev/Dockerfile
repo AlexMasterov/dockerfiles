@@ -2,14 +2,15 @@ FROM alpine:3.4
 MAINTAINER Alex Masterov <alex.masterow@gmail.com>
 
 ENV PHP_VERSION="7.0.11" \
-    PHP_INI_DIR="/etc/php"
+    PHP_INI_DIR="/etc/php" \
+    LD_PRELOAD="/usr/local/lib/preloadable_libiconv.so"
 
 RUN \
   addgroup -S www-data \
   && adduser -D -S -h /var/cache/www-data -s /sbin/nologin -G www-data www-data
 
 RUN \
-  apk add --no-cache --update --virtual .php-build-dependencies \
+  apk add --update --virtual .php-build-dependencies \
     autoconf \
     binutils \
     bzip2-dev \
@@ -24,6 +25,7 @@ RUN \
     libevent-dev \
     libmcrypt-dev \
     libpng-dev \
+    libtool \
     libwebp-dev \
     libxml2-dev \
     make \
@@ -32,13 +34,14 @@ RUN \
     re2c \
     readline-dev \
     sqlite-dev \
-  && apk add --no-cache --virtual .php-runtime-dependencies \
+  && apk add --virtual .php-runtime-dependencies \
     curl \
     freetype \
     icu \
     jpeg \
     libbz2 \
     libevent \
+    libltdl \
     libmcrypt \
     libpng \
     libpq \
@@ -49,8 +52,31 @@ RUN \
     tar \
     zlib \
 
+  # Proper iconv
+  && LIBICONV_VERSION="1.14" \
+  && LIBICONV_FILENAME="libiconv-${LIBICONV_VERSION}.tar.gz" \
+  && LIBICONV_SOURCE="https://ftp.gnu.org/pub/gnu/libiconv/${LIBICONV_FILENAME}" \
+
+  && curl -fSL --connect-timeout 30 ${LIBICONV_SOURCE} -o /tmp/${LIBICONV_FILENAME} \
+  && tar xzf /tmp/${LIBICONV_FILENAME} -C /tmp \
+  && cd /tmp/libiconv-${LIBICONV_VERSION} \
+
+  # Patches
+  && LIBICONV_FIX_PATCH="https://git.io/vP8wu" \
+  && curl -fSL --connect-timeout 30 ${LIBICONV_FIX_PATCH} | patch -p1 -u \
+
+  && rm /usr/bin/iconv \
+
+  && ./configure \
+    --prefix=/usr/local \
+  && make \
+  && make install \
+
+  && libtool --finish /usr/local/lib \
+
+  # PHP
   && PHP_FILENAME="php-${PHP_VERSION}.tar.gz" \
-  && PHP_SOURCE="http://php.net/get/${PHP_FILENAME}/from/this/mirror" \
+  && PHP_SOURCE="https://secure.php.net/get/${PHP_FILENAME}/from/this/mirror" \
 
   && curl -fSL ${PHP_SOURCE} -o /tmp/${PHP_FILENAME} \
   && tar xzf /tmp/${PHP_FILENAME} -C /tmp \
@@ -152,10 +178,10 @@ RUN \
   && make install \
 
   # Memcached
-  && apk add --no-cache --virtual .memcached-build-dependencies \
+  && apk add --virtual .memcached-build-dependencies \
     libmemcached-dev \
     cyrus-sasl-dev \
-  && apk add --no-cache --virtual .memcached-runtime-dependencies \
+  && apk add --virtual .memcached-runtime-dependencies \
     libmemcached \
 
   && MEMCACHED_BRANCH="php7" \
@@ -172,7 +198,7 @@ RUN \
   && apk del .memcached-build-dependencies \
 
   # Tarantool
-  && apk add --no-cache --virtual .tarantool-runtime-dependencies \
+  && apk add --virtual .tarantool-runtime-dependencies \
     libltdl \
 
   && TARANTOOL_BRANCH="php7-v2" \
@@ -204,7 +230,7 @@ RUN \
 
   # V8 libs
   # https://github.com/AlexMasterov/dockerfiles/blob/master/alpine-v8-lib/Dockerfile
-  && V8_LIB_SOURCE="https://www.dropbox.com/s/n9olfc3rf02azug/alpine-v8-lib_5.5.339.tar" \
+  && V8_LIB_SOURCE="https://www.dropbox.com/s/1hn1ak0iebuv9m4/alpine-v8-lib_5.5-lkgr.tar.gz" \
   && curl -fSL --connect-timeout 30 ${V8_LIB_SOURCE} -o /tmp/v8-lib.tar \
   && tar xzf /tmp/v8-lib.tar -C / \
 
