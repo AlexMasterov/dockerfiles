@@ -1,12 +1,12 @@
 FROM alpine:3.4
 MAINTAINER Alex Masterov <alex.masterow@gmail.com>
 
-ENV V8_BRANCH="5.5.368" \
+ENV V8_BRANCH="5.5-lkgr" \
     V8_ARCHITECTURE="native" \
     V8_LIB_DIR="/usr/local/v8"
 
 RUN \
-  apk add --update --no-cache --virtual .v8-build-dependencies \
+  apk add --update --virtual .v8-build-dependencies \
     bash \
     binutils-gold \
     curl \
@@ -16,10 +16,10 @@ RUN \
     icu-dev \
     linux-headers \
     make \
-    perl \
     python \
     tar \
-  && apk add --no-cache \
+    wget \
+  && apk add \
     findutils \
 
   # depot tools
