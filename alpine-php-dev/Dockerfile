@@ -1,9 +1,13 @@
 FROM alpine:3.4
-MAINTAINER Alex Masterov <alex.masterow@gmail.com>
 
-ENV PHP_VERSION="7.0.11" \
-    PHP_INI_DIR="/etc/php" \
-    LD_PRELOAD="/usr/local/lib/preloadable_libiconv.so"
+MAINTAINER Alex Masterov <alex.masterow@gmail.com>
+LABEL repository.hub="alexmasterov/alpine-php-dev" \
+      repository.url="https://github.com/AlexMasterov/dockerfiles"
+
+ARG PHP_VERSION="7.0.11"
+ARG PHP_INI_DIR="/etc/php"
+
+ENV LD_PRELOAD /usr/local/lib/preloadable_libiconv.so
 
 RUN \
   addgroup -S www-data \
@@ -54,18 +58,13 @@ RUN \
 
   # Proper iconv
   && LIBICONV_VERSION="1.14" \
-  && LIBICONV_FILENAME="libiconv-${LIBICONV_VERSION}.tar.gz" \
-  && LIBICONV_SOURCE="https://ftp.gnu.org/pub/gnu/libiconv/${LIBICONV_FILENAME}" \
-
-  && curl -fSL --connect-timeout 30 ${LIBICONV_SOURCE} -o /tmp/${LIBICONV_FILENAME} \
-  && tar xzf /tmp/${LIBICONV_FILENAME} -C /tmp \
+  && LIBICONV_SOURCE="https://ftp.gnu.org/pub/gnu/libiconv/libiconv-${LIBICONV_VERSION}.tar.gz" \
+  && curl -fSL --connect-timeout 30 ${LIBICONV_SOURCE} | tar xz -C /tmp \
   && cd /tmp/libiconv-${LIBICONV_VERSION} \
 
   # Patches
   && LIBICONV_FIX_PATCH="https://git.io/vP8wu" \
   && curl -fSL --connect-timeout 30 ${LIBICONV_FIX_PATCH} | patch -p1 -u \
-
-  && rm /usr/bin/iconv \
 
   && ./configure \
     --prefix=/usr/local \
@@ -73,13 +72,11 @@ RUN \
   && make install \
 
   && libtool --finish /usr/local/lib \
+  && rm /usr/bin/iconv \
 
   # PHP
-  && PHP_FILENAME="php-${PHP_VERSION}.tar.gz" \
-  && PHP_SOURCE="https://secure.php.net/get/${PHP_FILENAME}/from/this/mirror" \
-
-  && curl -fSL ${PHP_SOURCE} -o /tmp/${PHP_FILENAME} \
-  && tar xzf /tmp/${PHP_FILENAME} -C /tmp \
+  && PHP_SOURCE="https://secure.php.net/get/php-${PHP_VERSION}.tar.gz/from/this/mirror" \
+  && curl -fSL --connect-timeout 30 ${PHP_SOURCE} | tar xz -C /tmp \
   && cd /tmp/php-${PHP_VERSION} \
 
   && ./configure \
@@ -228,11 +225,10 @@ RUN \
   && make \
   && make install \
 
-  # V8 libs
-  # https://github.com/AlexMasterov/dockerfiles/blob/master/alpine-v8-lib/Dockerfile
-  && V8_LIB_SOURCE="https://www.dropbox.com/s/1hn1ak0iebuv9m4/alpine-v8-lib_5.5-lkgr.tar.gz" \
-  && curl -fSL --connect-timeout 30 ${V8_LIB_SOURCE} -o /tmp/v8-lib.tar \
-  && tar xzf /tmp/v8-lib.tar -C / \
+  # alexmasterov/alpine-v8-lib
+  && V8_VERSION="5.5-lkgr" \
+  && V8_LIB_SOURCE="https://www.dropbox.com/s/1hn1ak0iebuv9m4/alpine-v8-lib_${V8_VERSION}.tar.gz" \
+  && curl -fSL --connect-timeout 30 ${V8_LIB_SOURCE} | tar xz -C / \
 
   # v8js
   && V8JS_BRANCH="php7" \
@@ -260,11 +256,11 @@ RUN \
   && apk del .php-build-dependencies \
   && rm -rf /var/cache/apk/* /tmp/* /var/tmp/*
 
-ENV MAILHOG_VERSION v0.2.1
+ARG MAILHOG_VERSION="v0.2.1"
 ADD https://github.com/mailhog/MailHog/releases/download/${MAILHOG_VERSION}/MailHog_linux_amd64 /sbin/mailhog
 RUN chmod +x /sbin/mailhog
 
-ENV TINI_VERSION v0.10.0
+ARG TINI_VERSION="v0.10.0"
 ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini-static /sbin/tini
 RUN chmod +x /sbin/tini
 

@@ -1,31 +1,31 @@
 FROM alpine:3.4
-MAINTAINER Alex Masterov <alex.masterow@gmail.com>
 
-ENV REDIS_VERSION 3.2.4
+MAINTAINER Alex Masterov <alex.masterow@gmail.com>
+LABEL repository.hub="alexmasterov/alpine-redis" \
+      repository.url="https://github.com/AlexMasterov/dockerfiles"
+
+ARG REDIS_VERSION="3.2.4"
+ARG REDIS_MALLOC="jemalloc"
 
 RUN \
   addgroup -S redis \
   && adduser -D -S -h /var/cache/redis -s /sbin/nologin -G redis redis
 
 RUN \
-  apk add --update --no-cache --virtual .redis-build-dependencies \
+  apk add --update --virtual .redis-build-dependencies \
     curl \
     gcc \
     linux-headers \
     make \
     musl-dev \
-    tar \
 
-  # Install Redis
-  && REDIS_FILENAME="redis-${REDIS_VERSION}.tar.gz" \
-  && REDIS_SOURCE="http://download.redis.io/releases/${REDIS_FILENAME}" \
-
-  && curl -fSL ${REDIS_SOURCE} -o /tmp/${REDIS_FILENAME} \
-  && tar xzf /tmp/${REDIS_FILENAME} -C /tmp \
+  # Redis
+  && REDIS_SOURCE="http://download.redis.io/releases/redis-${REDIS_VERSION}.tar.gz" \
+  && curl -fSL --connect-timeout 30 ${REDIS_SOURCE} | tar xz -C /tmp \
   && cd /tmp/redis-${REDIS_VERSION} \
 
   && make \
-    MALLOC=jemalloc \
+    MALLOC=${REDIS_MALLOC} \
     -j "$(getconf _NPROCESSORS_ONLN)" \
   && make install \
 
@@ -33,7 +33,7 @@ RUN \
   && apk del .redis-build-dependencies \
   && rm -rf /var/cache/apk/* /tmp/* /var/tmp/*
 
-ENV TINI_VERSION v0.10.0
+ARG TINI_VERSION="v0.10.0"
 ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini-static /sbin/tini
 RUN chmod +x /sbin/tini
 

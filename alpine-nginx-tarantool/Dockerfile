@@ -1,31 +1,34 @@
 FROM alpine:3.4
-MAINTAINER Alex Masterov <alex.masterow@gmail.com>
 
-ENV NGINX_VERSION="1.11.4" \
-    NGINX_INI_DIR="/etc/nginx"
+MAINTAINER Alex Masterov <alex.masterow@gmail.com>
+LABEL repository.hub="alexmasterov/alpine-nginx-tarantool" \
+      repository.url="https://github.com/AlexMasterov/dockerfiles"
+
+ARG NGINX_VERSION="1.11.4"
+ARG NGINX_INI_DIR="/etc/nginx"
 
 RUN \
   addgroup -S nginx \
   && adduser -D -S -h /var/cache/nginx -s /sbin/nologin -G nginx nginx
 
 RUN \
-  apk add --update --no-cache --virtual .nginx-build-dependencies \
-    linux-headers \
+  apk add --update --virtual .nginx-build-dependencies \
     curl \
     g++ \
     gcc \
     git \
+    linux-headers \
     make \
     openssl-dev \
     patch \
     pcre-dev \
     zlib-dev \
-  && apk add --no-cache --virtual .nginx-runtime-dependencies \
+  && apk add --virtual .nginx-runtime-dependencies \
     ca-certificates \
     pcre \
 
   # Tarantool upstream
-  && apk add --no-cache --virtual .tarantool-upstream-build-dependencies \
+  && apk add --virtual .tarantool-upstream-build-dependencies \
     cmake \
 
   && TARANTOOL_UPSTREAM_BRANCH="master" \
@@ -44,23 +47,14 @@ RUN \
   && git clone -b ${HEADERS_MORE_BRANCH} --depth 1 ${HEADERS_MORE_GIT} ${HEADERS_MORE_DIR} \
 
   # Nginx
-  && NGINX_FILENAME="nginx-${NGINX_VERSION}.tar.gz" \
-  && NGINX_SOURCE="https://nginx.org/download/${NGINX_FILENAME}" \
-
-  && curl -fSL ${NGINX_SOURCE} -o /tmp/${NGINX_FILENAME} \
-  && tar xzf /tmp/${NGINX_FILENAME} -C /tmp \
+  && NGINX_SOURCE="https://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz" \
+  && curl -fSL --connect-timeout 30 ${NGINX_SOURCE} | tar xz -C /tmp \
   && cd /tmp/nginx-${NGINX_VERSION} \
 
   # Patches
-  && NGINX_PATCH_DIR="/tmp/nginx-patches/" \
-  && mkdir -p ${NGINX_PATCH_DIR} \
-
   # See: https://blog.cloudflare.com/the-curious-case-of-slow-downloads/
   && SEND_MINIMUM_RATE_PATCH="https://git.io/vPqHT" \
-  && curl -fSL --connect-timeout 30 ${SEND_MINIMUM_RATE_PATCH} -o ${NGINX_PATCH_DIR}/patch1.patch \
-
-  # Applying patches
-  && patch -p0 -i ${NGINX_PATCH_DIR}* \
+  && curl -fSL --connect-timeout 30 ${SEND_MINIMUM_RATE_PATCH} | patch -p0 -u \
 
   && ./configure \
     --prefix=${NGINX_INI_DIR} \
@@ -108,7 +102,7 @@ RUN \
   && apk del .nginx-build-dependencies \
   && rm -rf /var/cache/apk/* /tmp/* /var/tmp/*
 
-ENV TINI_VERSION v0.10.0
+ARG TINI_VERSION="v0.10.0"
 ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini-static /sbin/tini
 RUN chmod +x /sbin/tini
 

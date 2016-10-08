@@ -1,5 +1,8 @@
 FROM golang:1.7.1-alpine
+
 MAINTAINER Alex Masterov <alex.masterow@gmail.com>
+LABEL repository.hub="alexmasterov/alpine-mailhog" \
+      repository.url="https://github.com/AlexMasterov/dockerfiles"
 
 RUN \
   apk add --update --virtual .mailhog-build-dependencies \
@@ -13,7 +16,7 @@ RUN \
   && apk del .mailhog-build-dependencies \
   && rm -rf /var/cache/apk/* /tmp/* /var/tmp/*
 
-ENV TINI_VERSION v0.10.0
+ARG TINI_VERSION="v0.10.0"
 ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini-static /sbin/tini
 RUN chmod +x /sbin/tini
 

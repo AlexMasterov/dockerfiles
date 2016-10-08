@@ -1,9 +1,13 @@
 FROM alpine:3.4
-MAINTAINER Alex Masterov <alex.masterow@gmail.com>
 
-ENV V8_BRANCH="5.5-lkgr" \
-    V8_ARCHITECTURE="native" \
-    V8_LIB_DIR="/usr/local/v8"
+MAINTAINER Alex Masterov <alex.masterow@gmail.com>
+LABEL repository.hub="alexmasterov/alpine-v8-lib" \
+      repository.url="https://github.com/AlexMasterov/dockerfiles"
+
+ARG V8_BRANCH="5.5-lkgr"
+ARG V8_ARCH="native"
+ARG V8_SNAPSHOT="off"
+ARG V8_LIB_DIR="/usr/local/v8"
 
 RUN \
   apk add --update --virtual .v8-build-dependencies \
@@ -17,7 +21,6 @@ RUN \
     linux-headers \
     make \
     python \
-    tar \
     wget \
   && apk add \
     findutils \
@@ -26,7 +29,6 @@ RUN \
   && DEPOT_TOOLS_BRANCH="master" \
   && DEPOT_TOOLS_GIT="https://chromium.googlesource.com/chromium/tools/depot_tools.git" \
   && DEPOT_TOOLS_DIR="/tmp/depot_tools" \
-
   && git clone -b ${DEPOT_TOOLS_BRANCH} --depth 1 ${DEPOT_TOOLS_GIT} ${DEPOT_TOOLS_DIR} \
   && export PATH="${DEPOT_TOOLS_DIR}:${PATH}" \
 
@@ -43,14 +45,14 @@ RUN \
   && export GYPFLAGS="-Dclang=0" \
 
   && make \
-    ${V8_ARCHITECTURE} \
+    ${V8_ARCH} \
     library=shared \
-    snapshot=off \
+    snapshot=${V8_SNAPSHOT} \
     werror=no \
     -j "$(getconf _NPROCESSORS_ONLN)" \
 
   # Shared libraries
-  && V8_OUTPUT_DIR="/tmp/v8/out/${V8_ARCHITECTURE}" \
+  && V8_OUTPUT_DIR="/tmp/v8/out/${V8_ARCH}" \
   && mkdir -p ${V8_LIB_DIR}/include ${V8_LIB_DIR}/lib \
   && cp -R /tmp/v8/include/* ${V8_LIB_DIR}/include \
   && cp ${V8_OUTPUT_DIR}/lib.target/lib*.so ${V8_LIB_DIR}/lib \
