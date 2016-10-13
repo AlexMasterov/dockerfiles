@@ -4,7 +4,7 @@ MAINTAINER Alex Masterov <alex.masterow@gmail.com>
 LABEL repository.hub="alexmasterov/alpine-php-dev" \
       repository.url="https://github.com/AlexMasterov/dockerfiles"
 
-ARG PHP_VERSION="7.0.11"
+ARG PHP_VERSION="7.0.12"
 ARG PHP_INI_DIR="/etc/php"
 
 ENV LD_PRELOAD /usr/local/lib/preloadable_libiconv.so
@@ -32,6 +32,7 @@ RUN \
     libtool \
     libwebp-dev \
     libxml2-dev \
+    libxslt-dev \
     make \
     openssl-dev \
     postgresql-dev \
@@ -51,9 +52,9 @@ RUN \
     libpq \
     libwebp \
     libxml2 \
+    libxslt \
     openssl \
     readline \
-    tar \
     zlib \
 
   # Proper iconv
@@ -85,55 +86,62 @@ RUN \
     --with-config-file-path=${PHP_INI_DIR} \
     --with-config-file-scan-dir=${PHP_INI_DIR}/conf.d \
     --without-pear \
-    --disable-debug \
-    --disable-phpdbg \
-    --disable-ipv6 \
     --disable-cgi \
+    --disable-debug \
+    --disable-ipv6 \
+    --disable-phpdbg \
     --disable-rpath \
     --disable-static \
-    --enable-fpm --with-fpm-user=www-data --with-fpm-group=www-data \
-    --enable-opcache \
-    --enable-opcache-file \
-    --enable-pcntl \
-    --enable-shmop \
     --enable-bcmath \
-    --enable-mbregex \
-    --enable-mbstring \
-    --enable-sockets \
-    --enable-soap \
-    --enable-ftp \
-    --enable-zip \
-    --enable-exif \
     --enable-calendar \
+    --enable-dom \
+    --enable-exif \
+    --enable-fpm \
+      --with-fpm-group=www-data \
+      --with-fpm-user=www-data \
+    --enable-ftp \
+    --enable-gd-native-ttf \
     --enable-intl \
     --enable-json \
+    --enable-libxml \
+      --with-libxml-dir=/usr \
+    --enable-mbregex \
+    --enable-mbstring \
+    --enable-opcache \
+      --enable-huge-code-pages \
+      --enable-opcache-file \
+    --enable-pcntl \
     --enable-phar \
-    --enable-dom \
     --enable-session \
-    --enable-gd-native-ttf \
-    --enable-libxml --with-libxml-dir=/usr \
+    --enable-shmop \
+    --enable-soap \
+    --enable-sockets \
     --enable-xml \
     --enable-xmlreader \
-    --with-xmlrpc \
-    --with-mhash \
-    --with-iconv \
-    --with-pgsql \
-    --with-pdo-pgsql \
-    --with-pdo-sqlite \
-    --with-pdo-mysql=mysqlnd \
+    --enable-xmlwriter \
+    --enable-zip \
+    --enable-zlib \
+    --with-bz2=/usr \
     --with-curl \
-    --with-openssl \
+    --with-gd \
+      --with-freetype-dir=/usr \
+      --with-jpeg-dir=/usr \
+      --with-png-dir=/usr \
+      --with-webp-dir=/usr \
+      --with-zlib-dir=/usr \
+    --with-iconv \
     --with-mcrypt \
     --with-mhash \
+    --with-openssl \
     --with-pcre-regex \
+      --with-pcre-jit \
+    --with-pdo-mysql=mysqlnd \
+    --with-pdo-pgsql \
+    --with-pdo-sqlite \
+    --with-pgsql \
     --with-readline \
-    --with-gd \
-    --with-jpeg-dir=/usr \
-    --with-webp-dir=/usr \
-    --with-png-dir=/usr \
-    --with-freetype-dir=/usr \
-    --with-bz2=/usr \
-    --with-zlib --with-zlib-dir=/usr \
+    --with-xmlrpc \
+    --with-xsl \
     CFLAGS="-O2 -march=native" \
   && make -j "$(getconf _NPROCESSORS_ONLN)" \
   && make install \
@@ -225,7 +233,7 @@ RUN \
   && make \
   && make install \
 
-  # alexmasterov/alpine-v8-lib
+  # https://github.com/AlexMasterov/dockerfiles/blob/master/alpine-v8-lib/Dockerfile
   && V8_VERSION="5.5-lkgr" \
   && V8_LIB_SOURCE="https://www.dropbox.com/s/1hn1ak0iebuv9m4/alpine-v8-lib_${V8_VERSION}.tar.gz" \
   && curl -fSL --connect-timeout 30 ${V8_LIB_SOURCE} | tar xz -C / \
