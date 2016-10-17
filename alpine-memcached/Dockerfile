@@ -4,7 +4,7 @@ MAINTAINER Alex Masterov <alex.masterow@gmail.com>
 LABEL repository.hub="alexmasterov/alpine-memcached" \
       repository.url="https://github.com/AlexMasterov/dockerfiles"
 
-ARG MEMCACHED_VERSION="1.4.31"
+ARG MEMCACHED_VERSION="1.4.32"
 
 RUN \
   addgroup -S memcache \
