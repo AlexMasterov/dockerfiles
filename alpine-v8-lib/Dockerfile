@@ -1,11 +1,11 @@
-FROM alpine:3.4
+FROM alpine:edge
 
 MAINTAINER Alex Masterov <alex.masterow@gmail.com>
 LABEL repository.hub="alexmasterov/alpine-v8-lib" \
       repository.url="https://github.com/AlexMasterov/dockerfiles"
 
 ARG V8_BRANCH="5.5-lkgr"
-ARG V8_ARCH="native"
+ARG V8_ARCH="x64.release"
 ARG V8_SNAPSHOT="off"
 ARG V8_LIB_DIR="/usr/local/v8"
 
@@ -48,6 +48,7 @@ RUN \
     ${V8_ARCH} \
     library=shared \
     snapshot=${V8_SNAPSHOT} \
+    debugsymbols=off \
     werror=no \
     -j "$(getconf _NPROCESSORS_ONLN)" \
 
