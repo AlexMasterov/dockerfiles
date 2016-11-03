@@ -100,7 +100,6 @@ RUN \
       --with-fpm-group=www-data \
       --with-fpm-user=www-data \
     --enable-ftp \
-    --enable-gd-native-ttf \
     --enable-intl \
     --enable-json \
     --enable-libxml \
@@ -268,7 +267,7 @@ ARG MAILHOG_VERSION="v0.2.1"
 ADD https://github.com/mailhog/MailHog/releases/download/${MAILHOG_VERSION}/MailHog_linux_amd64 /sbin/mailhog
 RUN chmod +x /sbin/mailhog
 
-ARG TINI_VERSION="v0.10.0"
+ARG TINI_VERSION="v0.11.0"
 ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini-static /sbin/tini
 RUN chmod +x /sbin/tini
 
