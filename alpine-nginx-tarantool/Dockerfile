@@ -102,7 +102,7 @@ RUN \
   && apk del .nginx-build-dependencies \
   && rm -rf /var/cache/apk/* /tmp/* /var/tmp/*
 
-ARG TINI_VERSION="v0.11.0"
+ARG TINI_VERSION="v0.13.0"
 ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini-static /sbin/tini
 RUN chmod +x /sbin/tini
 
