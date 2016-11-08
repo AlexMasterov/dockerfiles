@@ -4,7 +4,7 @@ MAINTAINER Alex Masterov <alex.masterow@gmail.com>
 LABEL repository.hub="alexmasterov/alpine-php-dev" \
       repository.url="https://github.com/AlexMasterov/dockerfiles"
 
-ARG PHP_VERSION="7.0.12"
+ARG PHP_VERSION="7.0.13"
 ARG PHP_INI_DIR="/etc/php"
 
 ENV LD_PRELOAD /usr/local/lib/preloadable_libiconv.so
@@ -214,7 +214,7 @@ RUN \
   && make install \
 
   # Mongo
-  && MONGO_TAG="1.1.8" \
+  && MONGO_TAG="1.1.9" \
   && git clone -o ${MONGO_TAG} --depth 1 https://github.com/mongodb/mongo-php-driver.git /tmp/mongo-php \
   && git -C /tmp/mongo-php submodule update --init --recursive \
   && cd /tmp/mongo-php \
