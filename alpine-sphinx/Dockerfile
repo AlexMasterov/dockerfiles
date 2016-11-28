@@ -1,4 +1,4 @@
-FROM alpine:3.4
+FROM alpine:edge
 
 MAINTAINER Alex Masterov <alex.masterow@gmail.com>
 LABEL repository.hub="alexmasterov/alpine-sphinx" \
@@ -20,8 +20,6 @@ RUN \
     make \
     mariadb-dev \
     postgresql-dev \
-  && apk add --update-cache --virtual .sphinx-build-dependencies \
-    --repository http://dl-3.alpinelinux.org/alpine/edge/community/ --allow-untrusted \
     snowball-dev \
   && apk add --virtual .sphinx-runtime-dependencies \
     expat \

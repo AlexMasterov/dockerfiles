@@ -1,4 +1,4 @@
-FROM alpine:3.4
+FROM alpine:edge
 
 MAINTAINER Alex Masterov <alex.masterow@gmail.com>
 LABEL repository.hub="alexmasterov/alpine-nginx" \
@@ -17,9 +17,9 @@ RUN \
     g++ \
     gcc \
     git \
+    libressl-dev \
     linux-headers \
     make \
-    openssl-dev \
     patch \
     pcre-dev \
     zlib-dev \
@@ -28,10 +28,10 @@ RUN \
     pcre \
 
   # Headers More
-  && HEADERS_MORE_BRANCH="master" \
+  && HEADERS_MORE_TAG="v0.32" \
   && HEADERS_MORE_GIT="https://github.com/openresty/headers-more-nginx-module.git" \
   && HEADERS_MORE_DIR="/tmp/headers-more-nginx-module" \
-  && git clone -b ${HEADERS_MORE_BRANCH} --depth 1 ${HEADERS_MORE_GIT} ${HEADERS_MORE_DIR} \
+  && git clone -o ${HEADERS_MORE_TAG} --depth 1 ${HEADERS_MORE_GIT} ${HEADERS_MORE_DIR} \
 
   # Nginx
   && NGINX_SOURCE="https://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz" \
@@ -61,25 +61,27 @@ RUN \
     --group=nginx  \
     --without-http_autoindex_module \
     --without-http_ssi_module \
-    --with-http_v2_module \
-    --with-http_ssl_module \
+    --without-mail_imap_module \
+    --without-mail_pop3_module \
+    --without-mail_smtp_module \
+    --with-file-aio \
+    --with-http_auth_request_module \
     --with-http_dav_module \
-    --with-http_slice_module \
-    --with-http_realip_module \
+    --with-http_degradation_module \
     --with-http_gunzip_module \
     --with-http_gzip_static_module \
-    --with-http_stub_status_module \
+    --with-http_realip_module \
     --with-http_secure_link_module \
-    --with-http_auth_request_module \
-    --with-http_degradation_module \
+    --with-http_slice_module \
+    --with-http_ssl_module \
+    --with-http_stub_status_module \
+    --with-http_v2_module \
     --with-pcre \
     --with-pcre-jit \
     --with-stream \
     --with-stream_ssl_module  \
     --with-threads \
-    --with-file-aio \
-    --with-cc-opt='-Ofast -march=native -flto -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security' \
-    --with-ld-opt='-Wl,-Bsymbolic-functions -Wl,-z,relro -Wl,--as-needed' \
+    --with-cc-opt="-Ofast -march=native -flto -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security" \
     --add-module=${HEADERS_MORE_DIR} \
   && make -j "$(getconf _NPROCESSORS_ONLN)" \
   && make install \

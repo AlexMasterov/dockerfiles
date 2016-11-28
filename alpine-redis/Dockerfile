@@ -1,4 +1,4 @@
-FROM alpine:3.4
+FROM alpine:edge
 
 MAINTAINER Alex Masterov <alex.masterow@gmail.com>
 LABEL repository.hub="alexmasterov/alpine-redis" \
