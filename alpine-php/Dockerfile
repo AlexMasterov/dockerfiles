@@ -1,13 +1,11 @@
-FROM alpine:3.4
+FROM alpine:edge
 
 MAINTAINER Alex Masterov <alex.masterow@gmail.com>
-LABEL repository.hub="alexmasterov/alpine-php-dev" \
+LABEL repository.hub="alexmasterov/alpine-php:7.0" \
       repository.url="https://github.com/AlexMasterov/dockerfiles"
 
 ARG PHP_VERSION="7.0.13"
 ARG PHP_INI_DIR="/etc/php"
-
-ENV LD_PRELOAD /usr/local/lib/preloadable_libiconv.so
 
 RUN \
   addgroup -S www-data \
@@ -34,7 +32,6 @@ RUN \
     libxml2-dev \
     libxslt-dev \
     make \
-    openssl-dev \
     postgresql-dev \
     re2c \
     readline-dev \
@@ -53,7 +50,6 @@ RUN \
     libwebp \
     libxml2 \
     libxslt \
-    openssl \
     readline \
     zlib \
 
@@ -68,12 +64,9 @@ RUN \
   && curl -fSL --connect-timeout 30 ${LIBICONV_FIX_PATCH} | patch -p1 -u \
 
   && ./configure \
-    --prefix=/usr/local \
+    --prefix=/usr \
   && make \
   && make install \
-
-  && libtool --finish /usr/local/lib \
-  && rm /usr/bin/iconv \
 
   # PHP
   && PHP_SOURCE="https://secure.php.net/get/php-${PHP_VERSION}.tar.gz/from/this/mirror" \
@@ -96,6 +89,7 @@ RUN \
     --enable-calendar \
     --enable-dom \
     --enable-exif \
+    --enable-fd-setsize=65536 \
     --enable-fpm \
       --with-fpm-group=www-data \
       --with-fpm-user=www-data \
@@ -119,7 +113,6 @@ RUN \
     --enable-xmlreader \
     --enable-xmlwriter \
     --enable-zip \
-    --enable-zlib \
     --with-bz2=/usr \
     --with-curl \
     --with-gd \
@@ -128,7 +121,7 @@ RUN \
       --with-png-dir=/usr \
       --with-webp-dir=/usr \
       --with-zlib-dir=/usr \
-    --with-iconv \
+    --with-iconv=/usr \
     --with-mcrypt \
     --with-mhash \
     --with-openssl \
@@ -164,8 +157,8 @@ RUN \
   && make install \
 
   # Msgpack
-  && MSGPACK_BRANCH="master" \
-  && git clone -b ${MSGPACK_BRANCH} --depth 1 https://github.com/msgpack/msgpack-php.git /tmp/msgpack-php \
+  && MSGPACK_BRANCH="struct_unserialize_data" \
+  && git clone -b ${MSGPACK_BRANCH} --depth 1 https://github.com/sodabrew/msgpack-php.git /tmp/msgpack-php \
   && cd /tmp/msgpack-php \
   && phpize \
   && ./configure \
@@ -181,6 +174,24 @@ RUN \
   && make \
   && make install \
 
+  # Phpiredis
+  # https://blog.remirepo.net/post/2016/11/13/Redis-from-PHP
+  && apk add --virtual .phpiredis-build-dependencies \
+    hiredis-dev \
+  && apk add --virtual .phpiredis-runtime-dependencies \
+    hiredis \
+
+  && PHPIREDIS_BRANCH="v1.0" \
+  && git clone -b ${PHPIREDIS_BRANCH} --depth 1 https://github.com/nrk/phpiredis.git /tmp/phpiredis \
+  && cd /tmp/phpiredis \
+  && phpize \
+  && ./configure \
+    --enable-phpiredis \
+  && make \
+  && make install \
+
+  && apk del .phpiredis-build-dependencies \
+
   # Memcached
   && apk add --virtual .memcached-build-dependencies \
     libmemcached-dev \
@@ -189,8 +200,8 @@ RUN \
     libmemcached \
 
   && MEMCACHED_BRANCH="php7" \
-  && git clone -b ${MEMCACHED_BRANCH} --depth 1 https://github.com/php-memcached-dev/php-memcached.git /tmp/memcached-php \
-  && cd /tmp/memcached-php \
+  && git clone -b ${MEMCACHED_BRANCH} --depth 1 https://github.com/php-memcached-dev/php-memcached.git /tmp/php-memcached \
+  && cd /tmp/php-memcached \
   && phpize \
   && ./configure \
     --enable-memcached-json \
@@ -213,20 +224,27 @@ RUN \
   && make \
   && make install \
 
-  # Mongo
-  && MONGO_TAG="1.1.9" \
-  && git clone -o ${MONGO_TAG} --depth 1 https://github.com/mongodb/mongo-php-driver.git /tmp/mongo-php \
-  && git -C /tmp/mongo-php submodule update --init --recursive \
-  && cd /tmp/mongo-php \
+  # php-amqp (RabbitMQ)
+  && apk add --update-cache --virtual .amqp-build-dependencies \
+    --repository http://dl-3.alpinelinux.org/alpine/edge/testing/ --allow-untrusted \
+    rabbitmq-c-dev \
+  && apk add --virtual .rabbitmq-runtime-dependencies \
+    rabbitmq-c \
+
+  && AMQP_TAG="v1.7.1" \
+  && git clone -o ${AMQP_TAG} --depth 1 https://github.com/pdezwart/php-amqp.git /tmp/php-amqp \
+  && cd /tmp/php-amqp \
   && phpize \
   && ./configure \
   && make \
   && make install \
 
+  && apk del .amqp-build-dependencies \
+
   # libevent
   && LIBEVENT_BRANCH="master" \
-  && git clone -b ${LIBEVENT_BRANCH} --depth 1 https://github.com/expressif/pecl-event-libevent.git /tmp/libevent-php \
-  && cd /tmp/libevent-php \
+  && git clone -b ${LIBEVENT_BRANCH} --depth 1 https://github.com/expressif/pecl-event-libevent.git /tmp/libevent \
+  && cd /tmp/libevent \
   && phpize \
   && ./configure \
   && make \
