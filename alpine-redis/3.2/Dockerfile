@@ -1,7 +1,7 @@
 FROM alpine:edge
 
 MAINTAINER Alex Masterov <alex.masterow@gmail.com>
-LABEL repository.hub="alexmasterov/alpine-redis" \
+LABEL repository.hub="alexmasterov/alpine-redis:3.2" \
       repository.url="https://github.com/AlexMasterov/dockerfiles"
 
 ARG REDIS_VERSION="3.2.5"
@@ -26,6 +26,7 @@ RUN \
 
   && make \
     MALLOC=${REDIS_MALLOC} \
+    CFLAGS="-march=native" \
     -j "$(getconf _NPROCESSORS_ONLN)" \
   && make install \
 
