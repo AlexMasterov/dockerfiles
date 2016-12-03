@@ -89,7 +89,7 @@ RUN \
     --enable-calendar \
     --enable-dom \
     --enable-exif \
-    --enable-fd-setsize=65536 \
+    --enable-fd-setsize=$(ulimit -n) \
     --enable-fpm \
       --with-fpm-group=www-data \
       --with-fpm-user=www-data \
