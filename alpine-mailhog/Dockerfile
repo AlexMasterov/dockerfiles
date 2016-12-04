@@ -1,4 +1,4 @@
-FROM golang:1.7.3-alpine
+FROM golang:1.7.4-alpine
 
 MAINTAINER Alex Masterov <alex.masterow@gmail.com>
 LABEL repository.hub="alexmasterov/alpine-mailhog" \
