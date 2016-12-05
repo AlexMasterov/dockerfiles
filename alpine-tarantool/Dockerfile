@@ -1,13 +1,14 @@
-FROM alpine:3.4
+FROM alpine:edge
 
 MAINTAINER Alex Masterov <alex.masterow@gmail.com>
 LABEL repository.hub="alexmasterov/alpine-tarantool" \
       repository.url="https://github.com/AlexMasterov/dockerfiles"
 
-ARG TARANTOOL_BRANCH="1.7"
-# [ Release | RelWithDebInfo ]
+ARG TARANTOOL_TAG="1.7.2-1-g92ed6c4"
+# [ RelWithDebInfo | Release ]
 ARG TARANTOOL_BUILD_TYPE="Release"
 ARG TARANTOOL_BACKTRACE="NO"
+ARG TARANTOOL_AVX="ON"
 ARG TARANTOOL_DIST="NO"
 ARG TARANTOOL_BUNDLED_LIBYAML="NO"
 
@@ -22,8 +23,8 @@ RUN \
     g++ \
     gcc \
     git \
+    libressl-dev \
     make \
-    openssl-dev \
     perl \
     readline-dev \
     yaml-dev \
@@ -47,13 +48,15 @@ RUN \
   # Tarantool
   && TARANTOOL_GIT="https://github.com/tarantool/tarantool.git" \
   && TARANTOOL_DIR="/tmp/tarantool" \
-  && git clone -b ${TARANTOOL_BRANCH} ${TARANTOOL_GIT} ${TARANTOOL_DIR} \
-  && git -C ${TARANTOOL_DIR} submodule update --init --recursive \
+  && git clone -o ${TARANTOOL_TAG} ${TARANTOOL_GIT} ${TARANTOOL_DIR} \
+  && git -C ${TARANTOOL_DIR} submodule update \
+    --init --recursive --jobs "$(getconf _NPROCESSORS_ONLN)" \
   && cd ${TARANTOOL_DIR} \
 
   && cmake \
     -DCMAKE_BUILD_TYPE=${TARANTOOL_BUILD_TYPE} \
     -DENABLE_BACKTRACE:BOOL=${TARANTOOL_BACKTRACE} \
+    -DENABLE_AVX:BOOL=${TARANTOOL_AVX} \
     -DENABLE_DIST:BOOL=${TARANTOOL_DIST} \
     -DENABLE_BUNDLED_LIBYAML:BOOL=${TARANTOOL_BUNDLED_LIBYAML} \
     . \
