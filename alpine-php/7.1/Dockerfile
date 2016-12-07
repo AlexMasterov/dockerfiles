@@ -157,8 +157,8 @@ RUN \
   && make install \
 
   # Msgpack
-  && MSGPACK_BRANCH="struct_unserialize_data" \
-  && git clone -b ${MSGPACK_BRANCH} --depth 1 https://github.com/sodabrew/msgpack-php.git /tmp/msgpack-php \
+  && MSGPACK_BRANCH="master" \
+  && git clone -b ${MSGPACK_BRANCH} --depth 1 https://github.com/msgpack/msgpack-php.git /tmp/msgpack-php \
   && cd /tmp/msgpack-php \
   && phpize \
   && ./configure \
