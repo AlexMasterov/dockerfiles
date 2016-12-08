@@ -4,7 +4,7 @@ MAINTAINER Alex Masterov <alex.masterow@gmail.com>
 LABEL repository.hub="alexmasterov/alpine-php:7.0" \
       repository.url="https://github.com/AlexMasterov/dockerfiles"
 
-ARG PHP_VERSION="7.0.13"
+ARG PHP_VERSION="7.0.14"
 ARG PHP_INI_DIR="/etc/php"
 
 RUN \
@@ -261,8 +261,8 @@ RUN \
   && make \
   && make install \
 
-  && MONGO_TAG="1.2.1" \
-  && git clone -o ${MONGO_TAG} --depth 1 https://github.com/mongodb/mongo-php-driver.git /tmp/mongo-php \
+  && MONGODB_TAG="1.2.1" \
+  && git clone -o ${MONGODB_TAG} --depth 1 https://github.com/mongodb/mongo-php-driver.git /tmp/mongo-php \
   && git -C /tmp/mongo-php submodule update \
     --init --recursive --jobs "$(getconf _NPROCESSORS_ONLN)" \
   && cd /tmp/mongo-php \
