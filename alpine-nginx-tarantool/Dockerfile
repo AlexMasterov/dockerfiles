@@ -35,7 +35,7 @@ RUN \
   && TARANTOOL_UPSTREAM_GIT="https://github.com/tarantool/nginx_upstream_module.git" \
   && TARANTOOL_UPSTREAM_DIR="/tmp/nginx_upstream_module" \
   && git clone -b ${TARANTOOL_UPSTREAM_BRANCH} --depth 1 ${TARANTOOL_UPSTREAM_GIT} ${TARANTOOL_UPSTREAM_DIR} \
-  && git -C ${TARANTOOL_UPSTREAM_DIR} submodule update
+  && git -C ${TARANTOOL_UPSTREAM_DIR} submodule update \
     --init --recursive --jobs "$(getconf _NPROCESSORS_ONLN)" \
   && make -C ${TARANTOOL_UPSTREAM_DIR} yajl \
 
