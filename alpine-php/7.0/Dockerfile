@@ -148,9 +148,18 @@ RUN \
   && make install \
 
   # xDebug
-  && XDEBUG_BRANCH="master" \
-  && git clone -b ${XDEBUG_BRANCH} --depth 1 https://github.com/xdebug/xdebug.git /tmp/xdebug \
+  && XDEBUG_TAG="XDEBUG_2_5_0RC1" \
+  && git clone -o ${XDEBUG_TAG} --depth 1 https://github.com/xdebug/xdebug.git /tmp/xdebug \
   && cd /tmp/xdebug \
+  && phpize \
+  && ./configure \
+  && make \
+  && make install \
+
+  # libevent
+  && LIBEVENT_BRANCH="master" \
+  && git clone -b ${LIBEVENT_BRANCH} --depth 1 https://github.com/expressif/pecl-event-libevent.git /tmp/libevent \
+  && cd /tmp/libevent \
   && phpize \
   && ./configure \
   && make \
@@ -224,6 +233,48 @@ RUN \
   && make \
   && make install \
 
+  # Mongodb
+  && apk add --virtual .mongodb-build-dependencies \
+    automake \
+  && apk add --virtual .mongodb-runtime-dependencies \
+    libressl2.4-libtls \
+
+  && LIBBSON_VERSION="1.5.0" \
+  && LIBBSON_FILENAME="libbson-${LIBBSON_VERSION}" \
+  && LIBBSON_SOURCE="https://github.com/mongodb/libbson/releases/download/${LIBBSON_VERSION}/${LIBBSON_FILENAME}.tar.gz" \
+  && curl -fSL --connect-timeout 30 ${LIBBSON_SOURCE} | tar xz -C /tmp \
+  && cd /tmp/${LIBBSON_FILENAME} \
+  && ./configure \
+    --enable-lto \
+  && make \
+  && make install \
+
+  && LIBMONGOC_BRANCH="master" \
+  && git clone -b ${LIBMONGOC_BRANCH} --depth 1 https://github.com/mongodb/mongo-c-driver.git /tmp/libmongoc \
+  && cd /tmp/libmongoc \
+  && ./autogen.sh \
+    --disable-automatic-init-and-cleanup \
+    --enable-rdtscp \
+    --enable-ssl=libressl \
+    --enable-sasl=no \
+    --with-libbson=system \
+  && make \
+  && make install \
+
+  && MONGO_TAG="1.2.1" \
+  && git clone -o ${MONGO_TAG} --depth 1 https://github.com/mongodb/mongo-php-driver.git /tmp/mongo-php \
+  && git -C /tmp/mongo-php submodule update \
+    --init --recursive --jobs "$(getconf _NPROCESSORS_ONLN)" \
+  && cd /tmp/mongo-php \
+  && phpize \
+  && ./configure \
+    --with-libmongoc=system \
+    --with-libbson=system \
+  && make \
+  && make install \
+
+  && apk del .mongodb-build-dependencies \
+
   # php-amqp (RabbitMQ)
   && apk add --update-cache --virtual .amqp-build-dependencies \
     --repository http://dl-3.alpinelinux.org/alpine/edge/testing/ --allow-untrusted \
@@ -240,15 +291,6 @@ RUN \
   && make install \
 
   && apk del .amqp-build-dependencies \
-
-  # libevent
-  && LIBEVENT_BRANCH="master" \
-  && git clone -b ${LIBEVENT_BRANCH} --depth 1 https://github.com/expressif/pecl-event-libevent.git /tmp/libevent \
-  && cd /tmp/libevent \
-  && phpize \
-  && ./configure \
-  && make \
-  && make install \
 
   # https://github.com/AlexMasterov/dockerfiles/blob/master/alpine-v8-lib/Dockerfile
   && V8_VERSION="5.5-lkgr" \
