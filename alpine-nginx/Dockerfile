@@ -57,8 +57,8 @@ RUN \
     --http-fastcgi-temp-path=/var/cache/nginx/fastcgi_temp \
     --http-uwsgi-temp-path=/var/cache/nginx/uwsgi_temp \
     --http-scgi-temp-path=/var/cache/nginx/scgi_temp \
-    --user=nginx  \
-    --group=nginx  \
+    --user=nginx \
+    --group=nginx \
     --without-http_autoindex_module \
     --without-http_ssi_module \
     --without-mail_imap_module \
@@ -90,7 +90,7 @@ RUN \
   && apk del .nginx-build-dependencies \
   && rm -rf /var/cache/apk/* /tmp/* /var/tmp/*
 
-ARG TINI_VERSION="v0.13.0"
+ARG TINI_VERSION="v0.13.1"
 ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini-static /sbin/tini
 RUN chmod +x /sbin/tini
 

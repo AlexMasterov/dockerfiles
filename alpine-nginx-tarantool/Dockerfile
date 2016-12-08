@@ -1,4 +1,4 @@
-FROM alpine:3.4
+FROM alpine:edge
 
 MAINTAINER Alex Masterov <alex.masterow@gmail.com>
 LABEL repository.hub="alexmasterov/alpine-nginx-tarantool" \
@@ -17,9 +17,9 @@ RUN \
     g++ \
     gcc \
     git \
+    libressl-dev \
     linux-headers \
     make \
-    openssl-dev \
     patch \
     pcre-dev \
     zlib-dev \
@@ -35,7 +35,8 @@ RUN \
   && TARANTOOL_UPSTREAM_GIT="https://github.com/tarantool/nginx_upstream_module.git" \
   && TARANTOOL_UPSTREAM_DIR="/tmp/nginx_upstream_module" \
   && git clone -b ${TARANTOOL_UPSTREAM_BRANCH} --depth 1 ${TARANTOOL_UPSTREAM_GIT} ${TARANTOOL_UPSTREAM_DIR} \
-  && git -C ${TARANTOOL_UPSTREAM_DIR} submodule update --init --recursive \
+  && git -C ${TARANTOOL_UPSTREAM_DIR} submodule update
+    --init --recursive --jobs "$(getconf _NPROCESSORS_ONLN)" \
   && make -C ${TARANTOOL_UPSTREAM_DIR} yajl \
 
   && apk del .tarantool-upstream-build-dependencies \
@@ -70,29 +71,31 @@ RUN \
     --http-fastcgi-temp-path=/var/cache/nginx/fastcgi_temp \
     --http-uwsgi-temp-path=/var/cache/nginx/uwsgi_temp \
     --http-scgi-temp-path=/var/cache/nginx/scgi_temp \
-    --user=nginx  \
-    --group=nginx  \
+    --user=nginx \
+    --group=nginx \
     --without-http_autoindex_module \
     --without-http_ssi_module \
-    --with-http_v2_module \
-    --with-http_ssl_module \
+    --without-mail_imap_module \
+    --without-mail_pop3_module \
+    --without-mail_smtp_module \
+    --with-file-aio \
+    --with-http_auth_request_module \
     --with-http_dav_module \
-    --with-http_slice_module \
-    --with-http_realip_module \
+    --with-http_degradation_module \
     --with-http_gunzip_module \
     --with-http_gzip_static_module \
-    --with-http_stub_status_module \
+    --with-http_realip_module \
     --with-http_secure_link_module \
-    --with-http_auth_request_module \
-    --with-http_degradation_module \
+    --with-http_slice_module \
+    --with-http_ssl_module \
+    --with-http_stub_status_module \
+    --with-http_v2_module \
     --with-pcre \
     --with-pcre-jit \
     --with-stream \
     --with-stream_ssl_module  \
     --with-threads \
-    --with-file-aio \
-    --with-cc-opt='-Ofast -march=native -flto -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security' \
-    --with-ld-opt='-Wl,-Bsymbolic-functions -Wl,-z,relro -Wl,--as-needed' \
+    --with-cc-opt="-Ofast -march=native -flto -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security" \
     --add-module=${TARANTOOL_UPSTREAM_DIR} \
     --add-module=${HEADERS_MORE_DIR} \
   && make -j "$(getconf _NPROCESSORS_ONLN)" \
@@ -102,7 +105,7 @@ RUN \
   && apk del .nginx-build-dependencies \
   && rm -rf /var/cache/apk/* /tmp/* /var/tmp/*
 
-ARG TINI_VERSION="v0.13.0"
+ARG TINI_VERSION="v0.13.1"
 ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini-static /sbin/tini
 RUN chmod +x /sbin/tini
 

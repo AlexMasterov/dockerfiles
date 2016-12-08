@@ -1,10 +1,10 @@
 FROM alpine:edge
 
 MAINTAINER Alex Masterov <alex.masterow@gmail.com>
-LABEL repository.hub="alexmasterov/alpine-tarantool" \
+LABEL repository.hub="alexmasterov/alpine-tarantool:1.7" \
       repository.url="https://github.com/AlexMasterov/dockerfiles"
 
-ARG TARANTOOL_TAG="1.7.2-1-g92ed6c4"
+ARG TARANTOOL_BRANCH="1.7"
 # [ RelWithDebInfo | Release ]
 ARG TARANTOOL_BUILD_TYPE="Release"
 ARG TARANTOOL_BACKTRACE="NO"
@@ -48,7 +48,7 @@ RUN \
   # Tarantool
   && TARANTOOL_GIT="https://github.com/tarantool/tarantool.git" \
   && TARANTOOL_DIR="/tmp/tarantool" \
-  && git clone -o ${TARANTOOL_TAG} ${TARANTOOL_GIT} ${TARANTOOL_DIR} \
+  && git clone -b ${TARANTOOL_BRANCH} ${TARANTOOL_GIT} ${TARANTOOL_DIR} \
   && git -C ${TARANTOOL_DIR} submodule update \
     --init --recursive --jobs "$(getconf _NPROCESSORS_ONLN)" \
   && cd ${TARANTOOL_DIR} \
@@ -67,7 +67,7 @@ RUN \
   && apk del .tarantool-build-dependencies \
   && rm -rf /var/cache/apk/* /tmp/* /var/tmp/*
 
-ARG TINI_VERSION="v0.13.0"
+ARG TINI_VERSION="v0.13.1"
 ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini-static /sbin/tini
 RUN chmod +x /sbin/tini
 
