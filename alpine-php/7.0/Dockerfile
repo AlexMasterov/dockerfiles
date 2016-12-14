@@ -195,7 +195,6 @@ RUN \
   && cd /tmp/phpiredis \
   && phpize \
   && ./configure \
-    --enable-phpiredis \
   && make \
   && make install \
 
@@ -213,9 +212,9 @@ RUN \
   && cd /tmp/php-memcached \
   && phpize \
   && ./configure \
-    --enable-memcached-json \
-    --enable-memcached-msgpack \
     --disable-memcached-sasl \
+    --enable-memcached-msgpack \
+    --enable-memcached-json \
   && make \
   && make install \
 
@@ -239,12 +238,10 @@ RUN \
   && apk add --virtual .mongodb-runtime-dependencies \
     libressl2.4-libtls \
 
-  && LIBBSON_VERSION="1.5.0" \
-  && LIBBSON_FILENAME="libbson-${LIBBSON_VERSION}" \
-  && LIBBSON_SOURCE="https://github.com/mongodb/libbson/releases/download/${LIBBSON_VERSION}/${LIBBSON_FILENAME}.tar.gz" \
-  && curl -fSL --connect-timeout 30 ${LIBBSON_SOURCE} | tar xz -C /tmp \
-  && cd /tmp/${LIBBSON_FILENAME} \
-  && ./configure \
+  && LIBBSON_BRANCH="master" \
+  && git clone -b ${LIBBSON_BRANCH} --depth 1 https://github.com/mongodb/libbson.git /tmp/libbson \
+  && cd /tmp/libbson \
+  && ./autogen.sh \
     --enable-lto \
   && make \
   && make install \
@@ -261,15 +258,16 @@ RUN \
   && make \
   && make install \
 
-  && MONGODB_TAG="1.2.1" \
+  && MONGODB_TAG="1.2.2" \
   && git clone -o ${MONGODB_TAG} --depth 1 https://github.com/mongodb/mongo-php-driver.git /tmp/mongo-php \
   && git -C /tmp/mongo-php submodule update \
     --init --recursive --jobs "$(getconf _NPROCESSORS_ONLN)" \
   && cd /tmp/mongo-php \
   && phpize \
   && ./configure \
-    --with-libmongoc=system \
     --with-libbson=system \
+    --with-libmongoc=system \
+      STD_CFLAGS="-march=native" \
   && make \
   && make install \
 
