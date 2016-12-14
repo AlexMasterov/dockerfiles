@@ -307,8 +307,9 @@ RUN \
   && make install \
 
   # php-v8
-  && PHPV8_BRANCH="master" \
-  && git clone -b ${PHPV8_BRANCH} --depth 1 https://github.com/pinepain/php-v8.git /tmp/php-v8 \
+  && PHPV8_COMMIT="8680f52" \
+  && git clone -b master https://github.com/pinepain/php-v8.git /tmp/php-v8 \
+  && git -C /tmp/php-v8 checkout ${PHPV8_COMMIT} \
   && cd /tmp/php-v8 \
   && phpize \
   && ./configure \
