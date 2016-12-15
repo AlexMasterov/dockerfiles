@@ -81,7 +81,7 @@ RUN \
     --with-stream \
     --with-stream_ssl_module  \
     --with-threads \
-    --with-cc-opt="-Ofast -march=native -flto -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security" \
+    --with-cc-opt="-O2 -march=native -flto -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security" \
     --add-module=${HEADERS_MORE_DIR} \
   && make -j "$(getconf _NPROCESSORS_ONLN)" \
   && make install \
