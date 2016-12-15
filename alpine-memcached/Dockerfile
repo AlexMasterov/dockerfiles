@@ -1,4 +1,4 @@
-FROM alpine:3.4
+FROM alpine:edge
 
 MAINTAINER Alex Masterov <alex.masterow@gmail.com>
 LABEL repository.hub="alexmasterov/alpine-memcached" \
@@ -26,6 +26,7 @@ RUN \
   && cd /tmp/memcached-${MEMCACHED_VERSION} \
 
   && ./configure \
+    CFLAGS="-O2 -march=native" \
   && make -j "$(getconf _NPROCESSORS_ONLN)" \
   && make install \
 
