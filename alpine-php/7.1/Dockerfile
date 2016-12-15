@@ -139,8 +139,8 @@ RUN \
   && make install \
 
   # See: https://bugs.php.net/bug.php?id=52312
-  && REALPATH_TURBO_BRANCH="master" \
-  && git clone -b ${REALPATH_TURBO_BRANCH} --depth 1 https://github.com/Mikk3lRo/realpath_turbo.git /tmp/realpath_turbo \
+  && REALPATH_TURBO_TAG="v1.4" \
+  && git clone -b ${REALPATH_TURBO_TAG} --depth 1 https://github.com/Mikk3lRo/realpath_turbo.git /tmp/realpath_turbo \
   && cd /tmp/realpath_turbo \
   && phpize \
   && ./configure \
@@ -148,9 +148,18 @@ RUN \
   && make install \
 
   # xDebug
-  && XDEBUG_TAG="XDEBUG_2_5_0RC1" \
+  && XDEBUG_TAG="XDEBUG_2_5_0" \
   && git clone -o ${XDEBUG_TAG} --depth 1 https://github.com/xdebug/xdebug.git /tmp/xdebug \
   && cd /tmp/xdebug \
+  && phpize \
+  && ./configure \
+  && make \
+  && make install \
+
+  # Msgpack
+  && MSGPACK_TAG="msgpack-2.0.2" \
+  && git clone -o ${MSGPACK_TAG} --depth 1 https://github.com/msgpack/msgpack-php.git /tmp/msgpack-php \
+  && cd /tmp/msgpack-php \
   && phpize \
   && ./configure \
   && make \
@@ -160,15 +169,6 @@ RUN \
   && LIBEVENT_BRANCH="master" \
   && git clone -b ${LIBEVENT_BRANCH} --depth 1 https://github.com/expressif/pecl-event-libevent.git /tmp/libevent \
   && cd /tmp/libevent \
-  && phpize \
-  && ./configure \
-  && make \
-  && make install \
-
-  # Msgpack
-  && MSGPACK_BRANCH="master" \
-  && git clone -b ${MSGPACK_BRANCH} --depth 1 https://github.com/msgpack/msgpack-php.git /tmp/msgpack-php \
-  && cd /tmp/msgpack-php \
   && phpize \
   && ./configure \
   && make \
@@ -190,8 +190,8 @@ RUN \
   && apk add --virtual .phpiredis-runtime-dependencies \
     hiredis \
 
-  && PHPIREDIS_BRANCH="v1.0" \
-  && git clone -b ${PHPIREDIS_BRANCH} --depth 1 https://github.com/nrk/phpiredis.git /tmp/phpiredis \
+  && PHPIREDIS_TAG="v1.0.0" \
+  && git clone -o ${PHPIREDIS_TAG} --depth 1 https://github.com/nrk/phpiredis.git /tmp/phpiredis \
   && cd /tmp/phpiredis \
   && phpize \
   && ./configure \
@@ -267,7 +267,7 @@ RUN \
   && ./configure \
     --with-libbson=system \
     --with-libmongoc=system \
-      STD_CFLAGS="-march=native" \
+    STD_CFLAGS="-march=native" \
   && make \
   && make install \
 
