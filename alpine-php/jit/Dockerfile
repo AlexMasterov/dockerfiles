@@ -60,7 +60,7 @@ RUN \
   && cd /tmp/libiconv-${LIBICONV_VERSION} \
 
   # Patches
-  && LIBICONV_FIX_PATCH="https://git.io/vP8wu" \
+  && LIBICONV_FIX_PATCH="https://raw.githubusercontent.com/mxe/mxe/master/src/libiconv-1-fixes.patch" \
   && curl -fSL --connect-timeout 30 ${LIBICONV_FIX_PATCH} | patch -p1 -u \
 
   && ./configure \
@@ -225,23 +225,25 @@ RUN \
   && make install \
 
   # Mongodb
-  && apk add --virtual .mongodb-build-dependencies \
-    automake \
   && apk add --virtual .mongodb-runtime-dependencies \
     libressl2.4-libtls \
 
-  && LIBBSON_BRANCH="master" \
-  && git clone -b ${LIBBSON_BRANCH} --depth 1 https://github.com/mongodb/libbson.git /tmp/libbson \
-  && cd /tmp/libbson \
-  && ./autogen.sh \
+  && LIBBSON_VERSION="1.5.1" \
+  && LIBBSON_FILENAME="libbson-${LIBBSON_VERSION}" \
+  && LIBBSON_SOURCE="https://github.com/mongodb/libbson/releases/download/${LIBBSON_VERSION}/${LIBBSON_FILENAME}.tar.gz" \
+  && curl -fSL --connect-timeout 30 ${LIBBSON_SOURCE} | tar xz -C /tmp \
+  && cd /tmp/${LIBBSON_FILENAME} \
+  && ./configure \
     --enable-lto \
   && make \
   && make install \
 
-  && LIBMONGOC_BRANCH="master" \
-  && git clone -b ${LIBMONGOC_BRANCH} --depth 1 https://github.com/mongodb/mongo-c-driver.git /tmp/libmongoc \
-  && cd /tmp/libmongoc \
-  && ./autogen.sh \
+  && LIBMONGOC_VERSION="1.5.1" \
+  && LIBMONGOC_FILENAME="mongo-c-driver-${LIBBSON_VERSION}" \
+  && LIBMONGOC_SOURCE="https://github.com/mongodb/mongo-c-driver/releases/download/${LIBMONGOC_VERSION}/${LIBMONGOC_FILENAME}.tar.gz" \
+  && curl -fSL --connect-timeout 30 ${LIBMONGOC_SOURCE} | tar xz -C /tmp \
+  && cd /tmp/${LIBMONGOC_FILENAME} \
+  && ./configure \
     --disable-automatic-init-and-cleanup \
     --enable-rdtscp \
     --enable-ssl=libressl \
@@ -250,11 +252,11 @@ RUN \
   && make \
   && make install \
 
-  && MONGODB_TAG="1.2.2" \
-  && git clone -o ${MONGODB_TAG} --depth 1 https://github.com/mongodb/mongo-php-driver.git /tmp/mongo-php \
-  && git -C /tmp/mongo-php submodule update \
-    --init --recursive --jobs "$(getconf _NPROCESSORS_ONLN)" \
-  && cd /tmp/mongo-php \
+  && MONGODB_VERSION="1.2.2" \
+  && MONGODB_FILENAME="mongodb-${MONGODB_VERSION}" \
+  && MONGODB_SOURCE="https://github.com/mongodb/mongo-php-driver/releases/download/${MONGODB_VERSION}/${MONGODB_FILENAME}.tgz" \
+  && curl -fSL --connect-timeout 30 ${MONGODB_SOURCE} | tar xz -C /tmp \
+  && cd /tmp/${MONGODB_FILENAME} \
   && phpize \
   && ./configure \
     --with-libbson=system \
@@ -262,8 +264,6 @@ RUN \
     STD_CFLAGS="-march=native" \
   && make \
   && make install \
-
-  && apk del .mongodb-build-dependencies \
 
   # php-amqp (RabbitMQ)
   && apk add --update-cache --virtual .amqp-build-dependencies \
