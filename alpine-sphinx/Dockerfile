@@ -35,7 +35,7 @@ RUN \
   && cd /tmp/sphinx-${SPHINX_VERSION} \
 
   # Patches
-  && PAGESIZE_PATCH="http://bit.ly/2dtP10a" \
+  && PAGESIZE_PATCH="http://git.alpinelinux.org/cgit/aports/plain/community/sphinx/sphinx-pagesize.patch" \
   && curl -fSL --connect-timeout 30 ${PAGESIZE_PATCH} | patch -p1 -u \
 
   && ./configure \
@@ -50,7 +50,6 @@ RUN \
     --with-mysql \
     --with-pgsql \
     --with-re2 \
-
   && make -j "$(getconf _NPROCESSORS_ONLN)" \
   && make install \
 
@@ -58,7 +57,7 @@ RUN \
   && apk del .sphinx-build-dependencies \
   && rm -rf /var/cache/apk/* /tmp/* /var/tmp/*
 
-ARG TINI_VERSION="v0.13.1"
+ARG TINI_VERSION="v0.13.2"
 ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini-static /sbin/tini
 RUN chmod +x /sbin/tini
 

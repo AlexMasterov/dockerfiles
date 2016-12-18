@@ -318,7 +318,7 @@ ARG MAILHOG_VERSION="v0.2.1"
 ADD https://github.com/mailhog/MailHog/releases/download/${MAILHOG_VERSION}/MailHog_linux_amd64 /sbin/mailhog
 RUN chmod +x /sbin/mailhog
 
-ARG TINI_VERSION="v0.13.1"
+ARG TINI_VERSION="v0.13.2"
 ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini-static /sbin/tini
 RUN chmod +x /sbin/tini
 
