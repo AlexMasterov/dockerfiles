@@ -4,7 +4,7 @@ MAINTAINER Alex Masterov <alex.masterow@gmail.com>
 LABEL repository.hub="alexmasterov/alpine-memcached" \
       repository.url="https://github.com/AlexMasterov/dockerfiles"
 
-ARG MEMCACHED_VERSION="1.4.33"
+ARG MEMCACHED_VERSION="1.4.34"
 
 RUN \
   addgroup -S memcache \
@@ -32,7 +32,7 @@ RUN \
 
   # Removing build dependencies, clean temporary files
   && apk del .memcached-build-dependencies \
-  && rm -rf /var/cache/apk/* /tmp/* /var/tmp/*
+  && rm -rf /tmp/* /var/tmp/* /var/cache/apk/*
 
 ARG TINI_VERSION="v0.13.2"
 ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini-static /sbin/tini
