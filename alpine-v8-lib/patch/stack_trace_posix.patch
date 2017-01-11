@@ -1,0 +1,72 @@
+--- base/debug/stack_trace_posix.cc.orig 2017-01-10 06:02:59.706993600 +0300
++++ base/debug/stack_trace_posix.cc      2017-01-10 05:54:06.697103500 +0300
+@@ -25,7 +25,7 @@
+ #if defined(__GLIBCXX__)
+ #include <cxxabi.h>
+ #endif
+-#if !defined(__UCLIBC__)
++#if defined(__GLIBC__)
+ #include <execinfo.h>
+ #endif
+
+@@ -76,7 +76,7 @@
+   // Note: code in this function is NOT async-signal safe (std::string uses
+   // malloc internally).
+
+-#if defined(__GLIBCXX__) && !defined(__UCLIBC__)
++#if defined(__GLIBCXX__) && defined(__GLIBC__)
+
+   std::string::size_type search_from = 0;
+   while (search_from < text->size()) {
+@@ -113,7 +113,7 @@
+     }
+   }
+
+-#endif  // defined(__GLIBCXX__) && !defined(__UCLIBC__)
++#endif  // defined(__GLIBCXX__) && defined(__GLIBC__)
+ }
+ #endif  // !defined(USE_SYMBOLIZE)
+
+@@ -125,7 +125,7 @@
+   virtual ~BacktraceOutputHandler() {}
+ };
+
+-#if !defined(__UCLIBC__)
++#if defined(__GLIBC__)
+ void OutputPointer(void* pointer, BacktraceOutputHandler* handler) {
+   // This should be more than enough to store a 64-bit number in hex:
+   // 16 hex digits + 1 for null-terminator.
+@@ -202,7 +202,7 @@
+   }
+ #endif  // defined(USE_SYMBOLIZE)
+ }
+-#endif  // !defined(__UCLIBC__)
++#endif  // defined(__GLIBC__)
+
+ void PrintToStderr(const char* output) {
+   // NOTE: This code MUST be async-signal safe (it's used by in-process
+@@ -718,7 +718,7 @@
+   // NOTE: This code MUST be async-signal safe (it's used by in-process
+   // stack dumping signal handler). NO malloc or stdio is allowed here.
+
+-#if !defined(__UCLIBC__)
++#if defined(__GLIBC__)
+   // Though the backtrace API man page does not list any possible negative
+   // return values, we take no chance.
+   count_ = base::saturated_cast<size_t>(backtrace(trace_, arraysize(trace_)));
+@@ -731,13 +731,13 @@
+   // NOTE: This code MUST be async-signal safe (it's used by in-process
+   // stack dumping signal handler). NO malloc or stdio is allowed here.
+
+-#if !defined(__UCLIBC__)
++#if defined(__GLIBC__)
+   PrintBacktraceOutputHandler handler;
+   ProcessBacktrace(trace_, count_, &handler);
+ #endif
+ }
+
+-#if !defined(__UCLIBC__)
++#if defined(__GLIBC__)
+ void StackTrace::OutputToStream(std::ostream* os) const {
+   StreamBacktraceOutputHandler handler(os);
+   ProcessBacktrace(trace_, count_, &handler);

@@ -1,0 +1,13 @@
+--- base/native_library_posix.cc.orig	2017-01-10 06:02:59.818695200 +0300
++++ base/native_library_posix.cc      2017-01-10 05:59:56.404003100 +0300
+@@ -12,6 +12,10 @@
+ #include "base/strings/utf_string_conversions.h"
+ #include "base/threading/thread_restrictions.h"
+
++#ifndef RTLD_DEEPBIND
++#define RTLD_DEEPBIND 0
++#endif
++
+ namespace base {
+
+ std::string NativeLibraryLoadError::ToString() const {

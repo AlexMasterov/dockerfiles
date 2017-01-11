@@ -1,0 +1,11 @@
+--- base/debug/stack_trace.cc.orig 2017-01-10 06:02:59.706493300 +0300
++++ base/debug/stack_trace.cc      2017-01-10 05:55:40.167398600 +0300
+@@ -211,7 +211,7 @@
+
+ std::string StackTrace::ToString() const {
+   std::stringstream stream;
+-#if !defined(__UCLIBC__)
++#if defined(__GLIBC__)
+   OutputToStream(&stream);
+ #endif
+   return stream.str();
