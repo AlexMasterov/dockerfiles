@@ -291,8 +291,8 @@ RUN \
   && apk del .amqp-build-dependencies \
 
   # https://github.com/AlexMasterov/dockerfiles/blob/master/alpine-v8-lib/Dockerfile
-  && V8_VERSION="5.5-lkgr" \
-  && V8_LIB_SOURCE="https://www.dropbox.com/s/1hn1ak0iebuv9m4/alpine-v8-lib_${V8_VERSION}.tar.gz" \
+  && V8_VERSION="5.7.455" \
+  && V8_LIB_SOURCE="https://www.dropbox.com/s/5vlxi8ulntzhuux/alpine-v8-lib_${V8_VERSION}.tar.gz" \
   && curl -fSL --connect-timeout 30 ${V8_LIB_SOURCE} | tar xz -C / \
 
   # v8js
@@ -307,9 +307,8 @@ RUN \
   && make install \
 
   # php-v8
-  && PHPV8_COMMIT="8680f52" \
-  && git clone -b master https://github.com/pinepain/php-v8.git /tmp/php-v8 \
-  && git -C /tmp/php-v8 checkout ${PHPV8_COMMIT} \
+  && PHPV8_BRANCH="master" \
+  && git clone -b ${PHPV8_BRANCH} https://github.com/pinepain/php-v8.git /tmp/php-v8 \
   && cd /tmp/php-v8 \
   && phpize \
   && ./configure \
