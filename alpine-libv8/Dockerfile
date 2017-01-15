@@ -1,14 +1,14 @@
 FROM alpine:edge
 
 MAINTAINER Alex Masterov <alex.masterow@gmail.com>
-LABEL repository.hub="alexmasterov/alpine-v8-lib" \
+LABEL repository.hub="alexmasterov/alpine-libv8" \
       repository.url="https://github.com/AlexMasterov/dockerfiles"
 
-ARG v8_version=5.7.457
-ARG v8_dir=/usr/local/v8
+ARG V8_VERSION=5.7.457
+ARG V8_DIR=/usr/local/v8
 
-ENV V8_VERSION=${v8_version} \
-    V8_DIR=${v8_dir}
+ENV V8_VERSION=${V8_VERSION} \
+    V8_DIR=${V8_DIR}
 
 RUN \
   apk add --update --virtual .v8-build-dependencies \
