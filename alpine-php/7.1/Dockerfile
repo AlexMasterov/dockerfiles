@@ -306,17 +306,6 @@ RUN \
   # && make test \
   && make install \
 
-  # php-v8
-  && PHPV8_BRANCH="master" \
-  && git clone -b ${PHPV8_BRANCH} https://github.com/pinepain/php-v8.git /tmp/php-v8 \
-  && cd /tmp/php-v8 \
-  && phpize \
-  && ./configure \
-    --with-v8=/usr/local/v8 \
-  && make \
-  # && make test \
-  && make install \
-
   # Removing build dependencies, clean temporary files
   && apk del .php-build-dependencies \
   && rm -rf /var/cache/apk/* /tmp/* /var/tmp/*
