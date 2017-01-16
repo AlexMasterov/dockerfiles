@@ -55,6 +55,7 @@ RUN \
       target_os=\"linux\" \
       target_cpu=\"x64\" \
       v8_target_cpu=\"x64\" \
+      v8_use_external_startup_data=false \
       is_component_build=true \
       is_clang=false \
       is_debug=false \
@@ -73,7 +74,7 @@ RUN \
   && mkdir -p ${V8_DIR}/include ${V8_DIR}/lib \
   && cp -R /tmp/v8/include/* ${V8_DIR}/include/ \
   && (cd /tmp/v8/out.gn/x64.release; \
-      cp lib*.so *_blob.bin icudtl.dat ${V8_DIR}/lib/) \
+      cp lib*.so icudtl.dat ${V8_DIR}/lib/) \
 
   # Removing build dependencies, clean temporary files
   && apk del .v8-build-dependencies .gn-runtime-dependencies \
