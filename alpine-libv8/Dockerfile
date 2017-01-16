@@ -72,7 +72,8 @@ RUN \
   # Shared libraries
   && mkdir -p ${V8_DIR}/include ${V8_DIR}/lib \
   && cp -R /tmp/v8/include/* ${V8_DIR}/include/ \
-  && cp /tmp/v8/out.gn/x64.release/lib*.so /tmp/v8/out.gn/x64.release/*_blob.bin ${V8_DIR}/lib/ \
+  && (cd /tmp/v8/out.gn/x64.release; \
+      cp lib*.so *_blob.bin icudtl.dat ${V8_DIR}/lib/) \
 
   # Removing build dependencies, clean temporary files
   && apk del .v8-build-dependencies .gn-runtime-dependencies \
