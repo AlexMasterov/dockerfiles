@@ -141,7 +141,7 @@ RUN \
 
   # See: https://bugs.php.net/bug.php?id=52312
   && REALPATH_TURBO_TAG="v1.4" \
-  && git clone -b ${REALPATH_TURBO_TAG} --depth 1 https://github.com/Mikk3lRo/realpath_turbo.git /tmp/realpath_turbo \
+  && git clone -o ${REALPATH_TURBO_TAG} --depth 1 https://github.com/Mikk3lRo/realpath_turbo.git /tmp/realpath_turbo \
   && cd /tmp/realpath_turbo \
   && phpize \
   && ./configure \
