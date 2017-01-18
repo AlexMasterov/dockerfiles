@@ -260,7 +260,7 @@ RUN \
   && make \
   && make install \
 
-  && MONGODB_VERSION="1.2.2" \
+  && MONGODB_VERSION="1.2.3" \
   && MONGODB_FILENAME="mongodb-${MONGODB_VERSION}" \
   && MONGODB_SOURCE="https://github.com/mongodb/mongo-php-driver/releases/download/${MONGODB_VERSION}/${MONGODB_FILENAME}.tgz" \
   && curl -fSL --connect-timeout 30 ${MONGODB_SOURCE} | tar xz -C /tmp \
