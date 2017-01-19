@@ -300,7 +300,7 @@ RUN \
   && make install \
 
   # php-v8
-  && PHPV8_BRANCH="master" \
+  && PHPV8_BRANCH="improve-api" \
   && git clone -b ${PHPV8_BRANCH} --depth 1 https://github.com/pinepain/php-v8.git /tmp/php-v8 \
   && cd /tmp/php-v8 \
   && phpize \
