@@ -53,6 +53,9 @@ RUN \
     readline \
     zlib \
 
+  # Use multi-threaded 'make' by default
+  && export MAKEFLAGS="-j $(expr $(getconf _NPROCESSORS_ONLN) \+ 1)" \
+
   # Proper iconv
   && LIBICONV_VERSION="1.14" \
   && LIBICONV_SOURCE="https://ftp.gnu.org/pub/gnu/libiconv/libiconv-${LIBICONV_VERSION}.tar.gz" \
@@ -135,7 +138,7 @@ RUN \
     --with-xmlrpc \
     --with-xsl \
     CFLAGS="-O2 -march=native" \
-  && make -j "$(getconf _NPROCESSORS_ONLN)" \
+  && make \
   && make install \
 
   # See: https://bugs.php.net/bug.php?id=52312
