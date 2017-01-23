@@ -142,8 +142,8 @@ RUN \
   && make install \
 
   # See: https://bugs.php.net/bug.php?id=52312
-  && REALPATH_TURBO_TAG="v1.4" \
-  && git clone -o ${REALPATH_TURBO_TAG} --depth 1 https://github.com/Mikk3lRo/realpath_turbo.git /tmp/realpath_turbo \
+  && REALPATH_TURBO_TAG="v2.0.0rc1" \
+  && git clone -o ${REALPATH_TURBO_TAG} --depth 1 https://github.com/Whissi/realpath_turbo.git /tmp/realpath_turbo \
   && cd /tmp/realpath_turbo \
   && phpize \
   && ./configure \
@@ -178,7 +178,7 @@ RUN \
   && make install \
 
   # Redis
-  && REDIS_TAG="3.1.1RC1" \
+  && REDIS_TAG="3.1.0" \
   && git clone -o ${REDIS_TAG} --depth 1 https://github.com/phpredis/phpredis.git /tmp/redis \
   && cd /tmp/redis \
   && phpize \
@@ -210,7 +210,7 @@ RUN \
   && apk add --virtual .memcached-runtime-dependencies \
     libmemcached \
 
-  && MEMCACHED_BRANCH="php7" \
+  && MEMCACHED_BRANCH="master" \
   && git clone -b ${MEMCACHED_BRANCH} --depth 1 https://github.com/php-memcached-dev/php-memcached.git /tmp/php-memcached \
   && cd /tmp/php-memcached \
   && phpize \
