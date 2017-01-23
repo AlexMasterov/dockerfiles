@@ -53,6 +53,10 @@ RUN \
     readline \
     zlib \
 
+  # See: https://github.com/docker-library/php/issues/272
+  && export CFLAGS="-O2 -march=native -fstack-protector-strong -fpic -fpie" \
+  && export CPPFLAGS=${CFLAGS} \
+  && export LDFLAGS="-Wl,-O2 -Wl,--hash-style=both -pie" \
   # Use multi-threaded 'make' by default
   && export MAKEFLAGS="-j $(expr $(getconf _NPROCESSORS_ONLN) \+ 1)" \
 
@@ -137,7 +141,6 @@ RUN \
     --with-readline \
     --with-xmlrpc \
     --with-xsl \
-    CFLAGS="-O2 -march=native" \
   && make \
   && make install \
 
