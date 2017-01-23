@@ -27,6 +27,11 @@ RUN \
     ca-certificates \
     pcre \
 
+  && export CFLAGS="-O2 -march=native -flto -fstack-protector-strong -fpic -fpie" \
+  && export LDFLAGS="-Wl,-O2 -Wl,--hash-style=both -pie" \
+  # Use multi-threaded 'make' by default
+  && export MAKEFLAGS="-j $(expr $(getconf _NPROCESSORS_ONLN) \+ 1)" \
+
   # Headers More
   && HEADERS_MORE_TAG="v0.32" \
   && HEADERS_MORE_GIT="https://github.com/openresty/headers-more-nginx-module.git" \
@@ -81,9 +86,8 @@ RUN \
     --with-stream \
     --with-stream_ssl_module  \
     --with-threads \
-    --with-cc-opt="-O2 -march=native -flto -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security" \
     --add-module=${HEADERS_MORE_DIR} \
-  && make -j "$(getconf _NPROCESSORS_ONLN)" \
+  && make \
   && make install \
 
   # Removing build dependencies, clean temporary files
