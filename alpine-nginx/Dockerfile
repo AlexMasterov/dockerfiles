@@ -4,7 +4,7 @@ MAINTAINER Alex Masterov <alex.masterow@gmail.com>
 LABEL repository.hub="alexmasterov/alpine-nginx" \
       repository.url="https://github.com/AlexMasterov/dockerfiles"
 
-ARG NGINX_VERSION="1.11.8"
+ARG NGINX_VERSION="1.11.9"
 ARG NGINX_INI_DIR="/etc/nginx"
 
 RUN \
@@ -92,7 +92,7 @@ RUN \
 
   # Removing build dependencies, clean temporary files
   && apk del .nginx-build-dependencies \
-  && rm -rf /var/cache/apk/* /tmp/* /var/tmp/*
+  && rm -rf /var/cache/apk/* /var/tmp/* /tmp/*
 
 ARG TINI_VERSION="v0.13.2"
 ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini-static /sbin/tini

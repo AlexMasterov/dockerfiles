@@ -4,7 +4,7 @@ MAINTAINER Alex Masterov <alex.masterow@gmail.com>
 LABEL repository.hub="alexmasterov/alpine-nginx-tarantool" \
       repository.url="https://github.com/AlexMasterov/dockerfiles"
 
-ARG NGINX_VERSION="1.11.8"
+ARG NGINX_VERSION="1.11.9"
 ARG NGINX_INI_DIR="/etc/nginx"
 
 RUN \
@@ -31,10 +31,10 @@ RUN \
   && apk add --virtual .tarantool-upstream-build-dependencies \
     cmake \
 
-  && TARANTOOL_UPSTREAM_BRANCH="master" \
+  && TARANTOOL_UPSTREAM_TAG="v2.3.2" \
   && TARANTOOL_UPSTREAM_GIT="https://github.com/tarantool/nginx_upstream_module.git" \
   && TARANTOOL_UPSTREAM_DIR="/tmp/nginx_upstream_module" \
-  && git clone -b ${TARANTOOL_UPSTREAM_BRANCH} --depth 1 ${TARANTOOL_UPSTREAM_GIT} ${TARANTOOL_UPSTREAM_DIR} \
+  && git clone -o ${TARANTOOL_UPSTREAM_TAG} --depth 1 ${TARANTOOL_UPSTREAM_GIT} ${TARANTOOL_UPSTREAM_DIR} \
   && git -C ${TARANTOOL_UPSTREAM_DIR} submodule update \
     --init --recursive --jobs "$(getconf _NPROCESSORS_ONLN)" \
   && make -C ${TARANTOOL_UPSTREAM_DIR} yajl \
@@ -98,12 +98,12 @@ RUN \
     --with-cc-opt="-O2 -march=native -flto -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security" \
     --add-module=${TARANTOOL_UPSTREAM_DIR} \
     --add-module=${HEADERS_MORE_DIR} \
-  && make -j "$(getconf _NPROCESSORS_ONLN)" \
+  && make -j $(getconf _NPROCESSORS_ONLN) \
   && make install \
 
   # Removing build dependencies, clean temporary files
   && apk del .nginx-build-dependencies \
-  && rm -rf /var/cache/apk/* /tmp/* /var/tmp/*
+  && rm -rf /var/cache/apk/* /var/tmp/* /tmp/*
 
 ARG TINI_VERSION="v0.13.2"
 ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini-static /sbin/tini
