@@ -234,7 +234,7 @@ RUN \
   && apk add --virtual .mongodb-runtime-dependencies \
     libressl2.4-libtls \
 
-  && LIBBSON_VERSION="1.5.3" \
+  && LIBBSON_VERSION="1.5.4" \
   && LIBBSON_FILENAME="libbson-${LIBBSON_VERSION}" \
   && LIBBSON_SOURCE="https://github.com/mongodb/libbson/releases/download/${LIBBSON_VERSION}/${LIBBSON_FILENAME}.tar.gz" \
   && curl -fSL --connect-timeout 30 ${LIBBSON_SOURCE} | tar xz -C /tmp \
@@ -244,7 +244,7 @@ RUN \
   && make \
   && make install \
 
-  && LIBMONGOC_VERSION="1.5.3" \
+  && LIBMONGOC_VERSION="1.5.4" \
   && LIBMONGOC_FILENAME="mongo-c-driver-${LIBBSON_VERSION}" \
   && LIBMONGOC_SOURCE="https://github.com/mongodb/mongo-c-driver/releases/download/${LIBMONGOC_VERSION}/${LIBMONGOC_FILENAME}.tar.gz" \
   && curl -fSL --connect-timeout 30 ${LIBMONGOC_SOURCE} | tar xz -C /tmp \
@@ -267,7 +267,6 @@ RUN \
   && ./configure \
     --with-libbson=system \
     --with-libmongoc=system \
-    STD_CFLAGS="-march=native" \
   && make \
   && make install \
 
@@ -318,7 +317,7 @@ RUN \
 
   # Removing build dependencies, clean temporary files
   && apk del .php-build-dependencies \
-  && rm -rf /var/cache/apk/* /tmp/* /var/tmp/*
+  && rm -rf /var/cache/apk/* /var/tmp/* /tmp/*
 
 ARG MAILHOG_VERSION="v0.2.1"
 ADD https://github.com/mailhog/MailHog/releases/download/${MAILHOG_VERSION}/MailHog_linux_amd64 /sbin/mailhog
