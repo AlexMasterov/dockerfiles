@@ -4,7 +4,7 @@ MAINTAINER Alex Masterov <alex.masterow@gmail.com>
 LABEL repository.hub="alexmasterov/alpine-redis:3.2" \
       repository.url="https://github.com/AlexMasterov/dockerfiles"
 
-ARG REDIS_VERSION="3.2.6"
+ARG REDIS_VERSION="3.2.7"
 ARG REDIS_MALLOC="jemalloc"
 
 RUN \
@@ -27,12 +27,12 @@ RUN \
   && make \
     MALLOC=${REDIS_MALLOC} \
     CFLAGS="-march=native" \
-    -j "$(getconf _NPROCESSORS_ONLN)" \
+    -j $(getconf _NPROCESSORS_ONLN) \
   && make install \
 
   # Removing build dependencies, clean temporary files
   && apk del .redis-build-dependencies \
-  && rm -rf /var/cache/apk/* /tmp/* /var/tmp/*
+  && rm -rf /var/cache/apk/* /var/tmp/* /tmp/*
 
 ARG TINI_VERSION="v0.13.2"
 ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini-static /sbin/tini
