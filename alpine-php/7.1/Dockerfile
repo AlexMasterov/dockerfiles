@@ -242,7 +242,7 @@ RUN \
   && apk add --virtual .mongodb-runtime-dependencies \
     libressl2.4-libtls \
 
-  && LIBBSON_VERSION="1.5.4" \
+  && LIBBSON_VERSION="1.6.0" \
   && LIBBSON_FILENAME="libbson-${LIBBSON_VERSION}" \
   && LIBBSON_SOURCE="https://github.com/mongodb/libbson/releases/download/${LIBBSON_VERSION}/${LIBBSON_FILENAME}.tar.gz" \
   && curl -fSL --connect-timeout 30 ${LIBBSON_SOURCE} | tar xz -C /tmp \
@@ -252,7 +252,7 @@ RUN \
   && make \
   && make install \
 
-  && LIBMONGOC_VERSION="1.5.4" \
+  && LIBMONGOC_VERSION="1.6.0" \
   && LIBMONGOC_FILENAME="mongo-c-driver-${LIBBSON_VERSION}" \
   && LIBMONGOC_SOURCE="https://github.com/mongodb/mongo-c-driver/releases/download/${LIBMONGOC_VERSION}/${LIBMONGOC_FILENAME}.tar.gz" \
   && curl -fSL --connect-timeout 30 ${LIBMONGOC_SOURCE} | tar xz -C /tmp \
@@ -266,7 +266,7 @@ RUN \
   && make \
   && make install \
 
-  && MONGODB_VERSION="1.2.3" \
+  && MONGODB_VERSION="1.2.5" \
   && MONGODB_FILENAME="mongodb-${MONGODB_VERSION}" \
   && MONGODB_SOURCE="https://github.com/mongodb/mongo-php-driver/releases/download/${MONGODB_VERSION}/${MONGODB_FILENAME}.tgz" \
   && curl -fSL --connect-timeout 30 ${MONGODB_SOURCE} | tar xz -C /tmp \
