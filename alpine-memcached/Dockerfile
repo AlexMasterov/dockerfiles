@@ -32,9 +32,9 @@ RUN \
 
   # Removing build dependencies, clean temporary files
   && apk del .memcached-build-dependencies \
-  && rm -rf /tmp/* /var/tmp/* /var/cache/apk/*
+  && rm -rf /var/cache/apk/* /var/tmp/* /tmp/*
 
-ARG TINI_VERSION="v0.13.2"
+ARG TINI_VERSION="v0.14.0"
 ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini-static /sbin/tini
 RUN chmod +x /sbin/tini
 

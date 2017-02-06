@@ -31,7 +31,7 @@ RUN \
   && apk add --virtual .tarantool-upstream-build-dependencies \
     cmake \
 
-  && TARANTOOL_UPSTREAM_TAG="v2.3.2" \
+  && TARANTOOL_UPSTREAM_TAG="v2.3.3" \
   && TARANTOOL_UPSTREAM_GIT="https://github.com/tarantool/nginx_upstream_module.git" \
   && TARANTOOL_UPSTREAM_DIR="/tmp/nginx_upstream_module" \
   && git clone -o ${TARANTOOL_UPSTREAM_TAG} --depth 1 ${TARANTOOL_UPSTREAM_GIT} ${TARANTOOL_UPSTREAM_DIR} \
@@ -98,14 +98,14 @@ RUN \
     --with-cc-opt="-O2 -march=native -flto -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security" \
     --add-module=${TARANTOOL_UPSTREAM_DIR} \
     --add-module=${HEADERS_MORE_DIR} \
-  && make -j $(getconf _NPROCESSORS_ONLN) \
+  && make -j "$(getconf _NPROCESSORS_ONLN)" \
   && make install \
 
   # Removing build dependencies, clean temporary files
   && apk del .nginx-build-dependencies \
   && rm -rf /var/cache/apk/* /var/tmp/* /tmp/*
 
-ARG TINI_VERSION="v0.13.2"
+ARG TINI_VERSION="v0.14.0"
 ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini-static /sbin/tini
 RUN chmod +x /sbin/tini
 
