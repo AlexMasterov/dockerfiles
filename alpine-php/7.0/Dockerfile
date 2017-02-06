@@ -239,6 +239,8 @@ RUN \
   && make install \
 
   # Mongodb
+  && apk add --virtual .mongodb-build-dependencies \
+    automake \
   && apk add --virtual .mongodb-runtime-dependencies \
     libressl2.4-libtls \
 
@@ -247,6 +249,7 @@ RUN \
   && LIBBSON_SOURCE="https://github.com/mongodb/libbson/releases/download/${LIBBSON_VERSION}/${LIBBSON_FILENAME}.tar.gz" \
   && curl -fSL --connect-timeout 30 ${LIBBSON_SOURCE} | tar xz -C /tmp \
   && cd /tmp/${LIBBSON_FILENAME} \
+  && (aclocal; automake) \
   && ./configure \
     --enable-lto \
   && make \
@@ -277,6 +280,8 @@ RUN \
     --with-libmongoc=system \
   && make \
   && make install \
+
+  && apk del .mongodb-build-dependencies \
 
   # php-amqp (RabbitMQ)
   && apk add --update-cache --virtual .amqp-build-dependencies \
