@@ -205,8 +205,8 @@ RUN \
   && apk add --virtual .memcached-runtime-dependencies \
     libmemcached \
 
-  && MEMCACHED_BRANCH="master" \
-  && git clone -b ${MEMCACHED_BRANCH} --depth 1 https://github.com/php-memcached-dev/php-memcached.git /tmp/php-memcached \
+  && MEMCACHED_TAG="v3.0.1" \
+  && git clone -o ${MEMCACHED_TAG} --depth 1 https://github.com/php-memcached-dev/php-memcached.git /tmp/php-memcached \
   && cd /tmp/php-memcached \
   && phpize \
   && ./configure \
