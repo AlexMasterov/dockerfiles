@@ -222,8 +222,8 @@ RUN \
   && apk add --virtual .tarantool-runtime-dependencies \
     libltdl \
 
-  && TARANTOOL_BRANCH="php7-v2" \
-  && git clone -b ${TARANTOOL_BRANCH} --depth 1 https://github.com/tarantool/tarantool-php.git /tmp/tarantool-php \
+  && TARANTOOL_BRANCH="fix/error-return-rv" \
+  && git clone -b ${TARANTOOL_BRANCH} --depth 1 https://github.com/AlexMasterov/tarantool-php.git /tmp/tarantool-php \
   && cd /tmp/tarantool-php \
   && phpize \
   && ./configure \
