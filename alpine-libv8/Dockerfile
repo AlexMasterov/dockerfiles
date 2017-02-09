@@ -4,7 +4,7 @@ MAINTAINER Alex Masterov <alex.masterow@gmail.com>
 LABEL repository.hub="alexmasterov/alpine-libv8" \
       repository.url="https://github.com/AlexMasterov/dockerfiles"
 
-ARG V8_VERSION=5.7.457
+ARG V8_VERSION=5.8.173
 ARG V8_DIR=/usr/local/v8
 
 ENV V8_VERSION=${V8_VERSION} \
@@ -45,7 +45,7 @@ RUN \
     libexecinfo \
     libstdc++ \
 
-  && GN_SOURCE="https://www.dropbox.com/s/nd3grxxhw4tscks/alpine-gn.tar.gz" \
+  && GN_SOURCE="https://www.dropbox.com/s/69lrj7y0yfyia8e/alpine-gn-ba97155.tar.gz" \
   && wget --no-check-certificate -O - ${GN_SOURCE} | tar xz -C /tmp/v8/buildtools/linux64/ \
 
   && ./tools/dev/v8gen.py \
@@ -78,4 +78,4 @@ RUN \
 
   # Removing build dependencies, clean temporary files
   && apk del .v8-build-dependencies .gn-runtime-dependencies \
-  && rm -rf /tmp/* /var/tmp/* /var/cache/apk/*
+  && rm -rf /var/cache/apk/* /var/tmp/* /tmp/*
