@@ -4,7 +4,7 @@ MAINTAINER Alex Masterov <alex.masterow@gmail.com>
 LABEL repository.hub="alexmasterov/alpine-php:jit" \
       repository.url="https://github.com/AlexMasterov/dockerfiles"
 
-ARG PHP_INI_DIR="/etc/php"
+ARG PHP_INI_DIR=/etc/php
 
 RUN \
   addgroup -S www-data \
@@ -324,11 +324,11 @@ RUN \
   && apk del .php-build-dependencies \
   && rm -rf /var/cache/apk/* /var/tmp/* /tmp/*
 
-ARG MAILHOG_VERSION="v0.2.1"
+ARG MAILHOG_VERSION=v0.2.1
 ADD https://github.com/mailhog/MailHog/releases/download/${MAILHOG_VERSION}/MailHog_linux_amd64 /sbin/mailhog
 RUN chmod +x /sbin/mailhog
 
-ARG TINI_VERSION="v0.14.0"
+ARG TINI_VERSION=v0.14.0
 ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini-static /sbin/tini
 RUN chmod +x /sbin/tini
 

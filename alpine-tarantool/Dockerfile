@@ -4,13 +4,13 @@ MAINTAINER Alex Masterov <alex.masterow@gmail.com>
 LABEL repository.hub="alexmasterov/alpine-tarantool:1.7" \
       repository.url="https://github.com/AlexMasterov/dockerfiles"
 
-ARG TARANTOOL_BRANCH="1.7"
+ARG TARANTOOL_BRANCH=1.7
 # [ RelWithDebInfo | Release ]
-ARG TARANTOOL_BUILD_TYPE="Release"
-ARG TARANTOOL_BACKTRACE="NO"
-ARG TARANTOOL_AVX="ON"
-ARG TARANTOOL_DIST="NO"
-ARG TARANTOOL_BUNDLED_LIBYAML="NO"
+ARG TARANTOOL_BUILD_TYPE=RelWithDebInfo
+ARG TARANTOOL_BACKTRACE=YES
+ARG TARANTOOL_AVX=OFF
+ARG TARANTOOL_DIST=NO
+ARG TARANTOOL_BUNDLED_LIBYAML=NO
 
 RUN \
   addgroup -S tarantool \
@@ -67,7 +67,7 @@ RUN \
   && apk del .tarantool-build-dependencies \
   && rm -rf /var/cache/apk/* /var/tmp/* /tmp/*
 
-ARG TINI_VERSION="v0.14.0"
+ARG TINI_VERSION=v0.14.0
 ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini-static /sbin/tini
 RUN chmod +x /sbin/tini
 
