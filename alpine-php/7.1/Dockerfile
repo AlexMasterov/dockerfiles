@@ -301,7 +301,7 @@ RUN \
   && apk del .amqp-build-dependencies \
 
   # https://github.com/AlexMasterov/dockerfiles#alpine-libv8
-  && V8_SOURCE="https://www.dropbox.com/s/xx18h20218awere/alpine-libv8-5.8.125.tar.gz" \
+  && V8_SOURCE="https://www.dropbox.com/s/hiarjmgmn3zlr2e/alpine-libv8-5.8.173.tar.gz" \
   && V8_DIR="/usr/local/v8" \
   && mkdir -p ${V8_DIR} \
   && curl -fSL --connect-timeout 30 ${V8_SOURCE} | tar xz -C ${V8_DIR} \
@@ -314,7 +314,6 @@ RUN \
   && ./configure \
     --with-v8js=${V8_DIR} \
   && make \
-  # && make test \
   && make install \
 
   # php-v8
@@ -325,7 +324,6 @@ RUN \
   && ./configure \
     --with-v8=${V8_DIR} \
   && make \
-  # && make test \
   && make install \
 
   # Removing build dependencies, clean temporary files
