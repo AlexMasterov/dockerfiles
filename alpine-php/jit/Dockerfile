@@ -61,14 +61,10 @@ RUN \
   && export MAKEFLAGS="-j $(expr $(getconf _NPROCESSORS_ONLN) \+ 1)" \
 
   # Proper iconv
-  && LIBICONV_VERSION="1.14" \
+  && LIBICONV_VERSION="1.15" \
   && LIBICONV_SOURCE="https://ftp.gnu.org/pub/gnu/libiconv/libiconv-${LIBICONV_VERSION}.tar.gz" \
   && curl -fSL --connect-timeout 30 ${LIBICONV_SOURCE} | tar xz -C /tmp \
   && cd /tmp/libiconv-${LIBICONV_VERSION} \
-
-  # Patches
-  && LIBICONV_FIX_PATCH="https://raw.githubusercontent.com/mxe/mxe/master/src/libiconv-1-fixes.patch" \
-  && curl -fSL --connect-timeout 30 ${LIBICONV_FIX_PATCH} | patch -p1 -u \
 
   && ./configure \
     --prefix=/usr \
