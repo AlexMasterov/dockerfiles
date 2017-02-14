@@ -4,7 +4,7 @@ MAINTAINER Alex Masterov <alex.masterow@gmail.com>
 LABEL repository.hub="alexmasterov/alpine-nginx" \
       repository.url="https://github.com/AlexMasterov/dockerfiles"
 
-ARG NGINX_VERSION=1.11.9
+ARG NGINX_VERSION=1.11.10
 ARG NGINX_INI_DIR=/etc/nginx
 
 RUN \
