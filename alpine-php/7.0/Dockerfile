@@ -4,7 +4,7 @@ MAINTAINER Alex Masterov <alex.masterow@gmail.com>
 LABEL repository.hub="alexmasterov/alpine-php:7.0" \
       repository.url="https://github.com/AlexMasterov/dockerfiles"
 
-ARG PHP_VERSION=7.0.15
+ARG PHP_VERSION=7.0.16
 ARG PHP_INI_DIR=/etc/php
 
 RUN \
