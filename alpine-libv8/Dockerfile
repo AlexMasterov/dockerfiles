@@ -4,7 +4,7 @@ MAINTAINER Alex Masterov <alex.masterow@gmail.com>
 LABEL repository.hub="alexmasterov/alpine-libv8" \
       repository.url="https://github.com/AlexMasterov/dockerfiles"
 
-ARG V8_VERSION=5.8.173
+ARG V8_VERSION=5.8.231
 ARG V8_DIR=/usr/local/v8
 
 ENV V8_VERSION=${V8_VERSION} \
@@ -68,7 +68,7 @@ RUN \
       symbol_level=0 \
 
   # Build
-  && ninja -C out.gn/x64.release/ \
+  && ninja -C out.gn/x64.release/ d8 \
 
   # Shared libraries
   && mkdir -p ${V8_DIR}/include ${V8_DIR}/lib \
