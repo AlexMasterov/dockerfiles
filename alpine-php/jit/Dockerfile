@@ -11,7 +11,9 @@ RUN \
   && adduser -D -S -h /var/cache/www-data -s /sbin/nologin -G www-data www-data
 
 RUN \
-  apk add --update --virtual .php-build-dependencies \
+  apk add --update \
+    tini \
+  && apk add --virtual .php-build-dependencies \
     autoconf \
     binutils \
     bison \
@@ -321,10 +323,6 @@ RUN \
 ARG MAILHOG_VERSION=v0.2.1
 ADD https://github.com/mailhog/MailHog/releases/download/${MAILHOG_VERSION}/MailHog_linux_amd64 /sbin/mailhog
 RUN chmod +x /sbin/mailhog
-
-ARG TINI_VERSION=v0.14.0
-ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini-static /sbin/tini
-RUN chmod +x /sbin/tini
 
 ENTRYPOINT ["tini", "--"]
 CMD ["php-fpm"]

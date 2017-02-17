@@ -17,7 +17,9 @@ RUN \
   && adduser -D -S -h /var/cache/tarantool -s /sbin/nologin -G tarantool tarantool
 
 RUN \
-  apk add --update --virtual .tarantool-build-dependencies \
+  apk add --update \
+    tini \
+  && apk add --virtual .tarantool-build-dependencies \
     cmake \
     curl \
     g++ \
@@ -66,10 +68,6 @@ RUN \
   # Removing build dependencies, clean temporary files
   && apk del .tarantool-build-dependencies \
   && rm -rf /var/cache/apk/* /var/tmp/* /tmp/*
-
-ARG TINI_VERSION=v0.14.0
-ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini-static /sbin/tini
-RUN chmod +x /sbin/tini
 
 ENTRYPOINT ["tini", "--"]
 CMD ["tarantool"]

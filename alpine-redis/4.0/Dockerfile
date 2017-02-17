@@ -12,7 +12,9 @@ RUN \
   && adduser -D -S -h /var/cache/redis -s /sbin/nologin -G redis redis
 
 RUN \
-  apk add --update --virtual .redis-build-dependencies \
+  apk add --update \
+    tini \
+  && apk add --virtual .redis-build-dependencies \
     curl \
     gcc \
     linux-headers \
@@ -33,10 +35,6 @@ RUN \
   # Removing build dependencies, clean temporary files
   && apk del .redis-build-dependencies \
   && rm -rf /var/cache/apk/* /var/tmp/* /tmp/*
-
-ARG TINI_VERSION=v0.14.0
-ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini-static /sbin/tini
-RUN chmod +x /sbin/tini
 
 ENTRYPOINT ["tini", "--"]
 CMD ["redis-server"]

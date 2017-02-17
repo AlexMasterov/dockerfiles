@@ -12,7 +12,9 @@ RUN \
   && adduser -D -S -h /var/cache/nginx -s /sbin/nologin -G nginx nginx
 
 RUN \
-  apk add --update --virtual .nginx-build-dependencies \
+  apk add --update \
+    tini \
+  && apk add --virtual .nginx-build-dependencies \
     curl \
     g++ \
     gcc \
@@ -104,10 +106,6 @@ RUN \
   # Removing build dependencies, clean temporary files
   && apk del .nginx-build-dependencies \
   && rm -rf /var/cache/apk/* /var/tmp/* /tmp/*
-
-ARG TINI_VERSION=v0.14.0
-ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini-static /sbin/tini
-RUN chmod +x /sbin/tini
 
 ENTRYPOINT ["tini", "--"]
 CMD ["nginx"]
