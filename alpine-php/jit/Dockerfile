@@ -289,7 +289,7 @@ RUN \
   && apk del .amqp-build-dependencies \
 
   # https://github.com/AlexMasterov/dockerfiles#alpine-libv8
-  && V8_SOURCE="https://www.dropbox.com/s/onmju0vf8nh4gxu/alpine-libv8-5.8.197.tar.gz" \
+  && V8_SOURCE="https://www.dropbox.com/s/4tbsny5rpflhxja/alpine-libv8-5.8.231.tar.gz" \
   && V8_DIR="/usr/local/v8" \
   && mkdir -p ${V8_DIR} \
   && curl -fSL --connect-timeout 30 ${V8_SOURCE} | tar xz -C ${V8_DIR} \
