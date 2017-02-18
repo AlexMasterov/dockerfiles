@@ -4,7 +4,6 @@ MAINTAINER Alex Masterov <alex.masterow@gmail.com>
 LABEL repository.hub="alexmasterov/alpine-php:7.0" \
       repository.url="https://github.com/AlexMasterov/dockerfiles"
 
-ARG PHP_VERSION=7.0.16
 ARG PHP_INI_DIR=/etc/php
 
 RUN \
@@ -17,6 +16,7 @@ RUN \
   && apk add --virtual .php-build-dependencies \
     autoconf \
     binutils \
+    bison \
     bzip2-dev \
     curl-dev \
     file \
@@ -74,10 +74,11 @@ RUN \
   && make install \
 
   # PHP
-  && PHP_SOURCE="https://secure.php.net/get/php-${PHP_VERSION}.tar.gz/from/this/mirror" \
-  && curl -fSL --connect-timeout 30 ${PHP_SOURCE} | tar xz -C /tmp \
-  && cd /tmp/php-${PHP_VERSION} \
+  && PHP_BRANCH="PHP-7.0" \
+  && git clone -b ${PHP_BRANCH} --depth 1 https://github.com/php/php-src.git /tmp/php-src \
+  && cd /tmp/php-src \
 
+  && ./buildconf --force \
   && ./configure \
     --prefix=/usr \
     --sysconfdir=${PHP_INI_DIR} \
