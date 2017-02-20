@@ -212,7 +212,7 @@ RUN \
   && apk add --virtual .memcached-runtime-dependencies \
     libmemcached \
 
-  && MEMCACHED_TAG="v3.0.2" \
+  && MEMCACHED_TAG="v3.0.3" \
   && git clone -o ${MEMCACHED_TAG} --depth 1 https://github.com/php-memcached-dev/php-memcached.git /tmp/php-memcached \
   && cd /tmp/php-memcached \
   && phpize \
@@ -300,7 +300,7 @@ RUN \
   && apk del .amqp-build-dependencies \
 
   # https://github.com/AlexMasterov/dockerfiles#alpine-libv8
-  && V8_SOURCE="https://www.dropbox.com/s/4tbsny5rpflhxja/alpine-libv8-5.8.231.tar.gz" \
+  && V8_SOURCE="https://www.dropbox.com/s/6xlewt0kz2clm6y/alpine-libv8-5.8.244.tar.gz" \
   && V8_DIR="/usr/local/v8" \
   && mkdir -p ${V8_DIR} \
   && curl -fSL --connect-timeout 30 ${V8_SOURCE} | tar xz -C ${V8_DIR} \
