@@ -325,6 +325,30 @@ RUN \
   && make \
   && make install \
 
+  # graphql-parser
+  && apk add --virtual .graphql-build-dependencies \
+    bison \
+    cmake \
+    flex \
+
+  && GRAPHQL_BRANCH="master" \
+  && git clone -b ${GRAPHQL_BRANCH} --depth 1 https://github.com/dosten/graphql-parser-php.git /tmp/graphql \
+
+  # libgraphqlparser
+  && cd /tmp/graphql/deps/libgraphqlparser \
+  && cmake . \
+  && make \
+  && make install \
+
+  # graphql-parser-php
+  && cd /tmp/graphql \
+  && phpize \
+  && ./configure \
+  && make \
+  && make install \
+
+  && apk del .graphql-build-dependencies \
+
   # Removing build dependencies, clean temporary files
   && apk del .php-build-dependencies \
   && rm -rf /var/cache/apk/* /var/tmp/* /tmp/*
