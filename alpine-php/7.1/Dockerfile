@@ -153,7 +153,7 @@ RUN \
   && make install \
 
   # xDebug
-  && XDEBUG_TAG="XDEBUG_2_5_0" \
+  && XDEBUG_TAG="XDEBUG_2_5_1" \
   && git clone -o ${XDEBUG_TAG} --depth 1 https://github.com/xdebug/xdebug.git /tmp/xdebug \
   && cd /tmp/xdebug \
   && phpize \
@@ -300,7 +300,7 @@ RUN \
   && apk del .amqp-build-dependencies \
 
   # https://github.com/AlexMasterov/dockerfiles#alpine-libv8
-  && V8_SOURCE="https://www.dropbox.com/s/6xlewt0kz2clm6y/alpine-libv8-5.8.244.tar.gz" \
+  && V8_SOURCE="https://www.dropbox.com/s/djf6946udgisqkf/alpine-libv8-5.8.283.tar.gz" \
   && V8_DIR="/usr/local/v8" \
   && mkdir -p ${V8_DIR} \
   && curl -fSL --connect-timeout 30 ${V8_SOURCE} | tar xz -C ${V8_DIR} \
