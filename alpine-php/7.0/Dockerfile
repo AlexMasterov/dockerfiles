@@ -130,7 +130,7 @@ RUN \
     --with-iconv=/usr \
     --with-mcrypt \
     --with-mhash \
-    --with-openssl \
+    --with-openssl=/usr \
     --with-pcre-regex \
       --with-pcre-jit \
     --with-pdo-mysql=mysqlnd \
