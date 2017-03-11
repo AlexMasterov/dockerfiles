@@ -297,7 +297,7 @@ RUN \
   && curl -fSL --connect-timeout 30 ${V8_SOURCE} | tar xz -C ${V8_DIR} \
 
   # v8js
-  && V8JS_TAG="1.3.4" \
+  && V8JS_TAG="1.3.5" \
   && git clone -o ${V8JS_TAG} --depth 1 https://github.com/preillyme/v8js.git /tmp/v8js \
   && cd /tmp/v8js \
   && phpize \
@@ -307,7 +307,7 @@ RUN \
   && make install \
 
   # php-v8
-  && PHPV8_TAG="v1.3.4" \
+  && PHPV8_TAG="v0.1.3" \
   && git clone -o ${PHPV8_TAG} --depth 1 https://github.com/pinepain/php-v8.git /tmp/php-v8 \
   && cd /tmp/php-v8 \
   && phpize \
