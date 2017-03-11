@@ -291,14 +291,14 @@ RUN \
   && apk del .amqp-build-dependencies \
 
   # https://github.com/AlexMasterov/dockerfiles#alpine-libv8
-  && V8_SOURCE="https://www.dropbox.com/s/6xlewt0kz2clm6y/alpine-libv8-5.8.244.tar.gz" \
+  && V8_SOURCE="https://www.dropbox.com/s/pwcb5aamxhenhol/alpine-libv8-5.9.5.tar.gz" \
   && V8_DIR="/usr/local/v8" \
   && mkdir -p ${V8_DIR} \
   && curl -fSL --connect-timeout 30 ${V8_SOURCE} | tar xz -C ${V8_DIR} \
 
   # v8js
-  && V8JS_BRANCH="php7" \
-  && git clone -b ${V8JS_BRANCH} --depth 1 https://github.com/preillyme/v8js.git /tmp/v8js \
+  && V8JS_TAG="1.3.4" \
+  && git clone -o ${V8JS_TAG} --depth 1 https://github.com/preillyme/v8js.git /tmp/v8js \
   && cd /tmp/v8js \
   && phpize \
   && ./configure \
@@ -307,8 +307,8 @@ RUN \
   && make install \
 
   # php-v8
-  && PHPV8_BRANCH="master" \
-  && git clone -b ${PHPV8_BRANCH} --depth 1 https://github.com/pinepain/php-v8.git /tmp/php-v8 \
+  && PHPV8_TAG="v1.3.4" \
+  && git clone -o ${PHPV8_TAG} --depth 1 https://github.com/pinepain/php-v8.git /tmp/php-v8 \
   && cd /tmp/php-v8 \
   && phpize \
   && ./configure \
