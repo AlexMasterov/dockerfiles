@@ -4,16 +4,18 @@ MAINTAINER Alex Masterov <alex.masterow@gmail.com>
 LABEL repository.hub="alexmasterov/alpine-php:jit" \
       repository.url="https://github.com/AlexMasterov/dockerfiles"
 
-ARG PHP_INI_DIR=/etc/php
-
-RUN \
-  addgroup -S www-data \
-  && adduser -D -S -h /var/cache/www-data -s /sbin/nologin -G www-data www-data
+ARG PHP_CONFIG=/etc/php
 
 RUN \
   apk add --update \
+    ssmtp \
     tini \
-  && apk add --virtual .php-build-dependencies \
+
+  && addgroup -g 82 -S www-data \
+  && adduser -u 82 -S -D -h /var/cache/www-data -s /sbin/nologin -G www-data www-data
+
+RUN \
+  apk add --no-cache --virtual .php-build-dependencies \
     autoconf \
     binutils \
     bison \
@@ -81,9 +83,9 @@ RUN \
   && ./buildconf --force \
   && ./configure \
     --prefix=/usr \
-    --sysconfdir=${PHP_INI_DIR} \
-    --with-config-file-path=${PHP_INI_DIR} \
-    --with-config-file-scan-dir=${PHP_INI_DIR}/conf.d \
+    --sysconfdir=${PHP_CONFIG} \
+    --with-config-file-path=${PHP_CONFIG} \
+    --with-config-file-scan-dir=${PHP_CONFIG}/conf.d \
     --without-pear \
     --disable-cgi \
     --disable-debug \
@@ -291,7 +293,7 @@ RUN \
   && apk del .amqp-build-dependencies \
 
   # https://github.com/AlexMasterov/dockerfiles#alpine-libv8
-  && V8_SOURCE="https://www.dropbox.com/s/pwcb5aamxhenhol/alpine-libv8-5.9.5.tar.gz" \
+  && V8_SOURCE="https://www.dropbox.com/s/72caawdps7pkehs/alpine-libv8-5.9.40.tar.gz" \
   && V8_DIR="/usr/local/v8" \
   && mkdir -p ${V8_DIR} \
   && curl -fSL --connect-timeout 30 ${V8_SOURCE} | tar xz -C ${V8_DIR} \
