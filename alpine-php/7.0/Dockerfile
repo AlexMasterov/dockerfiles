@@ -4,16 +4,19 @@ MAINTAINER Alex Masterov <alex.masterow@gmail.com>
 LABEL repository.hub="alexmasterov/alpine-php:7.0" \
       repository.url="https://github.com/AlexMasterov/dockerfiles"
 
-ARG PHP_INI_DIR=/etc/php
-
-RUN \
-  addgroup -S www-data \
-  && adduser -D -S -h /var/cache/www-data -s /sbin/nologin -G www-data www-data
+ARG PHP_VERSION=7.0.17
+ARG PHP_CONFIG=/etc/php
 
 RUN \
   apk add --update \
+    ssmtp \
     tini \
-  && apk add --virtual .php-build-dependencies \
+
+  && addgroup -g 82 -S www-data \
+  && adduser -u 82 -S -D -h /var/cache/www-data -s /sbin/nologin -G www-data www-data
+
+RUN \
+  apk add --no-cache --virtual .php-build-dependencies \
     autoconf \
     binutils \
     bison \
@@ -74,16 +77,15 @@ RUN \
   && make install \
 
   # PHP
-  && PHP_BRANCH="PHP-7.0" \
-  && git clone -b ${PHP_BRANCH} --depth 1 https://github.com/php/php-src.git /tmp/php-src \
-  && cd /tmp/php-src \
+  && PHP_SOURCE="https://secure.php.net/get/php-${PHP_VERSION}.tar.gz/from/this/mirror" \
+  && curl -fSL --connect-timeout 30 ${PHP_SOURCE} | tar xz -C /tmp \
+  && cd /tmp/php-${PHP_VERSION} \
 
-  && ./buildconf --force \
   && ./configure \
     --prefix=/usr \
-    --sysconfdir=${PHP_INI_DIR} \
-    --with-config-file-path=${PHP_INI_DIR} \
-    --with-config-file-scan-dir=${PHP_INI_DIR}/conf.d \
+    --sysconfdir=${PHP_CONFIG} \
+    --with-config-file-path=${PHP_CONFIG} \
+    --with-config-file-scan-dir=${PHP_CONFIG}/conf.d \
     --without-pear \
     --disable-cgi \
     --disable-debug \
@@ -313,7 +315,6 @@ RUN \
   && ./configure \
     --with-v8js=${V8_DIR} \
   && make \
-  && make install \
 
   # php-v8
   && PHPV8_TAG="v0.1.3" \
@@ -352,10 +353,6 @@ RUN \
   # Removing build dependencies, clean temporary files
   && apk del .php-build-dependencies \
   && rm -rf /var/cache/apk/* /var/tmp/* /tmp/*
-
-ARG MAILHOG_VERSION=v0.2.1
-ADD https://github.com/mailhog/MailHog/releases/download/${MAILHOG_VERSION}/MailHog_linux_amd64 /sbin/mailhog
-RUN chmod +x /sbin/mailhog
 
 ENTRYPOINT ["tini", "--"]
 CMD ["php-fpm"]
