@@ -307,7 +307,7 @@ RUN \
   && curl -fSL --connect-timeout 30 ${V8_SOURCE} | tar xz -C ${V8_DIR} \
 
   # v8js
-  && V8JS_TAG="1.3.5" \
+  && V8JS_TAG="1.3.6" \
   && git clone -o ${V8JS_TAG} --depth 1 https://github.com/preillyme/v8js.git /tmp/v8js \
   && cd /tmp/v8js \
   && phpize \
