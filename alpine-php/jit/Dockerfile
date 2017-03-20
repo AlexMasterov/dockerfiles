@@ -261,9 +261,9 @@ RUN \
   && make \
   && make install \
 
-  && MONGODB_VERSION="1.2.6" \
+  && MONGODB_VERSION="1.2.8" \
   && MONGODB_FILENAME="mongodb-${MONGODB_VERSION}" \
-  && MONGODB_SOURCE="http://pecl.php.net/get/${MONGODB_FILENAME}.tgz" \
+  && MONGODB_SOURCE="https://github.com/mongodb/mongo-php-driver/releases/download/${MONGODB_VERSION}/${MONGODB_FILENAME}.tgz" \
   && curl -fSL --connect-timeout 30 ${MONGODB_SOURCE} | tar xz -C /tmp \
   && cd /tmp/${MONGODB_FILENAME} \
   && phpize \
