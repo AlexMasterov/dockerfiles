@@ -4,16 +4,17 @@ MAINTAINER Alex Masterov <alex.masterow@gmail.com>
 LABEL repository.hub="alexmasterov/alpine-memcached" \
       repository.url="https://github.com/AlexMasterov/dockerfiles"
 
-ARG MEMCACHED_VERSION=1.4.35
-
-RUN \
-  addgroup -S memcache \
-  && adduser -D -S -h /var/cache/memcache -s /sbin/nologin -G memcache memcache
+ARG MEMCACHED_VERSION=1.4.36
 
 RUN \
   apk add --update \
     tini \
-  && apk add --virtual .memcached-build-dependencies \
+
+  && addgroup -g 82 -S memcache \
+  && adduser -u 82 -S -D -h /var/cache/memcache -s /sbin/nologin -G memcache memcache
+
+RUN \
+  apk add --virtual .memcached-build-dependencies \
     curl \
     g++ \
     gcc \
