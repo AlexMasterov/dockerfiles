@@ -4,17 +4,18 @@ MAINTAINER Alex Masterov <alex.masterow@gmail.com>
 LABEL repository.hub="alexmasterov/alpine-nginx-tarantool" \
       repository.url="https://github.com/AlexMasterov/dockerfiles"
 
-ARG NGINX_VERSION=1.11.9
-ARG NGINX_INI_DIR=/etc/nginx
-
-RUN \
-  addgroup -S nginx \
-  && adduser -D -S -h /var/cache/nginx -s /sbin/nologin -G nginx nginx
+ARG NGINX_VERSION=1.11.11
+ARG NGINX_CONFIG=/etc/nginx
 
 RUN \
   apk add --update \
     tini \
-  && apk add --virtual .nginx-build-dependencies \
+
+  && addgroup -g 82 -S nginx \
+  && adduser -u 82 -S -D -h /var/cache/nginx -s /sbin/nologin -G nginx nginx
+
+RUN \
+  apk add --no-cache --virtual .nginx-build-dependencies \
     curl \
     g++ \
     gcc \
@@ -29,11 +30,16 @@ RUN \
     ca-certificates \
     pcre \
 
+  && export CFLAGS="-O2 -march=native -flto -fstack-protector-strong -fpic -fpie" \
+  && export LDFLAGS="-Wl,-O2 -Wl,--hash-style=both -pie" \
+  # Use multi-threaded 'make' by default
+  && export MAKEFLAGS="-j $(expr $(getconf _NPROCESSORS_ONLN) \+ 1)" \
+
   # Tarantool upstream
   && apk add --virtual .tarantool-upstream-build-dependencies \
     cmake \
 
-  && TARANTOOL_UPSTREAM_TAG="v2.3.3" \
+  && TARANTOOL_UPSTREAM_TAG="v2.3.5-beta" \
   && TARANTOOL_UPSTREAM_GIT="https://github.com/tarantool/nginx_upstream_module.git" \
   && TARANTOOL_UPSTREAM_DIR="/tmp/nginx_upstream_module" \
   && git clone -o ${TARANTOOL_UPSTREAM_TAG} --depth 1 ${TARANTOOL_UPSTREAM_GIT} ${TARANTOOL_UPSTREAM_DIR} \
@@ -44,10 +50,10 @@ RUN \
   && apk del .tarantool-upstream-build-dependencies \
 
   # Headers More
-  && HEADERS_MORE_BRANCH="master" \
+  && HEADERS_MORE_TAG="v0.32" \
   && HEADERS_MORE_GIT="https://github.com/openresty/headers-more-nginx-module.git" \
   && HEADERS_MORE_DIR="/tmp/headers-more-nginx-module" \
-  && git clone -b ${HEADERS_MORE_BRANCH} --depth 1 ${HEADERS_MORE_GIT} ${HEADERS_MORE_DIR} \
+  && git clone -o ${HEADERS_MORE_TAG} --depth 1 ${HEADERS_MORE_GIT} ${HEADERS_MORE_DIR} \
 
   # Nginx
   && NGINX_SOURCE="https://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz" \
@@ -60,8 +66,8 @@ RUN \
   && curl -fSL --connect-timeout 30 ${SEND_MINIMUM_RATE_PATCH} | patch -p0 -u \
 
   && ./configure \
-    --prefix=${NGINX_INI_DIR} \
-    --conf-path=${NGINX_INI_DIR}/nginx.conf \
+    --prefix=${NGINX_CONFIG} \
+    --conf-path=${NGINX_CONFIG}/nginx.conf \
     --modules-path=/usr/lib/nginx/modules \
     --sbin-path=/usr/sbin/nginx \
     --pid-path=/var/run/nginx.pid \
@@ -97,10 +103,9 @@ RUN \
     --with-stream \
     --with-stream_ssl_module  \
     --with-threads \
-    --with-cc-opt="-O2 -march=native -flto -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security" \
     --add-module=${TARANTOOL_UPSTREAM_DIR} \
     --add-module=${HEADERS_MORE_DIR} \
-  && make -j "$(getconf _NPROCESSORS_ONLN)" \
+  && make \
   && make install \
 
   # Removing build dependencies, clean temporary files

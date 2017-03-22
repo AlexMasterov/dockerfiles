@@ -4,17 +4,18 @@ MAINTAINER Alex Masterov <alex.masterow@gmail.com>
 LABEL repository.hub="alexmasterov/alpine-nginx" \
       repository.url="https://github.com/AlexMasterov/dockerfiles"
 
-ARG NGINX_VERSION=1.11.10
-ARG NGINX_INI_DIR=/etc/nginx
-
-RUN \
-  addgroup -S nginx \
-  && adduser -D -S -h /var/cache/nginx -s /sbin/nologin -G nginx nginx
+ARG NGINX_VERSION=1.11.11
+ARG NGINX_CONFIG=/etc/nginx
 
 RUN \
   apk add --update \
     tini \
-  && apk add --virtual .nginx-build-dependencies \
+
+  && addgroup -g 82 -S nginx \
+  && adduser -u 82 -S -D -h /var/cache/nginx -s /sbin/nologin -G nginx nginx
+
+RUN \
+  apk add --no-cache --virtual .nginx-build-dependencies \
     curl \
     g++ \
     gcc \
@@ -51,8 +52,8 @@ RUN \
   && curl -fSL --connect-timeout 30 ${SEND_MINIMUM_RATE_PATCH} | patch -p0 -u \
 
   && ./configure \
-    --prefix=${NGINX_INI_DIR} \
-    --conf-path=${NGINX_INI_DIR}/nginx.conf \
+    --prefix=${NGINX_CONFIG} \
+    --conf-path=${NGINX_CONFIG}/nginx.conf \
     --modules-path=/usr/lib/nginx/modules \
     --sbin-path=/usr/sbin/nginx \
     --pid-path=/var/run/nginx.pid \
