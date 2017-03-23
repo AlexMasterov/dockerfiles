@@ -290,7 +290,7 @@ RUN \
   && apk add --virtual .rabbitmq-runtime-dependencies \
     rabbitmq-c \
 
-  && AMQP_TAG="v1.8.0" \
+  && AMQP_TAG="v1.9.0" \
   && git clone -o ${AMQP_TAG} --depth 1 https://github.com/pdezwart/php-amqp.git /tmp/php-amqp \
   && cd /tmp/php-amqp \
   && phpize \
