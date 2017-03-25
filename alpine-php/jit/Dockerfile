@@ -173,7 +173,7 @@ RUN \
   && make install \
 
   # Redis
-  && REDIS_TAG="3.1.1" \
+  && REDIS_TAG="3.1.2" \
   && git clone -o ${REDIS_TAG} --depth 1 https://github.com/phpredis/phpredis.git /tmp/redis \
   && cd /tmp/redis \
   && phpize \
