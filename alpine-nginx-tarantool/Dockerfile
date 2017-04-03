@@ -30,7 +30,7 @@ RUN \
     ca-certificates \
     pcre \
 
-  && export CFLAGS="-O2 -march=native -flto -fstack-protector-strong -fpic -fpie" \
+  && export CFLAGS="-O2 -march=native -fstack-protector-strong -fpic -fpie" \
   && export LDFLAGS="-Wl,-O2 -Wl,--hash-style=both -pie" \
   # Use multi-threaded 'make' by default
   && export MAKEFLAGS="-j $(expr $(getconf _NPROCESSORS_ONLN) \+ 1)" \
@@ -39,7 +39,7 @@ RUN \
   && apk add --virtual .tarantool-upstream-build-dependencies \
     cmake \
 
-  && TARANTOOL_UPSTREAM_TAG="v2.3.3" \
+  && TARANTOOL_UPSTREAM_TAG="v2.3.5-beta" \
   && TARANTOOL_UPSTREAM_GIT="https://github.com/tarantool/nginx_upstream_module.git" \
   && TARANTOOL_UPSTREAM_DIR="/tmp/nginx_upstream_module" \
   && git clone -o ${TARANTOOL_UPSTREAM_TAG} --depth 1 ${TARANTOOL_UPSTREAM_GIT} ${TARANTOOL_UPSTREAM_DIR} \
@@ -103,6 +103,7 @@ RUN \
     --with-stream \
     --with-stream_ssl_module  \
     --with-threads \
+    --with-cc-opt="-flto" \
     --add-module=${TARANTOOL_UPSTREAM_DIR} \
     --add-module=${HEADERS_MORE_DIR} \
   && make \
