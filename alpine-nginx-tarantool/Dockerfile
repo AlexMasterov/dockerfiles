@@ -4,7 +4,7 @@ MAINTAINER Alex Masterov <alex.masterow@gmail.com>
 LABEL repository.hub="alexmasterov/alpine-nginx-tarantool" \
       repository.url="https://github.com/AlexMasterov/dockerfiles"
 
-ARG NGINX_VERSION=1.11.12
+ARG NGINX_VERSION=1.11.13
 ARG NGINX_CONFIG=/etc/nginx
 
 RUN \
@@ -59,11 +59,6 @@ RUN \
   && NGINX_SOURCE="https://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz" \
   && curl -fSL --connect-timeout 30 ${NGINX_SOURCE} | tar xz -C /tmp \
   && cd /tmp/nginx-${NGINX_VERSION} \
-
-  # Patches
-  # See: https://blog.cloudflare.com/the-curious-case-of-slow-downloads/
-  && SEND_MINIMUM_RATE_PATCH="https://git.io/vPqHT" \
-  && curl -fSL --connect-timeout 30 ${SEND_MINIMUM_RATE_PATCH} | patch -p0 -u \
 
   && ./configure \
     --prefix=${NGINX_CONFIG} \
