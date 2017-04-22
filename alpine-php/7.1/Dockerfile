@@ -242,7 +242,7 @@ RUN \
   && apk add --virtual .mongodb-build-dependencies \
     automake \
   && apk add --virtual .mongodb-runtime-dependencies \
-    libressl2.4-libtls \
+    libressl2.5-libtls \
 
   && LIBBSON_VERSION="1.6.2" \
   && LIBBSON_FILENAME="libbson-${LIBBSON_VERSION}" \

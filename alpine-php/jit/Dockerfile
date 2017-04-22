@@ -234,7 +234,7 @@ RUN \
   && apk add --virtual .mongodb-build-dependencies \
     automake \
   && apk add --virtual .mongodb-runtime-dependencies \
-    libressl2.4-libtls \
+    libressl2.5-libtls \
 
   && LIBBSON_VERSION="1.6.2" \
   && LIBBSON_FILENAME="libbson-${LIBBSON_VERSION}" \
@@ -321,10 +321,6 @@ RUN \
   # Removing build dependencies, clean temporary files
   && apk del .php-build-dependencies \
   && rm -rf /var/cache/apk/* /var/tmp/* /tmp/*
-
-ARG MAILHOG_VERSION=v0.2.1
-ADD https://github.com/mailhog/MailHog/releases/download/${MAILHOG_VERSION}/MailHog_linux_amd64 /sbin/mailhog
-RUN chmod +x /sbin/mailhog
 
 ENTRYPOINT ["tini", "--"]
 CMD ["php-fpm"]
