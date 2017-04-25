@@ -4,7 +4,7 @@ MAINTAINER Alex Masterov <alex.masterow@gmail.com>
 LABEL repository.hub="alexmasterov/alpine-libv8" \
       repository.url="https://github.com/AlexMasterov/dockerfiles"
 
-ARG V8_VERSION=5.8.244
+ARG V8_VERSION=6.0.75
 ARG V8_DIR=/usr/local/v8
 
 ENV V8_VERSION=${V8_VERSION} \
