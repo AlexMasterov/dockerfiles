@@ -8,20 +8,20 @@ ARG REDIS_VERSION=3.2.8
 ARG REDIS_MALLOC=jemalloc
 
 RUN \
-  addgroup -S redis \
-  && adduser -D -S -h /var/cache/redis -s /sbin/nologin -G redis redis
-
-RUN \
   apk add --update \
     tini \
-  && apk add --virtual .redis-build-dependencies \
+
+  && addgroup -g 82 -S redis \
+  && adduser -u 82 -S -D -h /var/cache/redis -s /sbin/nologin -G redis redis
+
+RUN \
+  apk add --no-cache --virtual .redis-build-dependencies \
     curl \
     gcc \
     linux-headers \
     make \
     musl-dev \
 
-  # Redis
   && REDIS_SOURCE="http://download.redis.io/releases/redis-${REDIS_VERSION}.tar.gz" \
   && curl -fSL --connect-timeout 30 ${REDIS_SOURCE} | tar xz -C /tmp \
   && cd /tmp/redis-${REDIS_VERSION} \

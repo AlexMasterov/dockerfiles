@@ -13,13 +13,14 @@ ARG TARANTOOL_DIST=NO
 ARG TARANTOOL_BUNDLED_LIBYAML=NO
 
 RUN \
-  addgroup -S tarantool \
-  && adduser -D -S -h /var/cache/tarantool -s /sbin/nologin -G tarantool tarantool
-
-RUN \
   apk add --update \
     tini \
-  && apk add --virtual .tarantool-build-dependencies \
+
+  && addgroup -g 82 -S tarantool \
+  && adduser -u 82 -S -D -h /var/cache/tarantool -s /sbin/nologin -G tarantool tarantool
+
+RUN \
+  apk add --no-cache --virtual .tarantool-build-dependencies \
     cmake \
     curl \
     g++ \

@@ -7,13 +7,14 @@ LABEL repository.hub="alexmasterov/alpine-sphinx" \
 ARG SPHINX_VERSION=2.2.11-release
 
 RUN \
-  addgroup -S sphinx \
-  && adduser -D -S -h /var/cache/sphinx -s /sbin/nologin -G sphinx sphinx
-
-RUN \
   apk add --update \
     tini \
-  && apk add --virtual .sphinx-build-dependencies \
+
+  && addgroup -g 82 -S sphinx \
+  && adduser -u 82 -S -D -h /var/cache/sphinx -s /sbin/nologin -G sphinx sphinx
+
+RUN \
+  apk add --no-cache --virtual .sphinx-build-dependencies \
     curl \
     expat-dev \
     g++ \
