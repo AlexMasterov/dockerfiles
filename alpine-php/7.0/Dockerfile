@@ -316,7 +316,7 @@ RUN \
   && make install \
 
   # php-v8
-  && PHPV8_TAG="v0.1.4" \
+  && PHPV8_TAG="v0.1.5" \
   && git clone -o ${PHPV8_TAG} --depth 1 https://github.com/pinepain/php-v8.git /tmp/php-v8 \
   && cd /tmp/php-v8 \
   && phpize \
