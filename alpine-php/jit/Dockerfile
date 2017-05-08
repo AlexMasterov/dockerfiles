@@ -297,16 +297,6 @@ RUN \
   && mkdir -p ${V8_DIR} \
   && curl -fSL --connect-timeout 30 ${V8_SOURCE} | tar xz -C ${V8_DIR} \
 
-  # v8js
-  && V8JS_TAG="1.4.0" \
-  && git clone -o ${V8JS_TAG} --depth 1 https://github.com/preillyme/v8js.git /tmp/v8js \
-  && cd /tmp/v8js \
-  && phpize \
-  && ./configure \
-    --with-v8js=${V8_DIR} \
-  && make \
-  && make install \
-
   # php-v8
   && PHPV8_TAG="v0.1.6" \
   && git clone -o ${PHPV8_TAG} --depth 1 https://github.com/pinepain/php-v8.git /tmp/php-v8 \
@@ -316,6 +306,30 @@ RUN \
     --with-v8=${V8_DIR} \
   && make \
   && make install \
+
+  # graphql-parser
+  && apk add --virtual .graphql-build-dependencies \
+    bison \
+    cmake \
+    flex \
+
+  && GRAPHQL_BRANCH="master" \
+  && git clone -b ${GRAPHQL_BRANCH} --depth 1 https://github.com/dosten/graphql-parser-php.git /tmp/graphql \
+
+  # libgraphqlparser
+  && cd /tmp/graphql/deps/libgraphqlparser \
+  && cmake . \
+  && make \
+  && make install \
+
+  # graphql-parser-php
+  && cd /tmp/graphql \
+  && phpize \
+  && ./configure \
+  && make \
+  && make install \
+
+  && apk del .graphql-build-dependencies \
 
   # Removing build dependencies, clean temporary files
   && apk del .php-build-dependencies \
