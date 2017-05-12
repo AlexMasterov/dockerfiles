@@ -4,7 +4,7 @@ MAINTAINER Alex Masterov <alex.masterow@gmail.com>
 LABEL repository.hub="alexmasterov/alpine-tarantool:1.7" \
       repository.url="https://github.com/AlexMasterov/dockerfiles"
 
-ARG TARANTOOL_BRANCH=1.7
+ARG TARANTOOL_VERSION=1.7.4-0-g0ed962422
 # [ RelWithDebInfo | Release ]
 ARG TARANTOOL_BUILD_TYPE=RelWithDebInfo
 ARG TARANTOOL_BACKTRACE=YES
@@ -21,6 +21,7 @@ RUN \
 
 RUN \
   apk add --no-cache --virtual .tarantool-build-dependencies \
+    binutils-dev \
     cmake \
     curl \
     g++ \
@@ -28,6 +29,7 @@ RUN \
     git \
     libressl-dev \
     make \
+    ncurses-dev \
     perl \
     readline-dev \
     yaml-dev \
@@ -35,23 +37,14 @@ RUN \
   && apk add --virtual .tarantool-runtime-dependencies \
     libgomp \
     libstdc++ \
+    ncurses \
     readline \
     yaml \
 
-  # Termcap
-  && TERMCAP_VERSION="1.3.1" \
-  && TERMCAP_SOURCE="https://ftp.gnu.org/pub/gnu/termcap/termcap-${TERMCAP_VERSION}.tar.gz" \
-  && curl -fSL --connect-timeout 30 ${TERMCAP_SOURCE} | tar xz -C /tmp \
-  && cd /tmp/termcap-${TERMCAP_VERSION} \
-
-  && ./configure \
-  && make \
-  && make install \
-
   # Tarantool
-  && TARANTOOL_GIT="https://github.com/tarantool/tarantool.git" \
   && TARANTOOL_DIR="/tmp/tarantool" \
-  && git clone -b ${TARANTOOL_BRANCH} ${TARANTOOL_GIT} ${TARANTOOL_DIR} \
+  && git clone https://github.com/tarantool/tarantool.git ${TARANTOOL_DIR} \
+  && git -C ${TARANTOOL_DIR} checkout ${TARANTOOL_VERSION} \
   && git -C ${TARANTOOL_DIR} submodule update \
     --init --recursive --jobs "$(getconf _NPROCESSORS_ONLN)" \
   && cd ${TARANTOOL_DIR} \
