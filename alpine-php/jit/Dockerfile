@@ -36,6 +36,7 @@ RUN \
     libxml2-dev \
     libxslt-dev \
     make \
+    pcre-dev \
     postgresql-dev \
     re2c \
     readline-dev \
@@ -54,6 +55,7 @@ RUN \
     libwebp \
     libxml2 \
     libxslt \
+    pcre \
     readline \
     zlib \
 
@@ -122,7 +124,7 @@ RUN \
     --enable-xmlwriter \
     --enable-zip \
     --with-bz2=/usr \
-    --with-curl \
+    --with-curl=/usr \
     --with-gd \
       --with-freetype-dir=/usr \
       --with-jpeg-dir=/usr \
@@ -130,18 +132,18 @@ RUN \
       --with-webp-dir=/usr \
       --with-zlib-dir=/usr \
     --with-iconv=/usr \
-    --with-mcrypt \
+    --with-mcrypt=/usr \
     --with-mhash \
-    --with-openssl \
-    --with-pcre-regex \
+    --with-openssl=/usr \
+    --with-pcre-regex=/usr \
       --with-pcre-jit \
     --with-pdo-mysql=mysqlnd \
     --with-pdo-pgsql \
     --with-pdo-sqlite \
     --with-pgsql \
-    --with-readline \
+    --with-readline=/usr \
     --with-xmlrpc \
-    --with-xsl \
+    --with-xsl=/usr \
   && make \
   && make install \
 
