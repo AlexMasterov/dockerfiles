@@ -123,6 +123,7 @@ RUN \
     --enable-xmlreader \
     --enable-xmlwriter \
     --enable-zip \
+      --with-pcre-dir=/usr \
     --with-bz2=/usr \
     --with-curl=/usr \
     --with-gd \
@@ -130,9 +131,9 @@ RUN \
       --with-jpeg-dir=/usr \
       --with-png-dir=/usr \
       --with-webp-dir=/usr \
+      --with-xpm-dir=no \
       --with-zlib-dir=/usr \
     --with-iconv=/usr \
-    --with-mcrypt=/usr \
     --with-mhash \
     --with-openssl=/usr \
     --with-pcre-regex=/usr \
@@ -294,7 +295,7 @@ RUN \
   && apk del .amqp-build-dependencies \
 
   # https://github.com/AlexMasterov/dockerfiles#alpine-libv8
-  && V8_SOURCE="https://www.dropbox.com/s/wss4wj66dkkmype/alpine-libv8-6.0.146.tar.gz" \
+  && V8_SOURCE="https://www.dropbox.com/s/k8znon5hvaug54l/alpine-libv8-6.0.212.tar.gz" \
   && V8_DIR="/usr/local/v8" \
   && mkdir -p ${V8_DIR} \
   && curl -fSL --connect-timeout 30 ${V8_SOURCE} | tar xz -C ${V8_DIR} \
