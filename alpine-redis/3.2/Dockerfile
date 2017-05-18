@@ -4,7 +4,7 @@ MAINTAINER Alex Masterov <alex.masterow@gmail.com>
 LABEL repository.hub="alexmasterov/alpine-redis:3.2" \
       repository.url="https://github.com/AlexMasterov/dockerfiles"
 
-ARG REDIS_VERSION=3.2.8
+ARG REDIS_VERSION=3.2.9
 ARG REDIS_MALLOC=jemalloc
 
 RUN \
