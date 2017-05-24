@@ -248,7 +248,7 @@ RUN \
   && apk add --virtual .mongodb-runtime-dependencies \
     libressl2.5-libtls \
 
-  && LIBBSON_VERSION="1.6.2" \
+  && LIBBSON_VERSION="1.6.3" \
   && LIBBSON_FILENAME="libbson-${LIBBSON_VERSION}" \
   && LIBBSON_SOURCE="https://github.com/mongodb/libbson/releases/download/${LIBBSON_VERSION}/${LIBBSON_FILENAME}.tar.gz" \
   && curl -fSL --connect-timeout 30 ${LIBBSON_SOURCE} | tar xz -C /tmp \
@@ -259,7 +259,7 @@ RUN \
   && make \
   && make install \
 
-  && LIBMONGOC_VERSION="1.6.2" \
+  && LIBMONGOC_VERSION="1.6.3" \
   && LIBMONGOC_FILENAME="mongo-c-driver-${LIBBSON_VERSION}" \
   && LIBMONGOC_SOURCE="https://github.com/mongodb/mongo-c-driver/releases/download/${LIBMONGOC_VERSION}/${LIBMONGOC_FILENAME}.tar.gz" \
   && curl -fSL --connect-timeout 30 ${LIBMONGOC_SOURCE} | tar xz -C /tmp \
