@@ -4,7 +4,7 @@ MAINTAINER Alex Masterov <alex.masterow@gmail.com>
 LABEL repository.hub="alexmasterov/alpine-nginx-tarantool" \
       repository.url="https://github.com/AlexMasterov/dockerfiles"
 
-ARG NGINX_VERSION=1.13.0
+ARG NGINX_VERSION=1.13.1
 ARG NGINX_CONFIG=/etc/nginx
 
 RUN \
