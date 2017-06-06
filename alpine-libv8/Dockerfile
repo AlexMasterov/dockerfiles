@@ -4,7 +4,7 @@ MAINTAINER Alex Masterov <alex.masterow@gmail.com>
 LABEL repository.hub="alexmasterov/alpine-libv8" \
       repository.url="https://github.com/AlexMasterov/dockerfiles"
 
-ARG V8_VERSION=6.0.75
+ARG V8_VERSION=6.1.76
 ARG V8_DIR=/usr/local/v8
 
 ENV V8_VERSION=${V8_VERSION} \
@@ -57,13 +57,15 @@ RUN \
       target_cpu=\"x64\" \
       v8_target_cpu=\"x64\" \
       v8_use_external_startup_data=false \
+      v8_enable_future=true \
+      is_official_build=true \
       is_component_build=true \
       is_clang=false \
       is_debug=false \
       use_sysroot=false \
       use_gold=false \
       use_allocator=\"tcmalloc\" \
-      use_experimental_allocator_shim=false \
+      use_allocator_shim=false \
       enable_nacl=false \
       treat_warnings_as_errors=false \
       symbol_level=0 \
