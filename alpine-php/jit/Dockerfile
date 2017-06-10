@@ -6,6 +6,23 @@ LABEL repository.hub="alexmasterov/alpine-php:jit" \
 
 ARG PHP_CONFIG=/etc/php
 
+ARG REALPATH_TURBO_TAG=v2.0.0rc1
+ARG MSGPACK_TAG=msgpack-2.0.2
+ARG LIBEVENT_BRANCH=master
+ARG REDIS_TAG=3.1.2
+ARG PHPIREDIS_TAG=v1.0.0
+ARG MEMCACHED_TAG=v3.0.3
+ARG MONGODB_VERSION=1.2.9
+ARG AMQP_TAG=v1.9.0
+ARG PHPV8_TAG=v0.1.6
+ARG GRAPHQL_BRANCH=master
+
+ARG LIBBSON_VERSION=1.6.3
+ARG LIBMONGOC_VERSION=1.6.3
+# https://github.com/AlexMasterov/dockerfiles#alpine-libv8
+ARG V8_SOURCE=https://www.dropbox.com/s/541snl3x3kk39oi/alpine-libv8-6.1.110.tar.gz
+ARG V8_DIR=/usr/local/v8
+
 RUN \
   apk add --update \
     ssmtp \
@@ -15,7 +32,7 @@ RUN \
   && adduser -u 82 -S -D -h /var/cache/www-data -s /sbin/nologin -G www-data www-data
 
 RUN \
-  apk add --no-cache --virtual .php-build-dependencies \
+  apk add --virtual .php-build-dependencies \
     autoconf \
     binutils \
     bison \
@@ -60,7 +77,7 @@ RUN \
     zlib \
 
   # Proper iconv
-  && apk add --no-cache --virtual .php-runtime-dependencies \
+  && apk add --no-cache --virtual .iconv-runtime-dependencies \
     --repository https://dl-3.alpinelinux.org/alpine/edge/testing/ \
     gnu-libiconv-dev \
 
@@ -69,9 +86,9 @@ RUN \
       mv /usr/include/gnu-libiconv/*.h /usr/include; rm -rf /usr/include/gnu-libiconv) \
 
   # See: https://github.com/docker-library/php/issues/272
+  && export LDFLAGS="-Wl,-O2 -Wl,--hash-style=both -pie" \
   && export CFLAGS="-O2 -march=native -fstack-protector-strong -fpic -fpie" \
   && export CPPFLAGS=${CFLAGS} \
-  && export LDFLAGS="-Wl,-O2 -Wl,--hash-style=both -pie" \
   # Use multi-threaded 'make' by default
   && export MAKEFLAGS="-j $(expr $(getconf _NPROCESSORS_ONLN) \+ 1)" \
 
@@ -148,7 +165,6 @@ RUN \
   && make install \
 
   # See: https://bugs.php.net/bug.php?id=52312
-  && REALPATH_TURBO_TAG="v2.0.0rc1" \
   && git clone -o ${REALPATH_TURBO_TAG} --depth 1 https://github.com/Whissi/realpath_turbo.git /tmp/realpath_turbo \
   && cd /tmp/realpath_turbo \
   && phpize \
@@ -157,7 +173,6 @@ RUN \
   && make install \
 
   # Msgpack
-  && MSGPACK_TAG="msgpack-2.0.2" \
   && git clone -o ${MSGPACK_TAG} --depth 1 https://github.com/msgpack/msgpack-php.git /tmp/msgpack-php \
   && cd /tmp/msgpack-php \
   && phpize \
@@ -166,7 +181,6 @@ RUN \
   && make install \
 
   # libevent
-  && LIBEVENT_BRANCH="master" \
   && git clone -b ${LIBEVENT_BRANCH} --depth 1 https://github.com/expressif/pecl-event-libevent.git /tmp/libevent \
   && cd /tmp/libevent \
   && phpize \
@@ -175,7 +189,6 @@ RUN \
   && make install \
 
   # Redis
-  && REDIS_TAG="3.1.2" \
   && git clone -o ${REDIS_TAG} --depth 1 https://github.com/phpredis/phpredis.git /tmp/redis \
   && cd /tmp/redis \
   && phpize \
@@ -190,7 +203,6 @@ RUN \
   && apk add --virtual .phpiredis-runtime-dependencies \
     hiredis \
 
-  && PHPIREDIS_TAG="v1.0.0" \
   && git clone -o ${PHPIREDIS_TAG} --depth 1 https://github.com/nrk/phpiredis.git /tmp/phpiredis \
   && cd /tmp/phpiredis \
   && phpize \
@@ -207,7 +219,6 @@ RUN \
   && apk add --virtual .memcached-runtime-dependencies \
     libmemcached \
 
-  && MEMCACHED_TAG="v3.0.3" \
   && git clone -o ${MEMCACHED_TAG} --depth 1 https://github.com/php-memcached-dev/php-memcached.git /tmp/php-memcached \
   && cd /tmp/php-memcached \
   && phpize \
@@ -226,7 +237,6 @@ RUN \
   && apk add --virtual .mongodb-runtime-dependencies \
     libressl2.5-libtls \
 
-  && LIBBSON_VERSION="1.6.3" \
   && LIBBSON_FILENAME="libbson-${LIBBSON_VERSION}" \
   && LIBBSON_SOURCE="https://github.com/mongodb/libbson/releases/download/${LIBBSON_VERSION}/${LIBBSON_FILENAME}.tar.gz" \
   && curl -fSL --connect-timeout 30 ${LIBBSON_SOURCE} | tar xz -C /tmp \
@@ -237,7 +247,6 @@ RUN \
   && make \
   && make install \
 
-  && LIBMONGOC_VERSION="1.6.3" \
   && LIBMONGOC_FILENAME="mongo-c-driver-${LIBBSON_VERSION}" \
   && LIBMONGOC_SOURCE="https://github.com/mongodb/mongo-c-driver/releases/download/${LIBMONGOC_VERSION}/${LIBMONGOC_FILENAME}.tar.gz" \
   && curl -fSL --connect-timeout 30 ${LIBMONGOC_SOURCE} | tar xz -C /tmp \
@@ -251,7 +260,6 @@ RUN \
   && make \
   && make install \
 
-  && MONGODB_VERSION="1.2.9" \
   && MONGODB_FILENAME="mongodb-${MONGODB_VERSION}" \
   && MONGODB_SOURCE="https://github.com/mongodb/mongo-php-driver/releases/download/${MONGODB_VERSION}/${MONGODB_FILENAME}.tgz" \
   && curl -fSL --connect-timeout 30 ${MONGODB_SOURCE} | tar xz -C /tmp \
@@ -271,7 +279,6 @@ RUN \
   && apk add --virtual .amqp-runtime-dependencies \
     rabbitmq-c \
 
-  && AMQP_TAG="v1.9.0" \
   && git clone -o ${AMQP_TAG} --depth 1 https://github.com/pdezwart/php-amqp.git /tmp/php-amqp \
   && cd /tmp/php-amqp \
   && phpize \
@@ -281,14 +288,11 @@ RUN \
 
   && apk del .amqp-build-dependencies \
 
-  # https://github.com/AlexMasterov/dockerfiles#alpine-libv8
-  && V8_SOURCE="https://www.dropbox.com/s/541snl3x3kk39oi/alpine-libv8-6.1.110.tar.gz" \
-  && V8_DIR="/usr/local/v8" \
-  && mkdir -p ${V8_DIR} \
-  && curl -fSL --connect-timeout 30 ${V8_SOURCE} | tar xz -C ${V8_DIR} \
+  # libv8
+  && (mkdir -p ${V8_DIR}; \
+      curl -fSL --connect-timeout 30 ${V8_SOURCE} | tar xz -C ${V8_DIR}) \
 
   # php-v8
-  && PHPV8_TAG="v0.1.6" \
   && git clone -o ${PHPV8_TAG} --depth 1 https://github.com/pinepain/php-v8.git /tmp/php-v8 \
   && cd /tmp/php-v8 \
   && phpize \
@@ -303,7 +307,6 @@ RUN \
     cmake \
     flex \
 
-  && GRAPHQL_BRANCH="master" \
   && git clone -b ${GRAPHQL_BRANCH} --depth 1 https://github.com/dosten/graphql-parser-php.git /tmp/graphql \
 
   # libgraphqlparser

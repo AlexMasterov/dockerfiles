@@ -7,6 +7,17 @@ LABEL repository.hub="alexmasterov/alpine-php:7.2" \
 ARG PHP_VERSION=7.2.0alpha1
 ARG PHP_CONFIG=/etc/php
 
+ARG REALPATH_TURBO_TAG=v2.0.0rc1
+ARG XDEBUG_TAG=XDEBUG_2_5_4
+ARG MSGPACK_TAG=msgpack-2.0.2
+ARG REDIS_TAG=3.1.2
+ARG PHPIREDIS_TAG=v1.0.0
+ARG PHPV8_TAG=v0.1.6
+
+# https://github.com/AlexMasterov/dockerfiles#alpine-libv8
+ARG V8_SOURCE=https://www.dropbox.com/s/541snl3x3kk39oi/alpine-libv8-6.1.110.tar.gz
+ARG V8_DIR=/usr/local/v8
+
 RUN \
   apk add --update \
     ssmtp \
@@ -16,7 +27,7 @@ RUN \
   && adduser -u 82 -S -D -h /var/cache/www-data -s /sbin/nologin -G www-data www-data
 
 RUN \
-  apk add --no-cache --virtual .php-build-dependencies \
+  apk add --virtual .php-build-dependencies \
     autoconf \
     binutils \
     bzip2-dev \
@@ -60,7 +71,7 @@ RUN \
     zlib \
 
   # Proper iconv
-  && apk add --no-cache --virtual .php-runtime-dependencies \
+  && apk add --no-cache --virtual .iconv-runtime-dependencies \
     --repository https://dl-3.alpinelinux.org/alpine/edge/testing/ \
     gnu-libiconv-dev \
 
@@ -69,15 +80,15 @@ RUN \
       mv /usr/include/gnu-libiconv/*.h /usr/include; rm -rf /usr/include/gnu-libiconv) \
 
   # See: https://github.com/docker-library/php/issues/272
+  && export LDFLAGS="-Wl,-O2 -Wl,--hash-style=both -pie" \
   && export CFLAGS="-O2 -march=native -fstack-protector-strong -fpic -fpie" \
   && export CPPFLAGS=${CFLAGS} \
-  && export LDFLAGS="-Wl,-O2 -Wl,--hash-style=both -pie" \
   # Use multi-threaded 'make' by default
   && export MAKEFLAGS="-j $(expr $(getconf _NPROCESSORS_ONLN) \+ 1)" \
 
   # PHP
-  && PHP_SOURCE="https://downloads.php.net/~pollita/php-${PHP_VERSION}.tar.gz" \
-  && curl -fSL --connect-timeout 30 ${PHP_SOURCE} | tar xz -C /tmp \
+  && PHP_SOURCE="https://downloads.php.net/~pollita/php-${PHP_VERSION}.tar.xz" \
+  && curl -fSL --connect-timeout 30 ${PHP_SOURCE} | tar xJ -C /tmp \
   && cd /tmp/php-${PHP_VERSION} \
 
   && ./configure \
@@ -148,7 +159,6 @@ RUN \
   && make install \
 
   # See: https://bugs.php.net/bug.php?id=52312
-  && REALPATH_TURBO_TAG="v2.0.0rc1" \
   && git clone -o ${REALPATH_TURBO_TAG} --depth 1 https://github.com/Whissi/realpath_turbo.git /tmp/realpath_turbo \
   && cd /tmp/realpath_turbo \
   && phpize \
@@ -157,7 +167,6 @@ RUN \
   && make install \
 
   # xDebug
-  && XDEBUG_TAG="XDEBUG_2_5_4" \
   && git clone -o ${XDEBUG_TAG} --depth 1 https://github.com/xdebug/xdebug.git /tmp/xdebug \
   && cd /tmp/xdebug \
   && phpize \
@@ -175,7 +184,6 @@ RUN \
   && make install \
 
   # Redis
-  && REDIS_TAG="3.1.2" \
   && git clone -o ${REDIS_TAG} --depth 1 https://github.com/phpredis/phpredis.git /tmp/redis \
   && cd /tmp/redis \
   && phpize \
@@ -190,7 +198,6 @@ RUN \
   && apk add --virtual .phpiredis-runtime-dependencies \
     hiredis \
 
-  && PHPIREDIS_TAG="v1.0.0" \
   && git clone -o ${PHPIREDIS_TAG} --depth 1 https://github.com/nrk/phpiredis.git /tmp/phpiredis \
   && cd /tmp/phpiredis \
   && phpize \
@@ -200,14 +207,11 @@ RUN \
 
   && apk del .phpiredis-build-dependencies \
 
-  # https://github.com/AlexMasterov/dockerfiles#alpine-libv8
-  && V8_SOURCE="https://www.dropbox.com/s/hymkwbo4he8hnux/alpine-libv8-6.1.76.tar.gz" \
-  && V8_DIR="/usr/local/v8" \
-  && mkdir -p ${V8_DIR} \
-  && curl -fSL --connect-timeout 30 ${V8_SOURCE} | tar xz -C ${V8_DIR} \
+  # libv8
+  && (mkdir -p ${V8_DIR}; \
+      curl -fSL --connect-timeout 30 ${V8_SOURCE} | tar xz -C ${V8_DIR}) \
 
   # php-v8
-  && PHPV8_TAG="v0.1.6" \
   && git clone -o ${PHPV8_TAG} --depth 1 https://github.com/pinepain/php-v8.git /tmp/php-v8 \
   && cd /tmp/php-v8 \
   && phpize \

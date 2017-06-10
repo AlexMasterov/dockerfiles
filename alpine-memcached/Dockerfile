@@ -30,7 +30,7 @@ RUN \
 
   && ./configure \
     CFLAGS="-O2 -march=native" \
-  && make -j "$(getconf _NPROCESSORS_ONLN)" \
+  && make -j $(getconf _NPROCESSORS_ONLN) \
   && make install \
 
   # Removing build dependencies, clean temporary files

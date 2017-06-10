@@ -7,6 +7,9 @@ LABEL repository.hub="alexmasterov/alpine-nginx-tarantool" \
 ARG NGINX_VERSION=1.13.1
 ARG NGINX_CONFIG=/etc/nginx
 
+ARG HEADERS_MORE_TAG=v0.32
+ARG TARANTOOL_UPSTREAM_TAG=v2.3.7
+
 RUN \
   apk add --update \
     tini \
@@ -15,7 +18,7 @@ RUN \
   && adduser -u 82 -S -D -h /var/cache/nginx -s /sbin/nologin -G nginx nginx
 
 RUN \
-  apk add --no-cache --virtual .nginx-build-dependencies \
+  apk add --virtual .nginx-build-dependencies \
     curl \
     g++ \
     gcc \
@@ -23,23 +26,26 @@ RUN \
     libressl-dev \
     linux-headers \
     make \
-    patch \
     pcre-dev \
     zlib-dev \
   && apk add --virtual .nginx-runtime-dependencies \
     ca-certificates \
     pcre \
 
-  && export CFLAGS="-O2 -march=native -fstack-protector-strong -fpic -fpie" \
   && export LDFLAGS="-Wl,-O2 -Wl,--hash-style=both -pie" \
+  && export CFLAGS="-O2 -march=native -fstack-protector-strong -fpic -fpie" \
   # Use multi-threaded 'make' by default
   && export MAKEFLAGS="-j $(expr $(getconf _NPROCESSORS_ONLN) \+ 1)" \
+
+  # Headers More
+  && HEADERS_MORE_GIT="https://github.com/openresty/headers-more-nginx-module.git" \
+  && HEADERS_MORE_DIR="/tmp/headers-more-nginx-module" \
+  && git clone -o ${HEADERS_MORE_TAG} --depth 1 ${HEADERS_MORE_GIT} ${HEADERS_MORE_DIR} \
 
   # Tarantool upstream
   && apk add --virtual .tarantool-upstream-build-dependencies \
     cmake \
 
-  && TARANTOOL_UPSTREAM_TAG="v2.3.7" \
   && TARANTOOL_UPSTREAM_GIT="https://github.com/tarantool/nginx_upstream_module.git" \
   && TARANTOOL_UPSTREAM_DIR="/tmp/nginx_upstream_module" \
   && git clone -o ${TARANTOOL_UPSTREAM_TAG} --depth 1 ${TARANTOOL_UPSTREAM_GIT} ${TARANTOOL_UPSTREAM_DIR} \
@@ -48,12 +54,6 @@ RUN \
   && make -C ${TARANTOOL_UPSTREAM_DIR} msgpack yajl \
 
   && apk del .tarantool-upstream-build-dependencies \
-
-  # Headers More
-  && HEADERS_MORE_TAG="v0.32" \
-  && HEADERS_MORE_GIT="https://github.com/openresty/headers-more-nginx-module.git" \
-  && HEADERS_MORE_DIR="/tmp/headers-more-nginx-module" \
-  && git clone -o ${HEADERS_MORE_TAG} --depth 1 ${HEADERS_MORE_GIT} ${HEADERS_MORE_DIR} \
 
   # Nginx
   && NGINX_SOURCE="https://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz" \

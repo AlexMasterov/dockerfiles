@@ -20,7 +20,7 @@ RUN \
   && adduser -u 82 -S -D -h /var/cache/tarantool -s /sbin/nologin -G tarantool tarantool
 
 RUN \
-  apk add --no-cache --virtual .tarantool-build-dependencies \
+  apk add --virtual .tarantool-build-dependencies \
     binutils-dev \
     cmake \
     curl \
@@ -46,7 +46,7 @@ RUN \
   && git clone https://github.com/tarantool/tarantool.git ${TARANTOOL_DIR} \
   && git -C ${TARANTOOL_DIR} checkout ${TARANTOOL_VERSION} \
   && git -C ${TARANTOOL_DIR} submodule update \
-    --init --recursive --jobs "$(getconf _NPROCESSORS_ONLN)" \
+    --init --recursive --jobs $(getconf _NPROCESSORS_ONLN) \
   && cd ${TARANTOOL_DIR} \
 
   && cmake \
@@ -56,7 +56,7 @@ RUN \
     -DENABLE_DIST:BOOL=${TARANTOOL_DIST} \
     -DENABLE_BUNDLED_LIBYAML:BOOL=${TARANTOOL_BUNDLED_LIBYAML} \
     . \
-  && make -j "$(getconf _NPROCESSORS_ONLN)" \
+  && make -j $(getconf _NPROCESSORS_ONLN) \
   && make install \
 
   # Removing build dependencies, clean temporary files

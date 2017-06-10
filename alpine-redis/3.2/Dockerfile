@@ -15,7 +15,7 @@ RUN \
   && adduser -u 82 -S -D -h /var/cache/redis -s /sbin/nologin -G redis redis
 
 RUN \
-  apk add --no-cache --virtual .redis-build-dependencies \
+  apk add --virtual .redis-build-dependencies \
     curl \
     gcc \
     linux-headers \
@@ -29,7 +29,7 @@ RUN \
   && make \
     MALLOC=${REDIS_MALLOC} \
     CFLAGS="-march=native" \
-    -j "$(getconf _NPROCESSORS_ONLN)" \
+    -j $(getconf _NPROCESSORS_ONLN) \
   && make install \
 
   # Removing build dependencies, clean temporary files

@@ -14,7 +14,7 @@ RUN \
   && adduser -u 82 -S -D -h /var/cache/sphinx -s /sbin/nologin -G sphinx sphinx
 
 RUN \
-  apk add --no-cache --virtual .sphinx-build-dependencies \
+  apk add --virtual .sphinx-build-dependencies \
     curl \
     expat-dev \
     g++ \
@@ -30,7 +30,7 @@ RUN \
     libstdc++ \
 
   # Save MySQL client library
-  && cp /usr/lib/libmysqlclient* /usr/local/lib \
+  && mv /usr/lib/libmysqlclient* /usr/local/lib \
 
   # Sphinx
   && SPHINX_SOURCE="http://sphinxsearch.com/files/sphinx-${SPHINX_VERSION}.tar.gz" \
@@ -53,7 +53,7 @@ RUN \
     --with-mysql \
     --with-pgsql \
     --with-re2 \
-  && make -j "$(getconf _NPROCESSORS_ONLN)" \
+  && make -j $(getconf _NPROCESSORS_ONLN) \
   && make install \
 
   # Removing build dependencies, clean temporary files
