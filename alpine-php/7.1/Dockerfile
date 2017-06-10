@@ -59,23 +59,21 @@ RUN \
     readline \
     zlib \
 
+  # Proper iconv
+  && apk add --no-cache --virtual .php-runtime-dependencies \
+    --repository https://dl-3.alpinelinux.org/alpine/edge/testing/ \
+    gnu-libiconv-dev \
+
+  # Replace binary and headers
+  && (mv /usr/bin/gnu-iconv /usr/bin/iconv; \
+      mv /usr/include/gnu-libiconv/*.h /usr/include; rm -rf /usr/include/gnu-libiconv) \
+
   # See: https://github.com/docker-library/php/issues/272
   && export CFLAGS="-O2 -march=native -fstack-protector-strong -fpic -fpie" \
   && export CPPFLAGS=${CFLAGS} \
   && export LDFLAGS="-Wl,-O2 -Wl,--hash-style=both -pie" \
   # Use multi-threaded 'make' by default
   && export MAKEFLAGS="-j $(expr $(getconf _NPROCESSORS_ONLN) \+ 1)" \
-
-  # Proper iconv
-  && LIBICONV_VERSION="1.15" \
-  && LIBICONV_SOURCE="https://ftp.gnu.org/pub/gnu/libiconv/libiconv-${LIBICONV_VERSION}.tar.gz" \
-  && curl -fSL --connect-timeout 30 ${LIBICONV_SOURCE} | tar xz -C /tmp \
-  && cd /tmp/libiconv-${LIBICONV_VERSION} \
-
-  && ./configure \
-    --prefix=/usr \
-  && make \
-  && make install \
 
   # PHP
   && PHP_SOURCE="https://secure.php.net/get/php-${PHP_VERSION}.tar.gz/from/this/mirror" \
