@@ -104,6 +104,7 @@ RUN \
       --with-fpm-group=www-data \
       --with-fpm-user=www-data \
     --enable-ftp \
+    --enable-inline-optimization \
     --enable-intl \
     --enable-json \
     --enable-libxml \
