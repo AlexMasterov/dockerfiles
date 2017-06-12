@@ -12,6 +12,7 @@ ARG XDEBUG_TAG=XDEBUG_2_5_4
 ARG MSGPACK_TAG=msgpack-2.0.2
 ARG REDIS_TAG=3.1.2
 ARG PHPIREDIS_TAG=v1.0.0
+ARG AMQP_BRANCH=release/1.9
 ARG PHPV8_TAG=v0.1.6
 
 # https://github.com/AlexMasterov/dockerfiles#alpine-libv8
@@ -206,6 +207,21 @@ RUN \
   && make install \
 
   && apk del .phpiredis-build-dependencies \
+
+  # php-amqp (RabbitMQ)
+  && apk add --virtual .amqp-build-dependencies \
+    rabbitmq-c-dev \
+  && apk add --virtual .amqp-runtime-dependencies \
+    rabbitmq-c \
+
+  && git clone -b ${AMQP_BRANCH} --depth 1 https://github.com/pdezwart/php-amqp.git /tmp/php-amqp \
+  && cd /tmp/php-amqp \
+  && phpize \
+  && ./configure \
+  && make \
+  && make install \
+
+  && apk del .amqp-build-dependencies \
 
   # libv8
   && (mkdir -p ${V8_DIR}; \
