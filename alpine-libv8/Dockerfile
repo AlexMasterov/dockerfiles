@@ -4,8 +4,10 @@ MAINTAINER Alex Masterov <alex.masterow@gmail.com>
 LABEL repository.hub="alexmasterov/alpine-libv8" \
       repository.url="https://github.com/AlexMasterov/dockerfiles"
 
-ARG V8_VERSION=6.1.76
+ARG V8_VERSION=6.1.147
 ARG V8_DIR=/usr/local/v8
+
+ARG GN_SOURCE=https://www.dropbox.com/s/69lrj7y0yfyia8e/alpine-gn-ba97155.tar.gz
 
 ENV V8_VERSION=${V8_VERSION} \
     V8_DIR=${V8_DIR}
@@ -14,6 +16,7 @@ RUN \
   apk add --update --virtual .v8-build-dependencies \
     bash \
     binutils-gold \
+    ca-certificates \
     g++ \
     gcc \
     git \
@@ -46,8 +49,7 @@ RUN \
     libexecinfo \
     libstdc++ \
 
-  && GN_SOURCE="https://www.dropbox.com/s/69lrj7y0yfyia8e/alpine-gn-ba97155.tar.gz" \
-  && wget --no-check-certificate -O - ${GN_SOURCE} | tar xz -C /tmp/v8/buildtools/linux64/ \
+  && wget -O - ${GN_SOURCE} | tar xz -C /tmp/v8/buildtools/linux64/ \
 
   && ./tools/dev/v8gen.py \
     x64.release \
