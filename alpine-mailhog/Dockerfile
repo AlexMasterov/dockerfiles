@@ -1,8 +1,8 @@
 FROM golang:1.8-alpine
 
-MAINTAINER Alex Masterov <alex.masterow@gmail.com>
 LABEL repository.hub="alexmasterov/alpine-mailhog" \
-      repository.url="https://github.com/AlexMasterov/dockerfiles"
+      repository.url="https://github.com/AlexMasterov/dockerfiles" \
+      maintainer="Alex Masterov <alex.masterow@gmail.com>"
 
 RUN \
   apk add --update \

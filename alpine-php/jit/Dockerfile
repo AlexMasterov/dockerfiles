@@ -1,8 +1,8 @@
 FROM alpine:edge
 
-MAINTAINER Alex Masterov <alex.masterow@gmail.com>
 LABEL repository.hub="alexmasterov/alpine-php:jit" \
-      repository.url="https://github.com/AlexMasterov/dockerfiles"
+      repository.url="https://github.com/AlexMasterov/dockerfiles" \
+      maintainer="Alex Masterov <alex.masterow@gmail.com>"
 
 ARG PHP_CONFIG=/etc/php
 

@@ -1,8 +1,8 @@
 FROM alpine:edge
 
-MAINTAINER Alex Masterov <alex.masterow@gmail.com>
 LABEL repository.hub="alexmasterov/alpine-nginx" \
-      repository.url="https://github.com/AlexMasterov/dockerfiles"
+      repository.url="https://github.com/AlexMasterov/dockerfiles" \
+      maintainer="Alex Masterov <alex.masterow@gmail.com>"
 
 ARG NGINX_VERSION=1.13.1
 ARG NGINX_CONFIG=/etc/nginx

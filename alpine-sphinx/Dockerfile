@@ -1,8 +1,8 @@
 FROM alpine:edge
 
-MAINTAINER Alex Masterov <alex.masterow@gmail.com>
 LABEL repository.hub="alexmasterov/alpine-sphinx" \
-      repository.url="https://github.com/AlexMasterov/dockerfiles"
+      repository.url="https://github.com/AlexMasterov/dockerfiles" \
+      maintainer="Alex Masterov <alex.masterow@gmail.com>"
 
 ARG SPHINX_VERSION=2.2.11-release
 

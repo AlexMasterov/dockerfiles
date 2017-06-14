@@ -1,8 +1,8 @@
 FROM alpine:edge
 
-MAINTAINER Alex Masterov <alex.masterow@gmail.com>
 LABEL repository.hub="alexmasterov/alpine-libv8" \
-      repository.url="https://github.com/AlexMasterov/dockerfiles"
+      repository.url="https://github.com/AlexMasterov/dockerfiles" \
+      maintainer="Alex Masterov <alex.masterow@gmail.com>"
 
 ARG V8_VERSION=6.1.147
 ARG V8_DIR=/usr/local/v8
