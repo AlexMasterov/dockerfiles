@@ -4,11 +4,11 @@ LABEL repository.hub="alexmasterov/alpine-nginx-tarantool" \
       repository.url="https://github.com/AlexMasterov/dockerfiles" \
       maintainer="Alex Masterov <alex.masterow@gmail.com>"
 
-ARG NGINX_VERSION=1.13.1
+ARG NGINX_VERSION=1.13.2
 ARG NGINX_CONFIG=/etc/nginx
 
 ARG HEADERS_MORE_TAG=v0.32
-ARG TARANTOOL_UPSTREAM_TAG=v2.3.7
+ARG TARANTOOL_UPSTREAM_TAG=v2.4.5-beta
 
 RUN \
   apk add --update \
