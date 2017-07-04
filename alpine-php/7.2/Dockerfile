@@ -13,7 +13,7 @@ ARG MSGPACK_TAG=msgpack-2.0.2
 ARG REDIS_TAG=3.1.2
 ARG PHPIREDIS_TAG=v1.0.0
 ARG AMQP_BRANCH=release/1.9
-ARG PHPV8_TAG=v0.1.6
+ARG PHPV8_TAG=v0.1.7
 
 # https://github.com/AlexMasterov/dockerfiles#alpine-libv8
 ARG V8_SOURCE=https://www.dropbox.com/s/2juoqo8id8m384b/alpine-libv8-6.1.292.tar.gz
