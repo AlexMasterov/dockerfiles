@@ -8,10 +8,10 @@ ARG PHP_VERSION=7.2.0alpha3
 ARG PHP_CONFIG=/etc/php
 
 ARG REALPATH_TURBO_TAG=v2.0.0rc1
-ARG XDEBUG_TAG=XDEBUG_2_5_5
 ARG MSGPACK_TAG=msgpack-2.0.2
 ARG REDIS_TAG=3.1.2
 ARG PHPIREDIS_TAG=v1.0.0
+ARG TARANTOOL_BRANCH=issue-php72
 ARG AMQP_BRANCH=release/1.9
 ARG PHPV8_TAG=v0.1.7
 
@@ -31,6 +31,7 @@ RUN \
   apk add --virtual .php-build-dependencies \
     autoconf \
     binutils \
+    bison \
     bzip2-dev \
     curl-dev \
     file \
@@ -88,10 +89,10 @@ RUN \
   && export MAKEFLAGS="-j $(expr $(getconf _NPROCESSORS_ONLN) \+ 1)" \
 
   # PHP
-  && PHP_SOURCE="https://downloads.php.net/~pollita/php-${PHP_VERSION}.tar.xz" \
-  && curl -fSL --connect-timeout 30 ${PHP_SOURCE} | tar xJ -C /tmp \
-  && cd /tmp/php-${PHP_VERSION} \
+  && git clone -o php-${PHP_VERSION} --depth 1 https://github.com/php/php-src.git /tmp/php-src \
+  && cd /tmp/php-src \
 
+  && ./buildconf --force \
   && ./configure \
     --prefix=/usr \
     --sysconfdir=${PHP_CONFIG} \
@@ -167,14 +168,6 @@ RUN \
   && make \
   && make install \
 
-  # xDebug
-  && git clone -o ${XDEBUG_TAG} --depth 1 https://github.com/xdebug/xdebug.git /tmp/xdebug \
-  && cd /tmp/xdebug \
-  && phpize \
-  && ./configure \
-  && make \
-  && make install \
-
   # Msgpack
   && MSGPACK_TAG="msgpack-2.0.2" \
   && git clone -o ${MSGPACK_TAG} --depth 1 https://github.com/msgpack/msgpack-php.git /tmp/msgpack-php \
@@ -207,6 +200,17 @@ RUN \
   && make install \
 
   && apk del .phpiredis-build-dependencies \
+
+  # Tarantool
+  && apk add --virtual .tarantool-runtime-dependencies \
+    libltdl \
+
+  && git clone -b ${TARANTOOL_BRANCH} --depth 1 https://github.com/remicollet/tarantool-php.git /tmp/tarantool-php \
+  && cd /tmp/tarantool-php \
+  && phpize \
+  && ./configure \
+  && make \
+  && make install \
 
   # php-amqp (RabbitMQ)
   && apk add --virtual .amqp-build-dependencies \
