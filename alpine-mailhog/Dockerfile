@@ -17,5 +17,5 @@ RUN \
   && apk del .mailhog-build-dependencies \
   && rm -rf /var/cache/apk/* /var/tmp/* /tmp/*
 
-ENTRYPOINT ["tini", "--"]
+ENTRYPOINT ["/sbin/tini", "--"]
 CMD ["/go/bin/MailHog"]
