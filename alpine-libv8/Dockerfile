@@ -4,7 +4,7 @@ LABEL repository.hub="alexmasterov/alpine-libv8" \
       repository.url="https://github.com/AlexMasterov/dockerfiles" \
       maintainer="Alex Masterov <alex.masterow@gmail.com>"
 
-ARG V8_VERSION=6.1.234
+ARG V8_VERSION=6.1.431
 ARG V8_DIR=/usr/local/v8
 
 ARG GN_SOURCE=https://www.dropbox.com/s/69lrj7y0yfyia8e/alpine-gn-ba97155.tar.gz
@@ -64,6 +64,7 @@ RUN \
       is_component_build=true \
       is_clang=false \
       is_debug=false \
+      use_custom_libcxx=false \
       use_sysroot=false \
       use_gold=false \
       use_allocator=\"tcmalloc\" \
