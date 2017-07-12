@@ -4,7 +4,7 @@ LABEL repository.hub="alexmasterov/alpine-tarantool:1.7" \
       repository.url="https://github.com/AlexMasterov/dockerfiles" \
       maintainer="Alex Masterov <alex.masterow@gmail.com>"
 
-ARG TARANTOOL_VERSION=1.7.4-0-g927bd9c24
+ARG TARANTOOL_VERSION=1.7.4-248-g212cab57a
 # [ RelWithDebInfo | Release ]
 ARG TARANTOOL_BUILD_TYPE=RelWithDebInfo
 ARG TARANTOOL_BACKTRACE=YES
@@ -23,7 +23,7 @@ RUN \
   apk add --virtual .tarantool-build-dependencies \
     binutils-dev \
     cmake \
-    curl \
+    curl-dev \
     g++ \
     gcc \
     git \
@@ -35,6 +35,7 @@ RUN \
     yaml-dev \
     zlib-dev \
   && apk add --virtual .tarantool-runtime-dependencies \
+    curl \
     libgomp \
     libstdc++ \
     ncurses \
