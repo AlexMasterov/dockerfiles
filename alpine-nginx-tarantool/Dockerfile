@@ -4,11 +4,11 @@ LABEL repository.hub="alexmasterov/alpine-nginx-tarantool" \
       repository.url="https://github.com/AlexMasterov/dockerfiles" \
       maintainer="Alex Masterov <alex.masterow@gmail.com>"
 
-ARG NGINX_VERSION=1.13.2
+ARG NGINX_VERSION=1.13.3
 ARG NGINX_CONFIG=/etc/nginx
 
 ARG HEADERS_MORE_TAG=v0.32
-ARG TARANTOOL_UPSTREAM_TAG=v2.4.5-beta
+ARG TARANTOOL_UPSTREAM_TAG=v2.4.6-rc1
 
 RUN \
   apk add --update \
@@ -50,7 +50,7 @@ RUN \
   && TARANTOOL_UPSTREAM_DIR="/tmp/nginx_upstream_module" \
   && git clone -o ${TARANTOOL_UPSTREAM_TAG} --depth 1 ${TARANTOOL_UPSTREAM_GIT} ${TARANTOOL_UPSTREAM_DIR} \
   && git -C ${TARANTOOL_UPSTREAM_DIR} submodule update \
-    --init --recursive --jobs "$(getconf _NPROCESSORS_ONLN)" \
+    --init --recursive --jobs $(getconf _NPROCESSORS_ONLN) \
   && make -C ${TARANTOOL_UPSTREAM_DIR} msgpack yajl \
 
   && apk del .tarantool-upstream-build-dependencies \
