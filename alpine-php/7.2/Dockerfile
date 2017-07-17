@@ -13,7 +13,7 @@ ARG REDIS_TAG=3.1.3
 ARG PHPIREDIS_TAG=v1.0.0
 ARG TARANTOOL_BRANCH=issue-php72
 ARG AMQP_BRANCH=release/1.9
-ARG PHPV8_TAG=v0.1.7
+ARG PHPV8_TAG=v0.1.8
 
 # https://github.com/AlexMasterov/dockerfiles#alpine-libv8
 ARG V8_SOURCE=https://www.dropbox.com/s/1kkfsyu8sie89fi/alpine-libv8-6.1.508.tar.gz
