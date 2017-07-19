@@ -11,6 +11,7 @@ ARG REALPATH_TURBO_TAG=v2.0.0rc1
 ARG MSGPACK_TAG=msgpack-2.0.2
 ARG REDIS_TAG=3.1.3
 ARG PHPIREDIS_TAG=v1.0.0
+ARG MEMCACHED_BRANCH=master
 ARG TARANTOOL_BRANCH=issue-php72
 ARG AMQP_BRANCH=release/1.9
 ARG PHPV8_TAG=v0.1.8
@@ -200,6 +201,23 @@ RUN \
   && make install \
 
   && apk del .phpiredis-build-dependencies \
+
+  # Memcached
+  && apk add --virtual .memcached-build-dependencies \
+    libmemcached-dev \
+    cyrus-sasl-dev \
+  && apk add --virtual .memcached-runtime-dependencies \
+    libmemcached \
+
+  && git clone -b ${MEMCACHED_BRANCH} --depth 1 https://github.com/php-memcached-dev/php-memcached.git /tmp/php-memcached \
+  && cd /tmp/php-memcached \
+  && phpize \
+  && ./configure \
+    --disable-memcached-sasl \
+    --enable-memcached-msgpack \
+    --enable-memcached-json \
+  && make \
+  && make install \
 
   # Tarantool
   && apk add --virtual .tarantool-runtime-dependencies \
