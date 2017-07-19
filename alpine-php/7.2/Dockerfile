@@ -8,6 +8,7 @@ ARG PHP_VERSION=7.2.0beta1
 ARG PHP_CONFIG=/etc/php
 
 ARG REALPATH_TURBO_TAG=v2.0.0rc1
+ARG XDEBUG_BRANCH=master
 ARG MSGPACK_TAG=msgpack-2.0.2
 ARG REDIS_TAG=3.1.3
 ARG PHPIREDIS_TAG=v1.0.0
@@ -164,6 +165,14 @@ RUN \
   # See: https://bugs.php.net/bug.php?id=52312
   && git clone -o ${REALPATH_TURBO_TAG} --depth 1 https://github.com/Whissi/realpath_turbo.git /tmp/realpath_turbo \
   && cd /tmp/realpath_turbo \
+  && phpize \
+  && ./configure \
+  && make \
+  && make install \
+
+  # xDebug
+  && git clone -b ${XDEBUG_BRANCH} --depth 1 https://github.com/xdebug/xdebug.git /tmp/xdebug \
+  && cd /tmp/xdebug \
   && phpize \
   && ./configure \
   && make \
