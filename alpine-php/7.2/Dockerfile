@@ -18,7 +18,7 @@ ARG AMQP_BRANCH=release/1.9
 ARG PHPV8_TAG=v0.1.8
 
 # https://github.com/AlexMasterov/dockerfiles#alpine-libv8
-ARG V8_SOURCE=https://www.dropbox.com/s/ug9bz5o1den7gia/alpine-libv8-6.2.52.tar.gz
+ARG V8_SOURCE=https://www.dropbox.com/s/v1wu5v5b2sfv4v5/alpine-libv8-6.2.84.tar.gz
 ARG V8_DIR=/usr/local/v8
 
 RUN \
