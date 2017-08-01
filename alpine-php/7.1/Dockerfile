@@ -35,7 +35,15 @@ RUN \
   && adduser -u 82 -S -D -h /var/cache/www-data -s /sbin/nologin -G www-data www-data
 
 RUN \
-  apk add --virtual .php-build-dependencies \
+  # GOOD signature
+  apk add --no-cache --virtual .iconv-build-dependencies \
+    --repository https://dl-3.alpinelinux.org/alpine/v3.6/main/ \
+    libpng-dev \
+  && apk add --no-cache --virtual .iconv-runtime-dependencies \
+    --repository https://dl-3.alpinelinux.org/alpine/v3.6/main/ \
+    libpng \
+
+  && apk add --virtual .php-build-dependencies \
     autoconf \
     binutils \
     bzip2-dev \
@@ -49,7 +57,6 @@ RUN \
     jpeg-dev \
     libevent-dev \
     libmcrypt-dev \
-    libpng-dev \
     libtool \
     libwebp-dev \
     libxml2-dev \
@@ -69,7 +76,6 @@ RUN \
     libevent \
     libltdl \
     libmcrypt \
-    libpng \
     libpq \
     libwebp \
     libxml2 \
