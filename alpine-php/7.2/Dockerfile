@@ -178,14 +178,6 @@ RUN \
   && make \
   && make install \
 
-  # xDebug
-  && git clone -b ${XDEBUG_BRANCH} --depth 1 https://github.com/xdebug/xdebug.git /tmp/xdebug \
-  && cd /tmp/xdebug \
-  && phpize \
-  && ./configure \
-  && make \
-  && make install \
-
   # Msgpack
   && MSGPACK_TAG="msgpack-2.0.2" \
   && git clone -o ${MSGPACK_TAG} --depth 1 https://github.com/msgpack/msgpack-php.git /tmp/msgpack-php \
