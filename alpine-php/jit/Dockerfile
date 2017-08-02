@@ -160,6 +160,7 @@ RUN \
     --with-iconv=/usr \
     --with-mhash \
     --with-openssl=/usr \
+      --with-system-ciphers \
     --with-pcre-regex=/usr \
       --with-pcre-jit \
     --with-pdo-mysql=mysqlnd \
