@@ -32,15 +32,7 @@ RUN \
   && adduser -u 82 -S -D -h /var/cache/www-data -s /sbin/nologin -G www-data www-data
 
 RUN \
-  # GOOD signature
-  apk add --no-cache --virtual .iconv-build-dependencies \
-    --repository https://dl-3.alpinelinux.org/alpine/v3.6/main/ \
-    libpng-dev \
-  && apk add --no-cache --virtual .iconv-runtime-dependencies \
-    --repository https://dl-3.alpinelinux.org/alpine/v3.6/main/ \
-    libpng \
-
-  && apk add --virtual .php-build-dependencies \
+  apk add --virtual .php-build-dependencies \
     autoconf \
     binutils \
     bison \
