@@ -17,6 +17,7 @@ RUN \
     bash \
     binutils-gold \
     ca-certificates \
+    curl \
     g++ \
     gcc \
     git \
