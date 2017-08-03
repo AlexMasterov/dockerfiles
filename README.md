@@ -16,14 +16,14 @@ Common docker containers, used for development.
 
 ### alpine-libv8
 ```sh
-docker build --build-arg V8_VERSION=6.1.234 --build-arg V8_DIR=/usr/local/v8 .
+docker build --build-arg V8_VERSION=6.2.145 --build-arg V8_DIR=/usr/local/v8 .
 ```
 #### docker-compose
 ```yaml
 build:
   context: ./alpine-libv8
   args:
-    - V8_VERSION=6.1.234
+    - V8_VERSION=6.2.145
     - V8_DIR=/usr/local/v8
 ```
 #### Extract
