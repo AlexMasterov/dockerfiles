@@ -13,12 +13,12 @@ ARG MSGPACK_TAG=msgpack-2.0.2
 ARG REDIS_TAG=3.1.3
 ARG PHPIREDIS_TAG=v1.0.0
 ARG MEMCACHED_BRANCH=master
-ARG TARANTOOL_BRANCH=issue-php72
+ARG TARANTOOL_BRANCH=php7-v2
 ARG AMQP_BRANCH=release/1.9
 ARG PHPV8_TAG=v0.1.8
 
 # https://github.com/AlexMasterov/dockerfiles#alpine-libv8
-ARG V8_SOURCE=https://www.dropbox.com/s/wh3d9o2rujqqi48/alpine-libv8-6.2.189.tar.gz
+ARG V8_SOURCE=https://www.dropbox.com/s/flfs10vnawxvb2i/alpine-libv8-6.2.226.tar.gz
 ARG V8_DIR=/usr/local/v8
 
 RUN \
@@ -225,7 +225,7 @@ RUN \
   && apk add --virtual .tarantool-runtime-dependencies \
     libltdl \
 
-  && git clone -b ${TARANTOOL_BRANCH} --depth 1 https://github.com/remicollet/tarantool-php.git /tmp/tarantool-php \
+  && git clone -b ${TARANTOOL_BRANCH} --depth 1 https://github.com/tarantool/tarantool-php.git /tmp/tarantool-php \
   && cd /tmp/tarantool-php \
   && phpize \
   && ./configure \
