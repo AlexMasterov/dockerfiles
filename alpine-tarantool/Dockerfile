@@ -4,12 +4,12 @@ LABEL repository.hub="alexmasterov/alpine-tarantool:1.7" \
       repository.url="https://github.com/AlexMasterov/dockerfiles" \
       maintainer="Alex Masterov <alex.masterow@gmail.com>"
 
-ARG TARANTOOL_VERSION=1.7.4-329-g2e4b6fddf
+ARG TARANTOOL_VERSION=1.7.4-464-ga6128fcd2
 # [ RelWithDebInfo | Release ]
 ARG TARANTOOL_BUILD_TYPE=RelWithDebInfo
 ARG TARANTOOL_BACKTRACE=ON
-ARG TARANTOOL_AVX=OFF
 ARG TARANTOOL_DIST=ON
+ARG TARANTOOL_AVX=OFF
 ARG TARANTOOL_BUNDLED_LIBYAML=OFF
 ARG TARANTOOL_WITH_SYSTEMD=OFF
 ARG TARANTOOL_WITH_SYSVINIT=ON
@@ -23,17 +23,17 @@ RUN \
   && adduser -u 82 -S -D -h /var/cache/tarantool -s /sbin/nologin -G tarantool tarantool
 
 RUN \
-  if [[ $TARANTOOL_BACKTRACE = "ON" ]]; then \
-    buildDeps="libunwind-dev"; \
-    runtimeDeps="libunwind"; \
-  fi \
-  && \
-  if [[ $TARANTOOL_BUNDLED_LIBYAML = "OFF" ]]; then \
-    buildDeps="${buildDeps} yaml-dev"; \
-    runtimeDeps="${runtimeDeps} yaml"; \
-  fi \
+  [ $TARANTOOL_BACKTRACE = "ON" ] && \
+    buildDeps="libunwind-dev" \
+    runtimeDeps="libunwind" \
+  || true \
+  [ $TARANTOOL_BUNDLED_LIBYAML = "OFF" ] && \
+    buildDeps="${buildDeps} yaml-dev" \
+    runtimeDeps="${runtimeDeps} yaml" \
+  || true \
 
   && apk add --virtual .tarantool-build-dependencies \
+    ${buildDeps} \
     binutils-dev \
     cmake \
     curl-dev \
@@ -46,14 +46,13 @@ RUN \
     perl \
     readline-dev \
     zlib-dev \
-    ${buildDeps} \
   && apk add --virtual .tarantool-runtime-dependencies \
+    ${runtimeDeps} \
     curl \
     libgomp \
     libstdc++ \
     ncurses \
     readline \
-    ${runtimeDeps} \
 
   # Tarantool
   && TARANTOOL_DIR="/tmp/tarantool" \
