@@ -4,7 +4,7 @@ LABEL repository.hub="alexmasterov/alpine-tarantool:1.7" \
       repository.url="https://github.com/AlexMasterov/dockerfiles" \
       maintainer="Alex Masterov <alex.masterow@gmail.com>"
 
-ARG TARANTOOL_VERSION=1.7.5-0-g24b70de
+ARG TARANTOOL_VERSION=1.7.5-3-gd988d7fb9
 # [ RelWithDebInfo | Release ]
 ARG TARANTOOL_BUILD_TYPE=RelWithDebInfo
 ARG TARANTOOL_BACKTRACE=ON
@@ -14,6 +14,8 @@ ARG TARANTOOL_BUNDLED_LIBYAML=OFF
 ARG TARANTOOL_WITH_SYSTEMD=OFF
 ARG TARANTOOL_WITH_SYSVINIT=ON
 ARG TARANTOOL_WITH_LOGROTATE=ON
+
+ARG LUAJIT_GC64=OFF
 
 RUN \
   apk add --update \
@@ -71,6 +73,7 @@ RUN \
     -DWITH_SYSTEMD:BOOL=${TARANTOOL_WITH_SYSTEMD} \
     -DWITH_SYSVINIT:BOOL=${TARANTOOL_WITH_SYSVINIT} \
     -DWITH_LOGROTATE:BOOL=${TARANTOOL_WITH_LOGROTATE} \
+    -DLUAJIT_ENABLE_GC64:BOOL=${LUAJIT_GC64} \
     . \
   && make -j $(getconf _NPROCESSORS_ONLN) \
   && make install \
