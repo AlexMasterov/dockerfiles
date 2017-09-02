@@ -13,7 +13,7 @@ ARG REDIS_TAG=3.1.3
 ARG PHPIREDIS_TAG=v1.0.0
 ARG MEMCACHED_TAG=v3.0.3
 ARG AMQP_TAG=v1.9.0
-ARG PHPV8_TAG=v0.1.8
+ARG PHPV8_TAG=v0.1.9
 ARG GRAPHQL_BRANCH=master
 
 # https://github.com/AlexMasterov/dockerfiles#alpine-libv8
