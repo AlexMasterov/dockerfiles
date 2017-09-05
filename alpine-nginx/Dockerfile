@@ -4,17 +4,20 @@ LABEL repository.hub="alexmasterov/alpine-nginx" \
       repository.url="https://github.com/AlexMasterov/dockerfiles" \
       maintainer="Alex Masterov <alex.masterow@gmail.com>"
 
-ARG NGINX_VERSION=1.13.4
+ARG NGINX_VERSION=1.13.5
 ARG NGINX_CONFIG=/etc/nginx
 
 ARG HEADERS_MORE_TAG=v0.32
+
+ARG UID=82
+ARG GID=82
 
 RUN \
   apk add --update \
     tini \
 
-  && addgroup -g 82 -S nginx \
-  && adduser -u 82 -S -D -h /var/cache/nginx -s /sbin/nologin -G nginx nginx
+  && addgroup -g ${GID} -S nginx \
+  && adduser -u ${UID} -S -D -h /var/cache/nginx -s /sbin/nologin -G nginx nginx
 
 RUN \
   apk add --virtual .nginx-build-dependencies \
