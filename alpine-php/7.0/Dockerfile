@@ -17,13 +17,13 @@ ARG MEMCACHED_TAG=v3.0.3
 ARG TARANTOOL_BRANCH=php7-v2
 ARG MONGODB_VERSION=1.2.9
 ARG AMQP_TAG=v1.9.0
-ARG PHPV8_TAG=v0.1.9
+ARG PHPV8_TAG=v0.1.8
 ARG GRAPHQL_BRANCH=master
 
 ARG LIBBSON_VERSION=1.6.3
 ARG LIBMONGOC_VERSION=1.6.3
 # https://github.com/AlexMasterov/dockerfiles#alpine-libv8
-ARG V8_SOURCE=https://www.dropbox.com/s/83sp384p4l3gafg/alpine-libv8-6.2.441.tar.gz
+ARG V8_SOURCE=https://www.dropbox.com/s/wotrotgerzrjl41/alpine-libv8-6.3.53.tar.gz
 ARG V8_DIR=/usr/local/v8
 
 RUN \
