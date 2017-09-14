@@ -24,7 +24,6 @@ ENV V8_VERSION=${V8_VERSION} \
 
 RUN \
   apk add --update --virtual .v8-build-dependencies \
-    binutils-gold \
     g++ \
     gcc \
     git \
