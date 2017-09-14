@@ -15,7 +15,7 @@ ARG PHPIREDIS_TAG=v1.0.0
 ARG MEMCACHED_BRANCH=master
 ARG TARANTOOL_BRANCH=php7-v2
 ARG AMQP_BRANCH=release/1.9
-ARG PHPV8_TAG=v0.1.9
+ARG PHPV8_VERSION=0.1.9
 
 # https://github.com/AlexMasterov/dockerfiles#alpine-libv8
 ARG V8_SOURCE=https://www.dropbox.com/s/lyd6nhm5zqtba8q/alpine-libv8-6.3.138.tar.gz
@@ -252,8 +252,10 @@ RUN \
       curl -fSL --connect-timeout 30 ${V8_SOURCE} | tar xz -C ${V8_DIR}) \
 
   # php-v8
-  && git clone -o ${PHPV8_TAG} --depth 1 https://github.com/pinepain/php-v8.git /tmp/php-v8 \
-  && cd /tmp/php-v8 \
+  && PHPV8_FILENAME="php-v8-${PHPV8_VERSION}" \
+  && PHPV8_SOURCE="https://github.com/pinepain/php-v8/archive/v${PHPV8_VERSION}.tar.gz" \
+  && curl -fSL --connect-timeout 30 ${PHPV8_SOURCE} | tar xz -C /tmp \
+  && cd /tmp/${PHPV8_FILENAME} \
   && phpize \
   && ./configure \
     --with-v8=${V8_DIR} \
