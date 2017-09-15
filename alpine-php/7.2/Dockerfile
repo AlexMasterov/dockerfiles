@@ -15,7 +15,7 @@ ARG PHPIREDIS_TAG=v1.0.0
 ARG MEMCACHED_BRANCH=master
 ARG TARANTOOL_BRANCH=php7-v2
 ARG MONGODB_VERSION=1.3.0RC1
-ARG AMQP_BRANCH=release/1.9
+ARG AMQP_TAG=v1.9.0
 ARG PHPV8_VERSION=0.1.9
 
 ARG LIBBSON_VERSION=1.8.0
@@ -297,7 +297,7 @@ RUN \
   && apk add --virtual .amqp-runtime-dependencies \
     rabbitmq-c \
 
-  && git clone -b ${AMQP_BRANCH} --depth 1 https://github.com/pdezwart/php-amqp.git /tmp/php-amqp \
+  && git clone -o ${AMQP_TAG} --depth 1 https://github.com/pdezwart/php-amqp.git /tmp/php-amqp \
   && cd /tmp/php-amqp \
   && phpize \
   && ./configure \
