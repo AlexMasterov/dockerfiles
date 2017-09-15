@@ -49,6 +49,7 @@ RUN \
     libwebp-dev \
     libxml2-dev \
     libxslt-dev \
+    libzip-dev \
     make \
     pcre-dev \
     postgresql-dev \
@@ -69,6 +70,7 @@ RUN \
     libwebp \
     libxml2 \
     libxslt \
+    libzip \
     pcre \
     readline \
     zlib \
