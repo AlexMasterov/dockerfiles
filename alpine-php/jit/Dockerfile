@@ -12,10 +12,13 @@ ARG LIBEVENT_BRANCH=master
 ARG REDIS_TAG=3.1.3
 ARG PHPIREDIS_TAG=v1.0.0
 ARG MEMCACHED_TAG=v3.0.3
+ARG MONGODB_VERSION=1.3.0RC1
 ARG AMQP_TAG=v1.9.0
 ARG PHPV8_VERSION=0.1.9
 ARG GRAPHQL_BRANCH=master
 
+ARG LIBBSON_VERSION=1.8.0
+ARG LIBMONGOC_VERSION=1.8.0
 # https://github.com/AlexMasterov/dockerfiles#alpine-libv8
 ARG V8_SOURCE=https://www.dropbox.com/s/lyd6nhm5zqtba8q/alpine-libv8-6.3.138.tar.gz
 ARG V8_DIR=/usr/local/v8
@@ -230,6 +233,60 @@ RUN \
   && make install \
 
   && apk del .memcached-build-dependencies \
+
+  # Mongodb
+  && apk add --virtual .mongodb-build-dependencies \
+    cmake \
+
+  && LIBBSON_FILENAME="libbson-${LIBBSON_VERSION}" \
+  && LIBBSON_SOURCE="https://github.com/mongodb/libbson/releases/download/${LIBBSON_VERSION}/${LIBBSON_FILENAME}.tar.gz" \
+  && curl -fSL --connect-timeout 30 ${LIBBSON_SOURCE} | tar xz -C /tmp \
+  && cd /tmp/${LIBBSON_FILENAME} \
+  && cmake \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DENABLE_STATIC=OFF \
+    -DENABLE_TESTS:BOOL=OFF \
+    -DENABLE_EXAMPLES:BOOL=OFF \
+    . \
+  && make \
+  && make install \
+
+  && LIBMONGOC_FILENAME="mongo-c-driver-${LIBBSON_VERSION}" \
+  && LIBMONGOC_SOURCE="https://github.com/mongodb/mongo-c-driver/releases/download/${LIBMONGOC_VERSION}/${LIBMONGOC_FILENAME}.tar.gz" \
+  && curl -fSL --connect-timeout 30 ${LIBMONGOC_SOURCE} | tar xz -C /tmp \
+  && cd /tmp/${LIBMONGOC_FILENAME} \
+  && sed -ri \
+    "s/(OR\s*ENABLE_SSL\s*STREQUAL)\s*OPENSSL$/\1 LIBRESSL/" \
+    CMakeLists.txt \
+  && cmake \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DENABLE_AUTOMATIC_INIT_AND_CLEANUP:BOOL=OFF \
+    -DENABLE_STATIC=OFF \
+    -DENABLE_TESTS:BOOL=OFF \
+    -DENABLE_EXAMPLES:BOOL=OFF \
+    -DENABLE_SSL=LIBRESSL \
+    -DENABLE_SASL=OFF \
+    . \
+  && make \
+  && make install \
+
+  && apk add --virtual .mongodb-build-dependencies \
+    pkgconfig \
+  && apk add --virtual .mongodb-runtime-dependencies \
+    libressl2.5-libtls \
+
+  && MONGODB_FILENAME="mongodb-${MONGODB_VERSION}" \
+  && MONGODB_SOURCE="https://github.com/mongodb/mongo-php-driver/releases/download/${MONGODB_VERSION}/${MONGODB_FILENAME}.tgz" \
+  && curl -fSL --connect-timeout 30 ${MONGODB_SOURCE} | tar xz -C /tmp \
+  && cd /tmp/${MONGODB_FILENAME} \
+  && phpize \
+  && ./configure \
+    --with-libbson=system \
+    --with-libmongoc=system \
+  && make \
+  && make install \
+
+  && apk del .mongodb-build-dependencies \
 
   # php-amqp (RabbitMQ)
   && apk add --virtual .amqp-build-dependencies \

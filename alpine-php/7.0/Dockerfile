@@ -15,13 +15,13 @@ ARG REDIS_TAG=3.1.3
 ARG PHPIREDIS_TAG=v1.0.0
 ARG MEMCACHED_TAG=v3.0.3
 ARG TARANTOOL_BRANCH=php7-v2
-ARG MONGODB_VERSION=1.2.9
+ARG MONGODB_VERSION=1.3.0RC1
 ARG AMQP_TAG=v1.9.0
 ARG PHPV8_VERSION=0.1.9
 ARG GRAPHQL_BRANCH=master
 
-ARG LIBBSON_VERSION=1.6.3
-ARG LIBMONGOC_VERSION=1.6.3
+ARG LIBBSON_VERSION=1.8.0
+ARG LIBMONGOC_VERSION=1.8.0
 # https://github.com/AlexMasterov/dockerfiles#alpine-libv8
 ARG V8_SOURCE=https://www.dropbox.com/s/lyd6nhm5zqtba8q/alpine-libv8-6.3.138.tar.gz
 ARG V8_DIR=/usr/local/v8
@@ -255,17 +255,18 @@ RUN \
 
   # Mongodb
   && apk add --virtual .mongodb-build-dependencies \
-    automake \
-  && apk add --virtual .mongodb-runtime-dependencies \
-    libressl2.5-libtls \
+    cmake \
 
   && LIBBSON_FILENAME="libbson-${LIBBSON_VERSION}" \
   && LIBBSON_SOURCE="https://github.com/mongodb/libbson/releases/download/${LIBBSON_VERSION}/${LIBBSON_FILENAME}.tar.gz" \
   && curl -fSL --connect-timeout 30 ${LIBBSON_SOURCE} | tar xz -C /tmp \
   && cd /tmp/${LIBBSON_FILENAME} \
-  && (aclocal; automake) \
-  && ./configure \
-    --enable-lto \
+  && cmake \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DENABLE_STATIC=OFF \
+    -DENABLE_TESTS:BOOL=OFF \
+    -DENABLE_EXAMPLES:BOOL=OFF \
+    . \
   && make \
   && make install \
 
@@ -273,14 +274,25 @@ RUN \
   && LIBMONGOC_SOURCE="https://github.com/mongodb/mongo-c-driver/releases/download/${LIBMONGOC_VERSION}/${LIBMONGOC_FILENAME}.tar.gz" \
   && curl -fSL --connect-timeout 30 ${LIBMONGOC_SOURCE} | tar xz -C /tmp \
   && cd /tmp/${LIBMONGOC_FILENAME} \
-  && ./configure \
-    --disable-automatic-init-and-cleanup \
-    --enable-rdtscp \
-    --enable-ssl=libressl \
-    --enable-sasl=no \
-    --with-libbson=system \
+  && sed -ri \
+    "s/(OR\s*ENABLE_SSL\s*STREQUAL)\s*OPENSSL$/\1 LIBRESSL/" \
+    CMakeLists.txt \
+  && cmake \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DENABLE_AUTOMATIC_INIT_AND_CLEANUP:BOOL=OFF \
+    -DENABLE_STATIC=OFF \
+    -DENABLE_TESTS:BOOL=OFF \
+    -DENABLE_EXAMPLES:BOOL=OFF \
+    -DENABLE_SSL=LIBRESSL \
+    -DENABLE_SASL=OFF \
+    . \
   && make \
   && make install \
+
+  && apk add --virtual .mongodb-build-dependencies \
+    pkgconfig \
+  && apk add --virtual .mongodb-runtime-dependencies \
+    libressl2.5-libtls \
 
   && MONGODB_FILENAME="mongodb-${MONGODB_VERSION}" \
   && MONGODB_SOURCE="https://github.com/mongodb/mongo-php-driver/releases/download/${MONGODB_VERSION}/${MONGODB_FILENAME}.tgz" \
