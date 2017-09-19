@@ -37,6 +37,7 @@ RUN \
     binutils \
     bison \
     bzip2-dev \
+    curl \
     curl-dev \
     file \
     freetype-dev \
@@ -59,24 +60,6 @@ RUN \
     re2c \
     readline-dev \
     sqlite-dev \
-  && apk add --virtual .php-runtime-dependencies \
-    curl \
-    freetype \
-    icu \
-    jpeg \
-    libbz2 \
-    libevent \
-    libltdl \
-    libmcrypt \
-    libpng \
-    libpq \
-    libwebp \
-    libxml2 \
-    libxslt \
-    libzip \
-    pcre \
-    readline \
-    zlib \
 
   # Proper iconv
   && apk add --no-cache --virtual .iconv-runtime-dependencies \
@@ -166,6 +149,16 @@ RUN \
     --with-xsl=/usr \
   && make \
   && make install \
+
+  && runtimeDeps="$( \
+		scanelf --needed --nobanner --recursive /usr/sbin/php-fpm \
+			| awk '{ gsub(/,/, "\nso:", $2); print "so:" $2 }' \
+			| sort -u \
+			| xargs -r apk info --installed \
+			| sort -u \
+	)" \
+  && apk add --virtual .php-runtime-dependencies \
+    ${runtimeDeps} \
 
   # See: https://bugs.php.net/bug.php?id=52312
   && git clone -o ${REALPATH_TURBO_TAG} --depth 1 https://github.com/Whissi/realpath_turbo.git /tmp/realpath_turbo \
