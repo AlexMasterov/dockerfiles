@@ -7,11 +7,18 @@ LABEL repository.hub="alexmasterov/alpine-nginx-tarantool" \
 ARG NGINX_VERSION=1.13.5
 ARG NGINX_CONFIG=/etc/nginx
 
-ARG HEADERS_MORE_TAG=v0.32
-ARG TARANTOOL_UPSTREAM_TAG=v2.4.6-rc1
+ARG LUAJIT_BRANCH=tarantool-1.7
+ARG LUAROCKS_TAG=2.4.3
+
+ARG DEVELKIT_MODULE_TAG=v0.3.0
+ARG LUA_MODULE_TAG=v0.10.10
+ARG TARANTOOL_UPSTREAM_TAG=v2.5-r2
 
 ARG UID=82
 ARG GID=82
+
+ENV LUAJIT_LIB=/usr/local/lib \
+    LUAJIT_INC=/usr/local/include/luajit-2.1
 
 RUN \
   apk add --update \
@@ -22,6 +29,7 @@ RUN \
 
 RUN \
   apk add --virtual .nginx-build-dependencies \
+    cmake \
     curl \
     g++ \
     gcc \
@@ -31,32 +39,59 @@ RUN \
     make \
     pcre-dev \
     zlib-dev \
-  && apk add --virtual .nginx-runtime-dependencies \
-    ca-certificates \
-    pcre \
 
   && export LDFLAGS="-Wl,-O2 -Wl,--hash-style=both -pie" \
   && export CFLAGS="-O2 -march=native -fstack-protector-strong -fpic -fpie" \
   # Use multi-threaded 'make' by default
   && export MAKEFLAGS="-j $(expr $(getconf _NPROCESSORS_ONLN) \+ 1)" \
 
-  # Headers More
-  && HEADERS_MORE_GIT="https://github.com/openresty/headers-more-nginx-module.git" \
-  && HEADERS_MORE_DIR="/tmp/headers-more-nginx-module" \
-  && git clone -o ${HEADERS_MORE_TAG} --depth 1 ${HEADERS_MORE_GIT} ${HEADERS_MORE_DIR} \
+  && apk add --virtual .luajit-runtime-dependencies \
+    libgcc \
 
-  # Tarantool upstream
-  && apk add --virtual .tarantool-upstream-build-dependencies \
-    cmake \
+  && git clone -b ${LUAJIT_BRANCH} --depth 1 https://github.com/tarantool/luajit.git /tmp/luajit \
+  && cd /tmp/luajit \
+  && make \
+    CFLAGS+="-fPIC" \
+    XCFLAGS+="-DLUAJIT_ENABLE_GC64" \
+  && make install \
+
+  && ln -sf /usr/local/bin/luajit-2.1.0-beta3 /usr/local/bin/lua \
+
+  && git clone -b ${LUAROCKS_TAG} --depth 1 https://github.com/luarocks/luarocks.git /tmp/luarocks \
+  && cd /tmp/luarocks \
+  && ./configure \
+    --with-lua-bin=/usr/local/bin \
+    --with-lua-include=/usr/local/include/luajit-2.1 \
+  && make build \
+  && make install \
+
+  && DEVELKIT_MODULE_DIR="/tmp/devel-kit" \
+  && DEVELKIT_MODULE_GIT="https://github.com/simpl/ngx_devel_kit.git" \
+  && git clone -o ${DEVELKIT_MODULE_TAG} --depth 1 ${DEVELKIT_MODULE_GIT} ${DEVELKIT_MODULE_DIR} \
+
+  && LUA_MODULE_DIR="/tmp/lua-module" \
+  && LUA_MODULE_GIT="https://github.com/openresty/lua-nginx-module.git" \
+  && git clone -o ${LUA_MODULE_TAG} --depth 1 ${LUA_MODULE_GIT} ${LUA_MODULE_DIR} \
 
   && TARANTOOL_UPSTREAM_GIT="https://github.com/tarantool/nginx_upstream_module.git" \
   && TARANTOOL_UPSTREAM_DIR="/tmp/nginx_upstream_module" \
-  && git clone -o ${TARANTOOL_UPSTREAM_TAG} --depth 1 ${TARANTOOL_UPSTREAM_GIT} ${TARANTOOL_UPSTREAM_DIR} \
-  && git -C ${TARANTOOL_UPSTREAM_DIR} submodule update \
-    --init --recursive --jobs $(getconf _NPROCESSORS_ONLN) \
-  && make -C ${TARANTOOL_UPSTREAM_DIR} msgpack yajl \
+  && git clone --depth 1 ${TARANTOOL_UPSTREAM_GIT} ${TARANTOOL_UPSTREAM_DIR} \
 
-  && apk del .tarantool-upstream-build-dependencies \
+  && git clone --depth 1 https://github.com/lloyd/yajl.git /tmp/yajl \
+  && cd /tmp/yajl \
+  && cmake \
+    -DCMAKE_BUILD_TYPE=Release \
+    . \
+  && make \
+  && make install \
+
+  && git clone --depth 1 https://github.com/rtsisyk/msgpuck.git /tmp/msgpuck \
+  && cd /tmp/msgpuck \
+  && cmake \
+    -DCMAKE_BUILD_TYPE=Release \
+    . \
+  && make \
+  && make install \
 
   # Nginx
   && NGINX_SOURCE="https://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz" \
@@ -102,10 +137,20 @@ RUN \
     --with-stream_ssl_module  \
     --with-threads \
     --with-cc-opt="-flto" \
-    --add-module=${TARANTOOL_UPSTREAM_DIR} \
-    --add-module=${HEADERS_MORE_DIR} \
+    --add-module=${DEVELKIT_MODULE_DIR} \
+    --add-module=${LUA_MODULE_DIR} \
   && make \
   && make install \
+
+  && runtimeDeps="$( \
+		scanelf --needed --nobanner --recursive /usr/sbin/nginx /usr/lib/nginx/modules/*.so \
+			| awk '{ gsub(/,/, "\nso:", $2); print "so:" $2 }' \
+			| sort -u \
+			| xargs -r apk info --installed \
+			| sort -u \
+	)" \
+  && apk add --virtual .nginx-runtime-dependencies \
+    ${runtimeDeps} \
 
   # Removing build dependencies, clean temporary files
   && apk del .nginx-build-dependencies \
