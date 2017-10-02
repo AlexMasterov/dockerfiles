@@ -21,7 +21,7 @@ ARG PHPV8_VERSION=0.2.0
 ARG LIBBSON_VERSION=1.8.0
 ARG LIBMONGOC_VERSION=1.8.0
 # https://github.com/AlexMasterov/dockerfiles#alpine-libv8
-ARG V8_SOURCE=https://www.dropbox.com/s/gvkozn3a6495s24/alpine-libv8-6.3.217.tar.gz
+ARG V8_SOURCE=https://www.dropbox.com/s/mum2o3gyk3ccg87/alpine-libv8-6.3.248.tar.gz
 ARG V8_DIR=/usr/local/v8
 
 RUN \
