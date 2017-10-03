@@ -6,15 +6,14 @@ LABEL repository.hub="alexmasterov/alpine-sphinx" \
 
 ARG SPHINX_VERSION=2.2.11-release
 
-RUN \
-  apk add --update \
+RUN set -x \
+  && apk add --update \
     tini \
-
   && addgroup -g 82 -S sphinx \
   && adduser -u 82 -S -D -h /var/cache/sphinx -s /sbin/nologin -G sphinx sphinx
 
-RUN \
-  apk add --virtual .sphinx-build-dependencies \
+RUN set -x \
+  && apk add --virtual .sphinx-build-dependencies \
     curl \
     expat-dev \
     g++ \
@@ -28,19 +27,16 @@ RUN \
     expat \
     libpq \
     libstdc++ \
-
-  # Save MySQL client library
+  && : "---------- Save MySQL client library ----------" \
   && mv /usr/lib/libmysqlclient* /usr/local/lib \
-
-  # Sphinx
+  && : "---------- Sphinx ----------" \
   && SPHINX_SOURCE="http://sphinxsearch.com/files/sphinx-${SPHINX_VERSION}.tar.gz" \
   && curl -fSL --connect-timeout 30 ${SPHINX_SOURCE} | tar xz -C /tmp \
   && cd /tmp/sphinx-${SPHINX_VERSION} \
-
-  # Patches
+  && : "---------- Patches ----------" \
   && PAGESIZE_PATCH="http://git.alpinelinux.org/cgit/aports/plain/community/sphinx/sphinx-pagesize.patch" \
   && curl -fSL --connect-timeout 30 ${PAGESIZE_PATCH} | patch -p1 -u \
-
+  && : "---------- Build ----------" \
   && ./configure \
     --prefix=/usr \
     --exec-prefix=/usr \
@@ -55,8 +51,7 @@ RUN \
     --with-re2 \
   && make -j $(getconf _NPROCESSORS_ONLN) \
   && make install \
-
-  # Removing build dependencies, clean temporary files
+  && : "---------- Removing build dependencies, clean temporary files ----------" \
   && apk del .sphinx-build-dependencies \
   && rm -rf /var/cache/apk/* /var/tmp/* /tmp/*
 
