@@ -4,10 +4,10 @@ LABEL repository.hub="alexmasterov/alpine-libv8" \
       repository.url="https://github.com/AlexMasterov/dockerfiles" \
       maintainer="Alex Masterov <alex.masterow@gmail.com>"
 
-ARG V8_VERSION=6.3.248
+ARG V8_VERSION=6.3.257
 ARG V8_DIR=/usr/local/v8
 
-ARG BUILD_COMMIT=ce6d3d886885f095c753819b7693c65d999e8b4b
+ARG BUILD_COMMIT=7311b7485e1a32d124f42b814c229be2faf0d599
 ARG BUILDTOOLS_COMMIT=f6d165d9d842ddd29056c127a5f3a3c5d8e0d2e3
 ARG ICU_COMMIT=08cb956852a5ccdba7f9c941728bb833529ba3c6
 ARG GTEST_COMMIT=6f8a66431cb592dad629028a50b3dd418a408c87
@@ -98,6 +98,7 @@ RUN \
       v8_enable_future=true \
       is_official_build=true \
       is_component_build=true \
+      is_cfi=false \
       is_clang=false \
       is_debug=false \
       use_custom_libcxx=false \
@@ -105,7 +106,6 @@ RUN \
       use_gold=false \
       use_allocator=\"tcmalloc\" \
       use_allocator_shim=false \
-      enable_nacl=false \
       treat_warnings_as_errors=false \
       symbol_level=0 \
 
