@@ -12,23 +12,19 @@ ARG LUAROCKS_TAG=2.4.3
 
 ARG DEVELKIT_MODULE_TAG=v0.3.0
 ARG LUA_MODULE_TAG=v0.10.10
-ARG TARANTOOL_UPSTREAM_TAG=v2.5-r2
-
-ARG UID=82
-ARG GID=82
+ARG TARANTOOL_UPSTREAM_TAG=v2.5-stable
 
 ENV LUAJIT_LIB=/usr/local/lib \
     LUAJIT_INC=/usr/local/include/luajit-2.1
 
-RUN \
-  apk add --update \
+RUN set -x \
+  && apk add --update \
     tini \
+  && addgroup -g 82 -S nginx \
+  && adduser -u 82 -S -D -h /var/cache/nginx -s /sbin/nologin -G nginx nginx
 
-  && addgroup -g ${GID} -S nginx \
-  && adduser -u ${UID} -S -D -h /var/cache/nginx -s /sbin/nologin -G nginx nginx
-
-RUN \
-  apk add --virtual .nginx-build-dependencies \
+RUN set -x \
+  && apk add --virtual .nginx-build-dependencies \
     cmake \
     curl \
     g++ \
@@ -39,24 +35,21 @@ RUN \
     make \
     pcre-dev \
     zlib-dev \
-
+  && : "---------- Build flags ----------" \
   && export LDFLAGS="-Wl,-O2 -Wl,--hash-style=both -pie" \
   && export CFLAGS="-O2 -march=native -fstack-protector-strong -fpic -fpie" \
-  # Use multi-threaded 'make' by default
   && export MAKEFLAGS="-j $(expr $(getconf _NPROCESSORS_ONLN) \+ 1)" \
-
+  && : "---------- LuaJIT ----------" \
   && apk add --virtual .luajit-runtime-dependencies \
     libgcc \
-
   && git clone -b ${LUAJIT_BRANCH} --depth 1 https://github.com/tarantool/luajit.git /tmp/luajit \
   && cd /tmp/luajit \
   && make \
     CFLAGS+="-fPIC" \
     XCFLAGS+="-DLUAJIT_ENABLE_GC64" \
   && make install \
-
   && ln -sf /usr/local/bin/luajit-2.1.0-beta3 /usr/local/bin/lua \
-
+  && : "---------- LuaRocks ----------" \
   && git clone -b ${LUAROCKS_TAG} --depth 1 https://github.com/luarocks/luarocks.git /tmp/luarocks \
   && cd /tmp/luarocks \
   && ./configure \
@@ -64,19 +57,18 @@ RUN \
     --with-lua-include=/usr/local/include/luajit-2.1 \
   && make build \
   && make install \
-
+  && : "---------- Nginx Development Kit ----------" \
   && DEVELKIT_MODULE_DIR="/tmp/devel-kit" \
   && DEVELKIT_MODULE_GIT="https://github.com/simpl/ngx_devel_kit.git" \
   && git clone -o ${DEVELKIT_MODULE_TAG} --depth 1 ${DEVELKIT_MODULE_GIT} ${DEVELKIT_MODULE_DIR} \
-
+  && : "---------- Nginx Lua Module  ----------" \
   && LUA_MODULE_DIR="/tmp/lua-module" \
   && LUA_MODULE_GIT="https://github.com/openresty/lua-nginx-module.git" \
   && git clone -o ${LUA_MODULE_TAG} --depth 1 ${LUA_MODULE_GIT} ${LUA_MODULE_DIR} \
-
+  && : "---------- Nginx Tarantool Module  ----------" \
   && TARANTOOL_UPSTREAM_GIT="https://github.com/tarantool/nginx_upstream_module.git" \
   && TARANTOOL_UPSTREAM_DIR="/tmp/nginx_upstream_module" \
   && git clone --depth 1 ${TARANTOOL_UPSTREAM_GIT} ${TARANTOOL_UPSTREAM_DIR} \
-
   && git clone --depth 1 https://github.com/lloyd/yajl.git /tmp/yajl \
   && cd /tmp/yajl \
   && cmake \
@@ -84,7 +76,7 @@ RUN \
     . \
   && make \
   && make install \
-
+  && : "---------- Msgpuck  ----------" \
   && git clone --depth 1 https://github.com/rtsisyk/msgpuck.git /tmp/msgpuck \
   && cd /tmp/msgpuck \
   && cmake \
@@ -92,12 +84,10 @@ RUN \
     . \
   && make \
   && make install \
-
-  # Nginx
+  && : "---------- Nginx  ----------" \
   && NGINX_SOURCE="https://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz" \
   && curl -fSL --connect-timeout 30 ${NGINX_SOURCE} | tar xz -C /tmp \
   && cd /tmp/nginx-${NGINX_VERSION} \
-
   && ./configure \
     --prefix=${NGINX_CONFIG} \
     --conf-path=${NGINX_CONFIG}/nginx.conf \
@@ -141,7 +131,6 @@ RUN \
     --add-module=${LUA_MODULE_DIR} \
   && make \
   && make install \
-
   && runtimeDeps="$( \
 		scanelf --needed --nobanner --recursive /usr/sbin/nginx /usr/lib/nginx/modules/*.so \
 			| awk '{ gsub(/,/, "\nso:", $2); print "so:" $2 }' \
@@ -151,8 +140,7 @@ RUN \
 	)" \
   && apk add --virtual .nginx-runtime-dependencies \
     ${runtimeDeps} \
-
-  # Removing build dependencies, clean temporary files
+  && : "---------- Removing build dependencies, clean temporary files ----------" \
   && apk del .nginx-build-dependencies \
   && rm -rf /var/cache/apk/* /var/tmp/* /tmp/*
 
