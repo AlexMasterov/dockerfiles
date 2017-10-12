@@ -4,23 +4,19 @@ LABEL repository.hub="alexmasterov/alpine-nginx" \
       repository.url="https://github.com/AlexMasterov/dockerfiles" \
       maintainer="Alex Masterov <alex.masterow@gmail.com>"
 
-ARG NGINX_VERSION=1.13.5
+ARG NGINX_VERSION=1.13.6
 ARG NGINX_CONFIG=/etc/nginx
 
 ARG HEADERS_MORE_TAG=v0.32
 
-ARG UID=82
-ARG GID=82
-
-RUN \
-  apk add --update \
+RUN set -x \
+  && apk add --update \
     tini \
+  && addgroup -g 82 -S nginx \
+  && adduser -u 82 -S -D -h /var/cache/nginx -s /sbin/nologin -G nginx nginx
 
-  && addgroup -g ${GID} -S nginx \
-  && adduser -u ${UID} -S -D -h /var/cache/nginx -s /sbin/nologin -G nginx nginx
-
-RUN \
-  apk add --virtual .nginx-build-dependencies \
+RUN set -x \
+  && apk add --virtual .nginx-build-dependencies \
     curl \
     g++ \
     gcc \
@@ -33,22 +29,18 @@ RUN \
   && apk add --virtual .nginx-runtime-dependencies \
     ca-certificates \
     pcre \
-
+  && : "---------- Build flags ----------" \
   && export LDFLAGS="-Wl,-O2 -Wl,--hash-style=both -pie" \
   && export CFLAGS="-O2 -march=native -flto -fstack-protector-strong -fpic -fpie" \
-  # Use multi-threaded 'make' by default
   && export MAKEFLAGS="-j $(expr $(getconf _NPROCESSORS_ONLN) \+ 1)" \
-
-  # Headers More
+  && : "---------- Headers More ----------" \
   && HEADERS_MORE_GIT="https://github.com/openresty/headers-more-nginx-module.git" \
   && HEADERS_MORE_DIR="/tmp/headers-more-nginx-module" \
   && git clone -o ${HEADERS_MORE_TAG} --depth 1 ${HEADERS_MORE_GIT} ${HEADERS_MORE_DIR} \
-
-  # Nginx
+  && : "---------- Nginx ----------" \
   && NGINX_SOURCE="https://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz" \
   && curl -fSL --connect-timeout 30 ${NGINX_SOURCE} | tar xz -C /tmp \
   && cd /tmp/nginx-${NGINX_VERSION} \
-
   && ./configure \
     --prefix=${NGINX_CONFIG} \
     --conf-path=${NGINX_CONFIG}/nginx.conf \
@@ -90,8 +82,7 @@ RUN \
     --add-module=${HEADERS_MORE_DIR} \
   && make \
   && make install \
-
-  # Removing build dependencies, clean temporary files
+  && : "---------- Removing build dependencies, clean temporary files ----------" \
   && apk del .nginx-build-dependencies \
   && rm -rf /var/cache/apk/* /var/tmp/* /tmp/*
 
