@@ -18,7 +18,7 @@ ARG MONGODB_VERSION=1.3.0
 ARG AMQP_TAG=v1.9.0
 ARG PHPV8_VERSION=0.2.0
 
-ARG LIBBSON_VERSION=1.8.0
+ARG LIBBSON_VERSION=1.8.1
 ARG LIBMONGOC_VERSION=1.8.1
 # https://github.com/AlexMasterov/dockerfiles#alpine-libv8
 ARG V8_SOURCE=https://www.dropbox.com/s/mum2o3gyk3ccg87/alpine-libv8-6.3.248.tar.gz
