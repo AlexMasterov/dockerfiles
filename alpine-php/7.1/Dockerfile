@@ -264,7 +264,7 @@ RUN \
   && make \
   && make install \
 
-  && LIBMONGOC_FILENAME="mongo-c-driver-${LIBBSON_VERSION}" \
+  && LIBMONGOC_FILENAME="mongo-c-driver-${LIBMONGOC_VERSION}" \
   && LIBMONGOC_SOURCE="https://github.com/mongodb/mongo-c-driver/releases/download/${LIBMONGOC_VERSION}/${LIBMONGOC_FILENAME}.tar.gz" \
   && curl -fSL --connect-timeout 30 ${LIBMONGOC_SOURCE} | tar xz -C /tmp \
   && cd /tmp/${LIBMONGOC_FILENAME} \
