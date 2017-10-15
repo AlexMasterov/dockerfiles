@@ -4,7 +4,7 @@ LABEL repository.hub="alexmasterov/alpine-php:7.2" \
       repository.url="https://github.com/AlexMasterov/dockerfiles" \
       maintainer="Alex Masterov <alex.masterow@gmail.com>"
 
-ARG PHP_VERSION=7.2.0RC3
+ARG PHP_VERSION=7.2.0RC4
 ARG PHP_CONFIG=/etc/php
 
 ARG REALPATH_TURBO_TAG=v2.0.0rc1
@@ -13,7 +13,6 @@ ARG MSGPACK_TAG=msgpack-2.0.2
 ARG REDIS_TAG=3.1.4
 ARG PHPIREDIS_TAG=v1.0.0
 ARG MEMCACHED_BRANCH=master
-ARG TARANTOOL_BRANCH=php7-v2
 ARG MONGODB_VERSION=1.3.0
 ARG AMQP_TAG=v1.9.0
 ARG PHPV8_VERSION=0.2.0
@@ -24,16 +23,15 @@ ARG LIBMONGOC_VERSION=1.8.1
 ARG V8_SOURCE=https://www.dropbox.com/s/ljdpvew7f2qqy7z/alpine-libv8-6.4.7.tar.gz
 ARG V8_DIR=/usr/local/v8
 
-RUN \
-  apk add --update \
+RUN set -x \
+  && apk add --update \
     ssmtp \
     tini \
-
   && addgroup -g 82 -S www-data \
   && adduser -u 82 -S -D -h /var/cache/www-data -s /sbin/nologin -G www-data www-data
 
-RUN \
-  apk add --virtual .php-build-dependencies \
+RUN set -x \
+  && apk add --virtual .php-build-dependencies \
     autoconf \
     binutils \
     bison \
@@ -61,27 +59,22 @@ RUN \
     re2c \
     readline-dev \
     sqlite-dev \
-
-  # Proper iconv
+  && : "---------- Proper iconv ----------" \
   && apk add --no-cache --virtual .iconv-runtime-dependencies \
     --repository https://dl-3.alpinelinux.org/alpine/edge/testing/ \
     gnu-libiconv-dev \
-
-  # Replace binary and headers
+  && : "---------- Replace binary and headers ----------" \
   && (mv /usr/bin/gnu-iconv /usr/bin/iconv; \
       mv /usr/include/gnu-libiconv/*.h /usr/include; rm -rf /usr/include/gnu-libiconv) \
-
-  # See: https://github.com/docker-library/php/issues/272
+  && : "---------- Build flags ----------" \
   && export LDFLAGS="-Wl,-O2 -Wl,--hash-style=both -pie" \
   && export CFLAGS="-O2 -march=native -fstack-protector-strong -fpic -fpie" \
   && export CPPFLAGS=${CFLAGS} \
-  # Use multi-threaded 'make' by default
   && export MAKEFLAGS="-j $(expr $(getconf _NPROCESSORS_ONLN) \+ 1)" \
-
-  # PHP
+  && : "---------- PHP ----------" \
   && git clone -o php-${PHP_VERSION} --depth 1 https://github.com/php/php-src.git /tmp/php-src \
   && cd /tmp/php-src \
-
+  && : "---------- Build ----------" \
   && ./buildconf --force \
   && ./configure \
     --prefix=/usr \
@@ -150,7 +143,6 @@ RUN \
     --with-xsl=/usr \
   && make \
   && make install \
-
   && runtimeDeps="$( \
 		scanelf --needed --nobanner --recursive /usr/sbin/php-fpm \
 			| awk '{ gsub(/,/, "\nso:", $2); print "so:" $2 }' \
@@ -160,16 +152,14 @@ RUN \
 	)" \
   && apk add --virtual .php-runtime-dependencies \
     ${runtimeDeps} \
-
-  # See: https://bugs.php.net/bug.php?id=52312
+  && : "---------- https://bugs.php.net/bug.php?id=52312 ----------" \
   && git clone -o ${REALPATH_TURBO_TAG} --depth 1 https://github.com/Whissi/realpath_turbo.git /tmp/realpath_turbo \
   && cd /tmp/realpath_turbo \
   && phpize \
   && ./configure \
   && make \
   && make install \
-
-  # Msgpack
+  && : "---------- Msgpack ----------" \
   && MSGPACK_TAG="msgpack-2.0.2" \
   && git clone -o ${MSGPACK_TAG} --depth 1 https://github.com/msgpack/msgpack-php.git /tmp/msgpack-php \
   && cd /tmp/msgpack-php \
@@ -177,38 +167,32 @@ RUN \
   && ./configure \
   && make \
   && make install \
-
-  # Redis
+  && : "---------- Redis ----------" \
   && git clone -o ${REDIS_TAG} --depth 1 https://github.com/phpredis/phpredis.git /tmp/redis \
   && cd /tmp/redis \
   && phpize \
   && ./configure \
   && make \
   && make install \
-
-  # Phpiredis
-  # https://blog.remirepo.net/post/2016/11/13/Redis-from-PHP
+  && : "---------- Phpiredis ----------" \
+  && : "---------- https://blog.remirepo.net/post/2016/11/13/Redis-from-PHP ----------" \
   && apk add --virtual .phpiredis-build-dependencies \
     hiredis-dev \
   && apk add --virtual .phpiredis-runtime-dependencies \
     hiredis \
-
   && git clone -o ${PHPIREDIS_TAG} --depth 1 https://github.com/nrk/phpiredis.git /tmp/phpiredis \
   && cd /tmp/phpiredis \
   && phpize \
   && ./configure \
   && make \
   && make install \
-
   && apk del .phpiredis-build-dependencies \
-
-  # Memcached
+  && : "---------- Memcached ----------" \
   && apk add --virtual .memcached-build-dependencies \
     libmemcached-dev \
     cyrus-sasl-dev \
   && apk add --virtual .memcached-runtime-dependencies \
     libmemcached \
-
   && git clone -b ${MEMCACHED_BRANCH} --depth 1 https://github.com/php-memcached-dev/php-memcached.git /tmp/php-memcached \
   && cd /tmp/php-memcached \
   && phpize \
@@ -218,22 +202,10 @@ RUN \
     --enable-memcached-json \
   && make \
   && make install \
-
-  # Tarantool
-  && apk add --virtual .tarantool-runtime-dependencies \
-    libltdl \
-
-  && git clone -b ${TARANTOOL_BRANCH} --depth 1 https://github.com/tarantool/tarantool-php.git /tmp/tarantool-php \
-  && cd /tmp/tarantool-php \
-  && phpize \
-  && ./configure \
-  && make \
-  && make install \
-
-  # Mongodb
+  && : "---------- MongoDB ----------" \
   && apk add --virtual .mongodb-build-dependencies \
     cmake \
-
+  && : "---------- libbson ----------" \
   && LIBBSON_FILENAME="libbson-${LIBBSON_VERSION}" \
   && LIBBSON_SOURCE="https://github.com/mongodb/libbson/releases/download/${LIBBSON_VERSION}/${LIBBSON_FILENAME}.tar.gz" \
   && curl -fSL --connect-timeout 30 ${LIBBSON_SOURCE} | tar xz -C /tmp \
@@ -246,7 +218,7 @@ RUN \
     . \
   && make \
   && make install \
-
+  && : "---------- mongo-c-driver ----------" \
   && LIBMONGOC_FILENAME="mongo-c-driver-${LIBMONGOC_VERSION}" \
   && LIBMONGOC_SOURCE="https://github.com/mongodb/mongo-c-driver/releases/download/${LIBMONGOC_VERSION}/${LIBMONGOC_FILENAME}.tar.gz" \
   && curl -fSL --connect-timeout 30 ${LIBMONGOC_SOURCE} | tar xz -C /tmp \
@@ -265,12 +237,11 @@ RUN \
     . \
   && make \
   && make install \
-
+  && : "---------- mongo-php-driver ----------" \
   && apk add --virtual .mongodb-build-dependencies \
     pkgconfig \
   && apk add --virtual .mongodb-runtime-dependencies \
     libressl2.5-libtls \
-
   && MONGODB_FILENAME="mongodb-${MONGODB_VERSION}" \
   && MONGODB_SOURCE="https://github.com/mongodb/mongo-php-driver/releases/download/${MONGODB_VERSION}/${MONGODB_FILENAME}.tgz" \
   && curl -fSL --connect-timeout 30 ${MONGODB_SOURCE} | tar xz -C /tmp \
@@ -281,29 +252,23 @@ RUN \
     --with-libmongoc=system \
   && make \
   && make install \
-
   && apk del .mongodb-build-dependencies \
-
-  # php-amqp (RabbitMQ)
+  && : "---------- php-amqp (RabbitMQ) ----------" \
   && apk add --virtual .amqp-build-dependencies \
     rabbitmq-c-dev \
   && apk add --virtual .amqp-runtime-dependencies \
     rabbitmq-c \
-
   && git clone -o ${AMQP_TAG} --depth 1 https://github.com/pdezwart/php-amqp.git /tmp/php-amqp \
   && cd /tmp/php-amqp \
   && phpize \
   && ./configure \
   && make \
   && make install \
-
   && apk del .amqp-build-dependencies \
-
-  # libv8
+  && : "---------- libv8 ----------" \
   && (mkdir -p ${V8_DIR}; \
       curl -fSL --connect-timeout 30 ${V8_SOURCE} | tar xz -C ${V8_DIR}) \
-
-  # php-v8
+  && : "---------- php-v8 ----------" \
   && PHPV8_FILENAME="php-v8-${PHPV8_VERSION}" \
   && PHPV8_SOURCE="https://github.com/pinepain/php-v8/archive/v${PHPV8_VERSION}.tar.gz" \
   && curl -fSL --connect-timeout 30 ${PHPV8_SOURCE} | tar xz -C /tmp \
@@ -313,8 +278,7 @@ RUN \
     --with-v8=${V8_DIR} \
   && make \
   && make install \
-
-  # Removing build dependencies, clean temporary files
+  && : "---------- Removing build dependencies, clean temporary files ----------" \
   && apk del .php-build-dependencies \
   && rm -rf /var/cache/apk/* /var/tmp/* /tmp/*
 
