@@ -13,7 +13,7 @@ ARG MSGPACK_TAG=msgpack-2.0.2
 ARG REDIS_TAG=3.1.4
 ARG PHPIREDIS_TAG=v1.0.0
 ARG MEMCACHED_BRANCH=master
-ARG MONGODB_VERSION=1.3.0
+ARG MONGODB_VERSION=1.3.1
 ARG AMQP_TAG=v1.9.0
 ARG PHPV8_VERSION=0.2.0
 
@@ -160,7 +160,6 @@ RUN set -x \
   && make \
   && make install \
   && : "---------- Msgpack ----------" \
-  && MSGPACK_TAG="msgpack-2.0.2" \
   && git clone -o ${MSGPACK_TAG} --depth 1 https://github.com/msgpack/msgpack-php.git /tmp/msgpack-php \
   && cd /tmp/msgpack-php \
   && phpize \
