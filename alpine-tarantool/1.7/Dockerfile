@@ -4,7 +4,7 @@ LABEL repository.hub="alexmasterov/alpine-tarantool:1.7" \
       repository.url="https://github.com/AlexMasterov/dockerfiles" \
       maintainer="Alex Masterov <alex.masterow@gmail.com>"
 
-ARG TARANTOOL_VERSION=1.7.5-3-gd988d7fb9
+ARG TARANTOOL_VERSION=1.7.5-250-g8c55b4993
 # [ RelWithDebInfo | Release ]
 ARG TARANTOOL_BUILD_TYPE=RelWithDebInfo
 ARG TARANTOOL_BACKTRACE=ON
@@ -17,15 +17,14 @@ ARG TARANTOOL_WITH_LOGROTATE=ON
 
 ARG LUAJIT_GC64=OFF
 
-RUN \
-  apk add --update \
+RUN set -x \
+  && apk add --update \
     tini \
-
   && addgroup -g 82 -S tarantool \
   && adduser -u 82 -S -D -h /var/cache/tarantool -s /sbin/nologin -G tarantool tarantool
 
-RUN \
-  [ $TARANTOOL_BACKTRACE = "ON" ] && \
+RUN set -x \
+  && [ $TARANTOOL_BACKTRACE = "ON" ] && \
     buildDeps="libunwind-dev" \
     runtimeDeps="libunwind" \
   || true \
@@ -42,6 +41,7 @@ RUN \
     g++ \
     gcc \
     git \
+    icu-dev \
     libressl-dev \
     make \
     ncurses-dev \
@@ -51,19 +51,18 @@ RUN \
   && apk add --virtual .tarantool-runtime-dependencies \
     ${runtimeDeps} \
     curl \
+    icu \
     libgomp \
     libstdc++ \
     ncurses \
     readline \
-
-  # Tarantool
+  && : "---------- Tarantool ----------" \
   && TARANTOOL_DIR="/tmp/tarantool" \
   && git clone https://github.com/tarantool/tarantool.git ${TARANTOOL_DIR} \
   && git -C ${TARANTOOL_DIR} checkout ${TARANTOOL_VERSION} \
   && git -C ${TARANTOOL_DIR} submodule update \
     --init --recursive --jobs $(getconf _NPROCESSORS_ONLN) \
   && cd ${TARANTOOL_DIR} \
-
   && cmake \
     -DCMAKE_BUILD_TYPE=${TARANTOOL_BUILD_TYPE} \
     -DENABLE_BACKTRACE:BOOL=${TARANTOOL_BACKTRACE} \
@@ -77,8 +76,7 @@ RUN \
     . \
   && make -j $(getconf _NPROCESSORS_ONLN) \
   && make install \
-
-  # Removing build dependencies, clean temporary files
+  && : "---------- Removing build dependencies, clean temporary files ----------" \
   && apk del .tarantool-build-dependencies \
   && rm -rf /var/cache/apk/* /var/tmp/* /tmp/*
 
