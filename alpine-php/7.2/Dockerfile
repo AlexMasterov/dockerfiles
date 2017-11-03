@@ -12,7 +12,7 @@ ARG XDEBUG_BRANCH=master
 ARG MSGPACK_TAG=msgpack-2.0.2
 ARG REDIS_TAG=3.1.4
 ARG PHPIREDIS_TAG=v1.0.0
-ARG MEMCACHED_BRANCH=master
+ARG MEMCACHED_TAG=v3.0.3
 ARG MONGODB_VERSION=1.3.1
 ARG AMQP_TAG=v1.9.3
 ARG PHPV8_VERSION=0.2.1
@@ -192,7 +192,7 @@ RUN set -x \
     cyrus-sasl-dev \
   && apk add --virtual .memcached-runtime-dependencies \
     libmemcached \
-  && git clone -b ${MEMCACHED_BRANCH} --depth 1 https://github.com/php-memcached-dev/php-memcached.git /tmp/php-memcached \
+  && git clone -o ${MEMCACHED_TAG} --depth 1 https://github.com/php-memcached-dev/php-memcached.git /tmp/php-memcached \
   && cd /tmp/php-memcached \
   && phpize \
   && ./configure \
