@@ -236,18 +236,6 @@ RUN set -x \
   && make \
   && make install \
   && apk del .mongodb-build-dependencies \
-  && : "---------- php-amqp (RabbitMQ) ----------" \
-  && apk add --virtual .amqp-build-dependencies \
-    rabbitmq-c-dev \
-  && apk add --virtual .amqp-runtime-dependencies \
-    rabbitmq-c \
-  && git clone -o ${AMQP_TAG} --depth 1 https://github.com/pdezwart/php-amqp.git /tmp/php-amqp \
-  && cd /tmp/php-amqp \
-  && phpize \
-  && ./configure \
-  && make \
-  && make install \
-  && apk del .amqp-build-dependencies \
   && : "---------- libv8 ----------" \
   && (mkdir -p ${V8_DIR}; \
       curl -fSL --connect-timeout 30 ${V8_SOURCE} | tar xz -C ${V8_DIR}) \

@@ -12,7 +12,6 @@ ARG LIBEVENT_BRANCH=master
 ARG REDIS_TAG=3.1.4
 ARG PHPIREDIS_TAG=v1.0.0
 ARG MONGODB_VERSION=1.3.1
-ARG AMQP_TAG=v1.9.3
 ARG PHPV8_VERSION=0.2.1
 ARG GRAPHQL_BRANCH=master
 
@@ -243,18 +242,6 @@ RUN set -x \
   && make \
   && make install \
   && apk del .mongodb-build-dependencies \
-  && : "---------- php-amqp (RabbitMQ) ----------" \
-  && apk add --virtual .amqp-build-dependencies \
-    rabbitmq-c-dev \
-  && apk add --virtual .amqp-runtime-dependencies \
-    rabbitmq-c \
-  && git clone -o ${AMQP_TAG} --depth 1 https://github.com/pdezwart/php-amqp.git /tmp/php-amqp \
-  && cd /tmp/php-amqp \
-  && phpize \
-  && ./configure \
-  && make \
-  && make install \
-  && apk del .amqp-build-dependencies \
   && : "---------- libv8 ----------" \
   && (mkdir -p ${V8_DIR}; \
       curl -fSL --connect-timeout 30 ${V8_SOURCE} | tar xz -C ${V8_DIR}) \
