@@ -265,7 +265,7 @@ RUN set -x \
   && apk add --virtual .mongodb-build-dependencies \
     pkgconfig \
   && apk add --virtual .mongodb-runtime-dependencies \
-    libressl2.5-libtls \
+    libressl2.6-libtls \
   && MONGODB_FILENAME="mongodb-${MONGODB_VERSION}" \
   && MONGODB_SOURCE="https://github.com/mongodb/mongo-php-driver/releases/download/${MONGODB_VERSION}/${MONGODB_FILENAME}.tgz" \
   && curl -fSL --connect-timeout 30 ${MONGODB_SOURCE} | tar xz -C /tmp \
