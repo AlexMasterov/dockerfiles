@@ -53,7 +53,7 @@ RUN set -x \
     libxslt-dev \
     libzip-dev \
     make \
-    pcre-dev \
+    pcre2-dev \
     postgresql-dev \
     re2c \
     readline-dev \
