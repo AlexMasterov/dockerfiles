@@ -58,6 +58,9 @@ RUN set -x \
     re2c \
     readline-dev \
     sqlite-dev \
+  && : "---------- Proper libpcre2 ----------" \
+  && (cd /usr/lib; \
+      ln -sf libpcre2-posix.a libpcre2.a; ln -sf libpcre2-posix.so libpcre2.so) \
   && : "---------- Proper iconv ----------" \
   && apk add --no-cache --virtual .iconv-runtime-dependencies \
     --repository https://dl-3.alpinelinux.org/alpine/edge/testing/ \
@@ -131,7 +134,7 @@ RUN set -x \
     --with-mhash \
     --with-openssl=/usr \
       --with-system-ciphers \
-    --with-pcre-regex=/usr \
+    --with-pcre-regex \
       --with-pcre-jit \
     --with-pdo-mysql=mysqlnd \
     --with-pdo-pgsql \
