@@ -20,8 +20,8 @@ ARG AMQP_TAG=v1.9.3
 ARG PHPV8_VERSION=0.2.1
 ARG GRAPHQL_BRANCH=master
 
-ARG LIBBSON_VERSION=1.8.1
-ARG LIBMONGOC_VERSION=1.8.1
+ARG LIBBSON_VERSION=1.8.2
+ARG LIBMONGOC_VERSION=1.8.2
 # https://github.com/AlexMasterov/dockerfiles#alpine-libv8
 ARG V8_SOURCE=https://www.dropbox.com/s/1th4n5xqua1mz2o/alpine-libv8-6.4.318.tar.gz
 ARG V8_DIR=/usr/local/v8
