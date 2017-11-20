@@ -44,7 +44,6 @@ RUN set -x \
     git \
     icu-dev \
     jpeg-dev \
-    libevent-dev \
     libmcrypt-dev \
     libpng-dev \
     libtool \

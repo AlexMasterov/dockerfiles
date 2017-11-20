@@ -10,7 +10,6 @@ ARG PHP_CONFIG=/etc/php
 ARG REALPATH_TURBO_TAG=v2.0.0rc1
 ARG XDEBUG_TAG=XDEBUG_2_5_5
 ARG MSGPACK_TAG=msgpack-2.0.2
-ARG LIBEVENT_BRANCH=master
 ARG REDIS_TAG=3.1.4
 ARG PHPIREDIS_TAG=v1.0.0
 ARG MEMCACHED_TAG=v3.0.3
@@ -47,7 +46,6 @@ RUN set -x \
     git \
     icu-dev \
     jpeg-dev \
-    libevent-dev \
     libmcrypt-dev \
     libpng-dev \
     libtool \
@@ -170,13 +168,6 @@ RUN set -x \
   && : "---------- Msgpack ----------" \
   && git clone -o ${MSGPACK_TAG} --depth 1 https://github.com/msgpack/msgpack-php.git /tmp/msgpack-php \
   && cd /tmp/msgpack-php \
-  && phpize \
-  && ./configure \
-  && make \
-  && make install \
-  && : "---------- libevent ----------" \
-  && git clone -b ${LIBEVENT_BRANCH} --depth 1 https://github.com/expressif/pecl-event-libevent.git /tmp/libevent \
-  && cd /tmp/libevent \
   && phpize \
   && ./configure \
   && make \
