@@ -298,6 +298,7 @@ RUN set -x \
     bison \
     cmake \
     flex \
+    python2 \
   && git clone -b ${GRAPHQL_BRANCH} --depth 1 https://github.com/dosten/graphql-parser-php.git /tmp/graphql \
   && : "---------- libgraphqlparser ----------" \
   && cd /tmp/graphql/deps/libgraphqlparser \
