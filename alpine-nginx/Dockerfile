@@ -4,10 +4,10 @@ LABEL repository.hub="alexmasterov/alpine-nginx" \
       repository.url="https://github.com/AlexMasterov/dockerfiles" \
       maintainer="Alex Masterov <alex.masterow@gmail.com>"
 
-ARG NGINX_VERSION=1.13.6
+ARG NGINX_VERSION=1.13.7
 ARG NGINX_CONFIG=/etc/nginx
 
-ARG HEADERS_MORE_TAG=v0.32
+ARG HEADERS_MORE_TAG=v0.33
 
 RUN set -x \
   && apk add --update \
