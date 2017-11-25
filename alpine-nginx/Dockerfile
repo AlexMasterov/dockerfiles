@@ -82,6 +82,15 @@ RUN set -x \
     --add-module=${HEADERS_MORE_DIR} \
   && make \
   && make install \
+  && runtimeDeps="$( \
+		scanelf --needed --nobanner --recursive /usr/sbin/nginx /usr/lib/nginx/modules/*.so \
+			| awk '{ gsub(/,/, "\nso:", $2); print "so:" $2 }' \
+			| sort -u \
+			| xargs -r apk info --installed \
+			| sort -u \
+	)" \
+  && apk add --virtual .nginx-runtime-dependencies \
+    ${runtimeDeps} \
   && : "---------- Removing build dependencies, clean temporary files ----------" \
   && apk del .nginx-build-dependencies \
   && rm -rf /var/cache/apk/* /var/tmp/* /tmp/*
