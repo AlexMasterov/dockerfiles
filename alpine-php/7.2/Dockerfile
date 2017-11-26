@@ -57,16 +57,16 @@ RUN set -x \
     re2c \
     readline-dev \
     sqlite-dev \
+  && apk add --no-cache --virtual .ext-runtime-dependencies \
+    --repository https://dl-3.alpinelinux.org/alpine/edge/testing/ \
+    argon2-dev \
+    gnu-libiconv-dev \
+  && : "---------- Proper iconv ----------" \
+  && (mv /usr/bin/gnu-iconv /usr/bin/iconv; \
+      mv /usr/include/gnu-libiconv/*.h /usr/include; rm -rf /usr/include/gnu-libiconv) \
   && : "---------- Proper libpcre2 ----------" \
   && (cd /usr/lib; \
       ln -sf libpcre2-posix.a libpcre2.a; ln -sf libpcre2-posix.so libpcre2.so) \
-  && : "---------- Proper iconv ----------" \
-  && apk add --no-cache --virtual .iconv-runtime-dependencies \
-    --repository https://dl-3.alpinelinux.org/alpine/edge/testing/ \
-    gnu-libiconv-dev \
-  && : "---------- Replace binary and headers ----------" \
-  && (mv /usr/bin/gnu-iconv /usr/bin/iconv; \
-      mv /usr/include/gnu-libiconv/*.h /usr/include; rm -rf /usr/include/gnu-libiconv) \
   && : "---------- Build flags ----------" \
   && export LDFLAGS="-Wl,-O2 -Wl,--hash-style=both -pie" \
   && export CFLAGS="-O2 -march=native -fstack-protector-strong -fpic -fpie" \
@@ -133,6 +133,7 @@ RUN set -x \
     --with-mhash \
     --with-openssl=/usr \
       --with-system-ciphers \
+    --with-password-argon2 \
     --with-pcre-regex \
       --with-pcre-jit \
     --with-pdo-mysql=mysqlnd \
