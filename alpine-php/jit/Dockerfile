@@ -6,7 +6,7 @@ LABEL repository.hub="alexmasterov/alpine-php:jit" \
 
 ARG PHP_CONFIG=/etc/php
 
-ARG REALPATH_TURBO_TAG=v2.0.0rc1
+ARG REALPATH_TURBO_TAG=v2.0.0
 ARG MSGPACK_TAG=msgpack-2.0.2
 ARG REDIS_TAG=3.1.4
 ARG PHPIREDIS_TAG=v1.0.0
