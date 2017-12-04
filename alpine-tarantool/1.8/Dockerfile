@@ -24,16 +24,7 @@ RUN set -x \
   && adduser -u 82 -S -D -h /var/cache/tarantool -s /sbin/nologin -G tarantool tarantool
 
 RUN set -x \
-  && [ $TARANTOOL_BACKTRACE = "ON" ] && \
-    buildDeps="libunwind-dev" \
-    runtimeDeps="libunwind" \
-  || true \
-  [ $TARANTOOL_BUNDLED_LIBYAML = "OFF" ] && \
-    buildDeps="${buildDeps} yaml-dev" \
-    runtimeDeps="${runtimeDeps} yaml" \
-  || true \
   && apk add --virtual .tarantool-build-dependencies \
-    ${buildDeps} \
     binutils-dev \
     cmake \
     curl-dev \
@@ -46,15 +37,8 @@ RUN set -x \
     ncurses-dev \
     perl \
     readline-dev \
-    zlib-dev \
-  && apk add --virtual .tarantool-runtime-dependencies \
-    ${runtimeDeps} \
-    curl \
-    icu \
-    libgomp \
-    libstdc++ \
-    ncurses \
-    readline \
+    $(test "${TARANTOOL_BACKTRACE}" = 'ON' && echo 'libunwind-dev') \
+    $(test "${TARANTOOL_BUNDLED_LIBYAML}" = 'OFF' && echo 'yaml-dev') \
   && : "---------- Tarantool ----------" \
   && TARANTOOL_DIR="/tmp/tarantool" \
   && git clone https://github.com/tarantool/tarantool.git ${TARANTOOL_DIR} \
@@ -75,6 +59,15 @@ RUN set -x \
     . \
   && make -j $(getconf _NPROCESSORS_ONLN) \
   && make install \
+  && runtimeDeps="$( \
+		scanelf --needed --nobanner --recursive /usr/local/bin/tarantool \
+			| awk '{ gsub(/,/, "\nso:", $2); print "so:" $2 }' \
+			| sort -u \
+			| xargs -r apk info --installed \
+			| sort -u \
+	)" \
+  && apk add --virtual .tarantool-runtime-dependencies \
+    ${runtimeDeps} \
   && : "---------- Removing build dependencies, clean temporary files ----------" \
   && apk del .tarantool-build-dependencies \
   && rm -rf /var/cache/apk/* /var/tmp/* /tmp/*
