@@ -17,7 +17,7 @@ ARG GRAPHQL_BRANCH=master
 ARG LIBBSON_VERSION=1.9.0
 ARG LIBMONGOC_VERSION=1.9.0
 # https://github.com/AlexMasterov/dockerfiles#alpine-libv8
-ARG V8_SOURCE=https://www.dropbox.com/s/72w57s7mgmfkcek/alpine-libv8-6.5.28.tar.gz
+ARG V8_SOURCE=https://www.dropbox.com/s/p8c7g5q4x4djw6b/alpine-libv8-6.5.107.tar.gz
 ARG V8_DIR=/usr/local/v8
 
 RUN set -x \
@@ -206,9 +206,6 @@ RUN set -x \
   && LIBMONGOC_SOURCE="https://github.com/mongodb/mongo-c-driver/releases/download/${LIBMONGOC_VERSION}/${LIBMONGOC_FILENAME}.tar.gz" \
   && curl -fSL --connect-timeout 30 ${LIBMONGOC_SOURCE} | tar xz -C /tmp \
   && cd /tmp/${LIBMONGOC_FILENAME} \
-  && sed -ri \
-    "s/(OR\s*ENABLE_SSL\s*STREQUAL)\s*OPENSSL$/\1 LIBRESSL/" \
-    CMakeLists.txt \
   && cmake \
     -DCMAKE_BUILD_TYPE=Release \
     -DENABLE_AUTOMATIC_INIT_AND_CLEANUP:BOOL=OFF \
