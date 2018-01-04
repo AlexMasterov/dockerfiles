@@ -10,7 +10,7 @@ ARG PHP_CONFIG=/etc/php
 ARG REALPATH_TURBO_TAG=v2.0.0
 ARG XDEBUG_TAG=XDEBUG_2_5_5
 ARG MSGPACK_TAG=msgpack-2.0.2
-ARG REDIS_TAG=3.1.5
+ARG REDIS_TAG=3.1.6
 ARG PHPIREDIS_TAG=v1.0.0
 ARG MEMCACHED_TAG=v3.0.4
 ARG TARANTOOL_BRANCH=php7-v2
@@ -238,9 +238,6 @@ RUN set -x \
   && LIBMONGOC_SOURCE="https://github.com/mongodb/mongo-c-driver/releases/download/${LIBMONGOC_VERSION}/${LIBMONGOC_FILENAME}.tar.gz" \
   && curl -fSL --connect-timeout 30 ${LIBMONGOC_SOURCE} | tar xz -C /tmp \
   && cd /tmp/${LIBMONGOC_FILENAME} \
-  && sed -ri \
-    "s/(OR\s*ENABLE_SSL\s*STREQUAL)\s*OPENSSL$/\1 LIBRESSL/" \
-    CMakeLists.txt \
   && cmake \
     -DCMAKE_BUILD_TYPE=Release \
     -DENABLE_AUTOMATIC_INIT_AND_CLEANUP:BOOL=OFF \
