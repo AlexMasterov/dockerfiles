@@ -22,7 +22,7 @@ ARG GRAPHQL_BRANCH=master
 ARG LIBBSON_VERSION=1.9.0
 ARG LIBMONGOC_VERSION=1.9.0
 # https://github.com/AlexMasterov/dockerfiles#alpine-libv8
-ARG V8_SOURCE=https://www.dropbox.com/s/p8c7g5q4x4djw6b/alpine-libv8-6.5.107.tar.gz
+ARG V8_SOURCE=https://www.dropbox.com/s/vc7o88ublxshmz2/alpine-libv8-6.5.146.tar.gz 
 ARG V8_DIR=/usr/local/v8
 
 RUN set -x \
