@@ -8,7 +8,6 @@ ARG PHP_VERSION=7.2.1
 ARG PHP_CONFIG=/etc/php
 
 ARG REALPATH_TURBO_TAG=v2.0.0
-ARG MSGPACK_TAG=msgpack-2.0.2
 ARG REDIS_TAG=3.1.6
 ARG PHPIREDIS_TAG=v1.0.0
 ARG MONGODB_VERSION=1.3.4
@@ -156,13 +155,6 @@ RUN set -x \
   && : "---------- https://bugs.php.net/bug.php?id=52312 ----------" \
   && git clone -o ${REALPATH_TURBO_TAG} --depth 1 https://github.com/Whissi/realpath_turbo.git /tmp/realpath_turbo \
   && cd /tmp/realpath_turbo \
-  && phpize \
-  && ./configure \
-  && make \
-  && make install \
-  && : "---------- Msgpack ----------" \
-  && git clone -o ${MSGPACK_TAG} --depth 1 https://github.com/msgpack/msgpack-php.git /tmp/msgpack-php \
-  && cd /tmp/msgpack-php \
   && phpize \
   && ./configure \
   && make \
