@@ -17,7 +17,7 @@ ARG CLANG_COMMIT=27088876ff821e8a1518383576a43662a3255d56
 ARG JINJA2_COMMIT=d34383206fa42d52faa10bb9931d6d538f3a57e0
 ARG MARKUPSAFE_COMMIT=8f45f5cfa0009d2a70589bcda0349b8cb2b72783
 
-ARG GN_SOURCE=https://www.dropbox.com/s/69lrj7y0yfyia8e/alpine-gn-ba97155.tar.gz
+ARG GN_SOURCE=https://www.dropbox.com/s/3ublwqh4h9dit9t/alpine-gn-80e00be.tar.gz
 ARG V8_SOURCE=https://chromium.googlesource.com/v8/v8/+archive/${V8_VERSION}.tar.gz
 
 ENV V8_VERSION=${V8_VERSION} \
