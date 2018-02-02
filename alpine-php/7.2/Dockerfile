@@ -71,8 +71,9 @@ RUN set -x \
   && export CPPFLAGS=${CFLAGS} \
   && export MAKEFLAGS="-j $(expr $(getconf _NPROCESSORS_ONLN) \+ 1)" \
   && : "---------- PHP ----------" \
-  && git clone -o php-${PHP_VERSION} --depth 1 https://github.com/php/php-src.git /tmp/php-src \
-  && cd /tmp/php-src \
+  && PHP_SOURCE="https://secure.php.net/get/php-${PHP_VERSION}.tar.xz/from/this/mirror" \
+  && curl -fSL --connect-timeout 30 ${PHP_SOURCE} | tar xJ -C /tmp \
+  && cd /tmp/php-${PHP_VERSION} \
   && : "---------- Build ----------" \
   && ./buildconf --force \
   && ./configure \
@@ -144,11 +145,11 @@ RUN set -x \
   && make \
   && make install \
   && runtimeDeps="$( \
-		scanelf --needed --nobanner --recursive /usr/sbin/php-fpm \
-			| awk '{ gsub(/,/, "\nso:", $2); print "so:" $2 }' \
-			| sort -u \
-			| xargs -r apk info --installed \
-			| sort -u \
+    scanelf --needed --nobanner --recursive /usr/sbin/php-fpm \
+      | awk '{ gsub(/,/, "\nso:", $2); print "so:" $2 }' \
+      | sort -u \
+      | xargs -r apk info --installed \
+      | sort -u \
 	)" \
   && apk add --virtual .php-runtime-dependencies \
     ${runtimeDeps} \
