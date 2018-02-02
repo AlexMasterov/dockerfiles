@@ -8,6 +8,7 @@ ARG PHP_VERSION=7.2.2
 ARG PHP_CONFIG=/etc/php
 
 ARG REALPATH_TURBO_TAG=v2.0.0
+ARG XDEBUG_TAG=2.6.0
 ARG REDIS_TAG=3.1.6
 ARG PHPIREDIS_TAG=v1.0.0
 ARG MONGODB_VERSION=1.3.4
@@ -156,6 +157,13 @@ RUN set -x \
   && : "---------- https://bugs.php.net/bug.php?id=52312 ----------" \
   && git clone -o ${REALPATH_TURBO_TAG} --depth 1 https://github.com/Whissi/realpath_turbo.git /tmp/realpath_turbo \
   && cd /tmp/realpath_turbo \
+  && phpize \
+  && ./configure \
+  && make \
+  && make install \
+  && : "---------- xDebug ----------" \
+  && git clone -o ${XDEBUG_TAG} --depth 1 https://github.com/xdebug/xdebug.git /tmp/xdebug \
+  && cd /tmp/xdebug \
   && phpize \
   && ./configure \
   && make \
