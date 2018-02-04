@@ -4,7 +4,7 @@ LABEL repository.hub="alexmasterov/alpine-tarantool:1.7" \
       repository.url="https://github.com/AlexMasterov/dockerfiles" \
       maintainer="Alex Masterov <alex.masterow@gmail.com>"
 
-ARG TARANTOOL_VERSION=1.7.6-11-gcd17b77f9
+ARG TARANTOOL_BRANCH=1.7-next
 # [ RelWithDebInfo | Release ]
 ARG TARANTOOL_BUILD_TYPE=RelWithDebInfo
 ARG TARANTOOL_BACKTRACE=ON
@@ -41,8 +41,7 @@ RUN set -x \
     $(test "${TARANTOOL_BUNDLED_LIBYAML}" = 'OFF' && echo 'yaml-dev') \
   && : "---------- Tarantool ----------" \
   && TARANTOOL_DIR="/tmp/tarantool" \
-  && git clone https://github.com/tarantool/tarantool.git ${TARANTOOL_DIR} \
-  && git -C ${TARANTOOL_DIR} checkout ${TARANTOOL_VERSION} \
+  && git clone -b ${TARANTOOL_BRANCH} https://github.com/tarantool/tarantool.git ${TARANTOOL_DIR} \
   && git -C ${TARANTOOL_DIR} submodule update \
     --init --recursive --jobs $(getconf _NPROCESSORS_ONLN) \
   && cd ${TARANTOOL_DIR} \
@@ -60,12 +59,12 @@ RUN set -x \
   && make -j $(getconf _NPROCESSORS_ONLN) \
   && make install \
   && runtimeDeps="$( \
-		scanelf --needed --nobanner --recursive /usr/local/bin/tarantool \
-			| awk '{ gsub(/,/, "\nso:", $2); print "so:" $2 }' \
-			| sort -u \
-			| xargs -r apk info --installed \
-			| sort -u \
-	)" \
+    scanelf --needed --nobanner --recursive /usr/local/bin/tarantool \
+      | awk '{ gsub(/,/, "\nso:", $2); print "so:" $2 }' \
+      | sort -u \
+      | xargs -r apk info --installed \
+      | sort -u \
+  )" \
   && apk add --virtual .tarantool-runtime-dependencies \
     ${runtimeDeps} \
   && : "---------- Removing build dependencies, clean temporary files ----------" \
