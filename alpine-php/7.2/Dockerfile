@@ -12,7 +12,7 @@ ARG XDEBUG_TAG=2.6.0
 ARG MSGPACK_TAG=msgpack-2.0.2
 ARG REDIS_TAG=3.1.6
 ARG PHPIREDIS_TAG=v1.0.0
-ARG MONGODB_VERSION=1.3.4
+ARG MONGODB_VERSION=1.4.0
 ARG AMQP_TAG=v1.9.3
 ARG PHPV8_VERSION=0.2.1
 
@@ -31,6 +31,7 @@ RUN set -x \
 
 RUN set -x \
   && apk add --virtual .php-build-dependencies \
+    argon2-dev \
     autoconf \
     binutils \
     bison \
@@ -59,7 +60,6 @@ RUN set -x \
     sqlite-dev \
   && apk add --no-cache --virtual .ext-runtime-dependencies \
     --repository https://dl-3.alpinelinux.org/alpine/edge/testing/ \
-    argon2-dev \
     gnu-libiconv-dev \
   && : "---------- Proper iconv ----------" \
   && (mv /usr/bin/gnu-iconv /usr/bin/iconv; \
