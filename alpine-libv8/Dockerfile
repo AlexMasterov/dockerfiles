@@ -4,16 +4,16 @@ LABEL repository.hub="alexmasterov/alpine-libv8" \
       repository.url="https://github.com/AlexMasterov/dockerfiles" \
       maintainer="Alex Masterov <alex.masterow@gmail.com>"
 
-ARG V8_VERSION=6.6.231
+ARG V8_VERSION=6.6.326
 ARG V8_DIR=/usr/local/v8
 
-ARG BUILD_COMMIT=792040c9f0593454829f105d58ea08a3c6d9d491
-ARG BUILDTOOLS_COMMIT=2637e7e911524502ea862870f52c36ed2723a25f
+ARG BUILD_COMMIT=b1d6c28b4a64128ad856d9da458afda2861fddab
+ARG BUILDTOOLS_COMMIT=2888931260f2a32bc583f005bd807a561b2fa6af
 ARG ICU_COMMIT=d888fd2a1be890f4d35e43f68d6d79f42519a357
 ARG GTEST_COMMIT=6f8a66431cb592dad629028a50b3dd418a408c87
 ARG TRACE_EVENT_COMMIT=0e9a47d74970bee1bbfc063c47215406f8918699
 ARG GYP_COMMIT=d61a9397e668fa9843c4aa7da9e79460fe590bfb
-ARG CLANG_COMMIT=a695c30c8618b948d714a2a8161ee6a2ab98d0ce
+ARG CLANG_COMMIT=b3d3f5920b161f95f1a8ffe08b75c695e0edf350
 ARG JINJA2_COMMIT=d34383206fa42d52faa10bb9931d6d538f3a57e0
 ARG MARKUPSAFE_COMMIT=8f45f5cfa0009d2a70589bcda0349b8cb2b72783
 
@@ -66,8 +66,7 @@ RUN set -x \
     done; \
     wait \
   && : "---------- Downloads the current stable Linux sysroot ----------" \
-  && /tmp/v8/build/linux/sysroot_scripts/install-sysroot.py \
-    --arch=amd64 \
+  && /tmp/v8/build/linux/sysroot_scripts/install-sysroot.py --arch=amd64 \
   && : "---------- Proper GN ----------" \
   && apk add --virtual .gn-runtime-dependencies \
     libevent \
@@ -89,16 +88,14 @@ RUN set -x \
       is_component_build=true \
       is_cfi=false \
       is_clang=false \
-      is_debug=false \
       use_custom_libcxx=false \
       use_sysroot=false \
       use_gold=false \
-      use_allocator=\"tcmalloc\" \
       use_allocator_shim=false \
       treat_warnings_as_errors=false \
       symbol_level=0 \
   && : "---------- Build ----------" \
-  && ninja -C out.gn/x64.release/ d8 \
+  && ninja d8 -C out.gn/x64.release/ -j $(getconf _NPROCESSORS_ONLN) \
   && : "---------- Extract shared libraries ----------" \
   && mkdir -p ${V8_DIR}/include ${V8_DIR}/lib \
   && cp -R /tmp/v8/include/* ${V8_DIR}/include/ \
