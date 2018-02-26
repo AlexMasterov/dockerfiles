@@ -1,10 +1,10 @@
 FROM alpine:edge
 
-LABEL repository.hub="alexmasterov/alpine-tarantool:1.8" \
+LABEL repository.hub="alexmasterov/alpine-tarantool:2.0" \
       repository.url="https://github.com/AlexMasterov/dockerfiles" \
       maintainer="Alex Masterov <alex.masterow@gmail.com>"
 
-ARG TARANTOOL_VERSION=1.8.3
+ARG TARANTOOL_TAG=2.0.4
 # [ RelWithDebInfo | Release ]
 ARG TARANTOOL_BUILD_TYPE=RelWithDebInfo
 ARG TARANTOOL_BACKTRACE=ON
@@ -15,7 +15,7 @@ ARG TARANTOOL_WITH_SYSTEMD=OFF
 ARG TARANTOOL_WITH_SYSVINIT=ON
 ARG TARANTOOL_WITH_LOGROTATE=ON
 
-ARG LUAJIT_GC64=OFF
+ARG LUAJIT_GC64=ON
 
 RUN set -x \
   && apk add --update \
@@ -41,8 +41,7 @@ RUN set -x \
     $(test "${TARANTOOL_BUNDLED_LIBYAML}" = 'OFF' && echo 'yaml-dev') \
   && : "---------- Tarantool ----------" \
   && TARANTOOL_DIR="/tmp/tarantool" \
-  && git clone https://github.com/tarantool/tarantool.git ${TARANTOOL_DIR} \
-  && git -C ${TARANTOOL_DIR} checkout ${TARANTOOL_VERSION} \
+  && git clone -o ${TARANTOOL_TAG} https://github.com/tarantool/tarantool.git ${TARANTOOL_DIR} \
   && git -C ${TARANTOOL_DIR} submodule update \
     --init --recursive --jobs $(getconf _NPROCESSORS_ONLN) \
   && cd ${TARANTOOL_DIR} \
@@ -60,11 +59,11 @@ RUN set -x \
   && make -j $(getconf _NPROCESSORS_ONLN) \
   && make install \
   && runtimeDeps="$( \
-		scanelf --needed --nobanner --recursive /usr/local/bin/tarantool \
-			| awk '{ gsub(/,/, "\nso:", $2); print "so:" $2 }' \
-			| sort -u \
-			| xargs -r apk info --installed \
-			| sort -u \
+    scanelf --needed --nobanner --recursive /usr/local/bin/tarantool \
+      | awk '{ gsub(/,/, "\nso:", $2); print "so:" $2 }' \
+      | sort -u \
+      | xargs -r apk info --installed \
+      | sort -u \
 	)" \
   && apk add --virtual .tarantool-runtime-dependencies \
     ${runtimeDeps} \

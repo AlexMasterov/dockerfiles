@@ -1,10 +1,10 @@
 FROM alpine:edge
 
-LABEL repository.hub="alexmasterov/alpine-tarantool:1.7" \
+LABEL repository.hub="alexmasterov/alpine-tarantool:1.9" \
       repository.url="https://github.com/AlexMasterov/dockerfiles" \
       maintainer="Alex Masterov <alex.masterow@gmail.com>"
 
-ARG TARANTOOL_BRANCH=1.7-next
+ARG TARANTOOL_TAG=1.9.0
 # [ RelWithDebInfo | Release ]
 ARG TARANTOOL_BUILD_TYPE=RelWithDebInfo
 ARG TARANTOOL_BACKTRACE=ON
@@ -15,7 +15,7 @@ ARG TARANTOOL_WITH_SYSTEMD=OFF
 ARG TARANTOOL_WITH_SYSVINIT=ON
 ARG TARANTOOL_WITH_LOGROTATE=ON
 
-ARG LUAJIT_GC64=OFF
+ARG LUAJIT_GC64=ON
 
 RUN set -x \
   && apk add --update \
@@ -41,7 +41,7 @@ RUN set -x \
     $(test "${TARANTOOL_BUNDLED_LIBYAML}" = 'OFF' && echo 'yaml-dev') \
   && : "---------- Tarantool ----------" \
   && TARANTOOL_DIR="/tmp/tarantool" \
-  && git clone -b ${TARANTOOL_BRANCH} https://github.com/tarantool/tarantool.git ${TARANTOOL_DIR} \
+  && git clone -o ${TARANTOOL_TAG} https://github.com/tarantool/tarantool.git ${TARANTOOL_DIR} \
   && git -C ${TARANTOOL_DIR} submodule update \
     --init --recursive --jobs $(getconf _NPROCESSORS_ONLN) \
   && cd ${TARANTOOL_DIR} \
