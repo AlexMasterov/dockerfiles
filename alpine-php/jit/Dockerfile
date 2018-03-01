@@ -13,8 +13,8 @@ ARG MONGODB_VERSION=1.4.1
 ARG PHPV8_VERSION=0.2.1
 ARG GRAPHQL_BRANCH=master
 
-ARG LIBBSON_VERSION=1.9.2
-ARG LIBMONGOC_VERSION=1.9.2
+ARG LIBBSON_VERSION=1.9.3
+ARG LIBMONGOC_VERSION=1.9.3
 # https://github.com/AlexMasterov/dockerfiles#alpine-libv8
 ARG V8_SOURCE=https://www.dropbox.com/s/vc7o88ublxshmz2/alpine-libv8-6.5.146.tar.gz
 ARG V8_DIR=/usr/local/v8
@@ -142,11 +142,11 @@ RUN set -x \
   && make \
   && make install \
   && runtimeDeps="$( \
-		scanelf --needed --nobanner --recursive /usr/sbin/php-fpm \
-			| awk '{ gsub(/,/, "\nso:", $2); print "so:" $2 }' \
-			| sort -u \
-			| xargs -r apk info --installed \
-			| sort -u \
+    scanelf --needed --nobanner --recursive /usr/sbin/php-fpm \
+      | awk '{ gsub(/,/, "\nso:", $2); print "so:" $2 }' \
+      | sort -u \
+      | xargs -r apk info --installed \
+      | sort -u \
 	)" \
   && apk add --virtual .php-runtime-dependencies \
     ${runtimeDeps} \
