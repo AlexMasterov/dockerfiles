@@ -1,3 +1,4 @@
+FROM alexmasterov/alpine-libv8 as libv8
 FROM alpine:edge
 
 LABEL repository.hub="alexmasterov/alpine-php:jit" \
@@ -10,14 +11,13 @@ ARG REALPATH_TURBO_TAG=v2.0.0
 ARG REDIS_TAG=3.1.6
 ARG PHPIREDIS_TAG=v1.0.0
 ARG MONGODB_VERSION=1.4.1
-ARG PHPV8_VERSION=0.2.1
+ARG PHPV8_VERSION=0.2.2
 ARG GRAPHQL_BRANCH=master
 
 ARG LIBBSON_VERSION=1.9.3
 ARG LIBMONGOC_VERSION=1.9.3
-# https://github.com/AlexMasterov/dockerfiles#alpine-libv8
-ARG V8_SOURCE=https://www.dropbox.com/s/vc7o88ublxshmz2/alpine-libv8-6.5.146.tar.gz
-ARG V8_DIR=/usr/local/v8
+
+COPY --from=libv8 /usr/local/v8 /usr/local/v8
 
 RUN set -x \
   && apk add --update \
@@ -225,9 +225,6 @@ RUN set -x \
   && make \
   && make install \
   && apk del .mongodb-build-dependencies \
-  && : "---------- libv8 ----------" \
-  && (mkdir -p ${V8_DIR}; \
-      curl -fSL --connect-timeout 30 ${V8_SOURCE} | tar xz -C ${V8_DIR}) \
   && : "---------- php-v8 ----------" \
   && PHPV8_FILENAME="php-v8-${PHPV8_VERSION}" \
   && PHPV8_SOURCE="https://github.com/pinepain/php-v8/archive/v${PHPV8_VERSION}.tar.gz" \
@@ -235,7 +232,7 @@ RUN set -x \
   && cd /tmp/${PHPV8_FILENAME} \
   && phpize \
   && ./configure \
-    --with-v8=${V8_DIR} \
+    --with-v8=/usr/local/v8 \
   && make \
   && make install \
   && : "---------- graphql-parser ----------" \
