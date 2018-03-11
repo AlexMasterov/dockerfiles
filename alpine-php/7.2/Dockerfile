@@ -1,4 +1,4 @@
-FROM alexmasterov/alpine-libv8 as libv8
+FROM alexmasterov/alpine-libv8:6.7 as libv8
 FROM alpine:edge
 
 LABEL repository.hub="alexmasterov/alpine-php:7.2" \
