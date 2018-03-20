@@ -8,7 +8,7 @@ ARG NGINX_VERSION=1.13.10
 ARG NGINX_CONFIG=/etc/nginx
 
 ARG LUAJIT_BRANCH=tarantool-1.7
-ARG LUAROCKS_TAG=2.4.3
+ARG LUAROCKS_TAG=2.4.4
 
 ARG DEVELKIT_MODULE_TAG=v0.3.0
 ARG LUA_MODULE_TAG=v0.10.11
@@ -132,11 +132,11 @@ RUN set -x \
   && make \
   && make install \
   && runtimeDeps="$( \
-		scanelf --needed --nobanner --recursive /usr/sbin/nginx /usr/lib/nginx/modules/*.so \
-			| awk '{ gsub(/,/, "\nso:", $2); print "so:" $2 }' \
-			| sort -u \
-			| xargs -r apk info --installed \
-			| sort -u \
+    scanelf --needed --nobanner --recursive /usr/sbin/nginx /usr/lib/nginx/modules/*.so \
+      | awk '{ gsub(/,/, "\nso:", $2); print "so:" $2 }' \
+      | sort -u \
+      | xargs -r apk info --installed \
+      | sort -u \
 	)" \
   && apk add --virtual .nginx-runtime-dependencies \
     ${runtimeDeps} \
