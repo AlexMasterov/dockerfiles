@@ -1,4 +1,4 @@
-FROM alpine:edge
+FROM alpine:3.7
 
 LABEL repository.hub="alexmasterov/alpine-php:7.0" \
       repository.url="https://github.com/AlexMasterov/dockerfiles" \

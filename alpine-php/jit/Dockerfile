@@ -1,5 +1,5 @@
 FROM alexmasterov/alpine-libv8:6.7 as libv8
-FROM alpine:edge
+FROM alpine:3.7
 
 LABEL repository.hub="alexmasterov/alpine-php:jit" \
       repository.url="https://github.com/AlexMasterov/dockerfiles" \
@@ -54,9 +54,9 @@ RUN set -x \
     re2c \
     readline-dev \
     sqlite-dev \
-  && : "---------- Proper libpcre2 ----------" \
-  && (cd /usr/lib; \
-      ln -sf libpcre2-posix.a libpcre2.a; ln -sf libpcre2-posix.so libpcre2.so) \
+  && apk add --no-cache --virtual .php-build-dependencies \
+    --repository https://dl-3.alpinelinux.org/alpine/edge/main/ \
+    argon2-dev \
   && : "---------- Proper iconv ----------" \
   && apk add --no-cache --virtual .iconv-runtime-dependencies \
     --repository https://dl-3.alpinelinux.org/alpine/edge/testing/ \
@@ -64,6 +64,9 @@ RUN set -x \
   && : "---------- Replace binary and headers ----------" \
   && (mv /usr/bin/gnu-iconv /usr/bin/iconv; \
       mv /usr/include/gnu-libiconv/*.h /usr/include; rm -rf /usr/include/gnu-libiconv) \
+  && : "---------- Proper libpcre2 ----------" \
+  && (cd /usr/lib; \
+      ln -sf libpcre2-posix.a libpcre2.a; ln -sf libpcre2-posix.so libpcre2.so) \
   && : "---------- Build flags ----------" \
   && export LDFLAGS="-Wl,-O2 -Wl,--hash-style=both -pie" \
   && export CFLAGS="-O2 -march=native -fstack-protector-strong -fpic -fpie" \
@@ -130,6 +133,7 @@ RUN set -x \
     --with-mhash \
     --with-openssl=/usr \
       --with-system-ciphers \
+    --with-password-argon2 \
     --with-pcre-regex \
       --with-pcre-jit \
     --with-pdo-mysql=mysqlnd \

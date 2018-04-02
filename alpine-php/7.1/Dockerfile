@@ -1,5 +1,5 @@
 FROM alexmasterov/alpine-libv8:6.7 as libv8
-FROM alpine:edge
+FROM alpine:3.7
 
 LABEL repository.hub="alexmasterov/alpine-php:7.1" \
       repository.url="https://github.com/AlexMasterov/dockerfiles" \
@@ -59,7 +59,7 @@ RUN set -x \
     readline-dev \
     sqlite-dev \
   && : "---------- Proper iconv ----------" \
-  && apk add --no-cache --virtual .iconv-runtime-dependencies \
+  && apk add --no-cache --virtual .ext-runtime-dependencies \
     --repository https://dl-3.alpinelinux.org/alpine/edge/testing/ \
     gnu-libiconv-dev \
   && : "---------- Replace binary and headers ----------" \

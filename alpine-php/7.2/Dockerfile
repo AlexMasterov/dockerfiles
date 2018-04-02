@@ -1,5 +1,5 @@
 FROM alexmasterov/alpine-libv8:6.7 as libv8
-FROM alpine:edge
+FROM alpine:3.7
 
 LABEL repository.hub="alexmasterov/alpine-php:7.2" \
       repository.url="https://github.com/AlexMasterov/dockerfiles" \
@@ -31,7 +31,6 @@ RUN set -x \
 
 RUN set -x \
   && apk add --virtual .php-build-dependencies \
-    argon2-dev \
     autoconf \
     binutils \
     bison \
@@ -58,10 +57,14 @@ RUN set -x \
     re2c \
     readline-dev \
     sqlite-dev \
+  && apk add --no-cache --virtual .php-build-dependencies \
+    --repository https://dl-3.alpinelinux.org/alpine/edge/main/ \
+    argon2-dev \
+  && : "---------- Proper iconv ----------" \
   && apk add --no-cache --virtual .ext-runtime-dependencies \
     --repository https://dl-3.alpinelinux.org/alpine/edge/testing/ \
     gnu-libiconv-dev \
-  && : "---------- Proper iconv ----------" \
+  && : "---------- Replace binary and headers ----------" \
   && (mv /usr/bin/gnu-iconv /usr/bin/iconv; \
       mv /usr/include/gnu-libiconv/*.h /usr/include; rm -rf /usr/include/gnu-libiconv) \
   && : "---------- Proper libpcre2 ----------" \
@@ -77,7 +80,6 @@ RUN set -x \
   && curl -fSL --connect-timeout 30 ${PHP_SOURCE} | tar xJ -C /tmp \
   && cd /tmp/php-${PHP_VERSION} \
   && : "---------- Build ----------" \
-  && ./buildconf --force \
   && ./configure \
     --prefix=/usr \
     --sysconfdir=${PHP_CONFIG} \
@@ -130,7 +132,6 @@ RUN set -x \
       --with-xpm-dir=no \
       --with-zlib-dir=/usr \
     --with-iconv=/usr \
-    --with-mcrypt=/usr \
     --with-mhash \
     --with-openssl=/usr \
       --with-system-ciphers \
