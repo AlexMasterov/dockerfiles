@@ -11,6 +11,7 @@ ARG REALPATH_TURBO_TAG=v2.0.0
 ARG REDIS_TAG=4.0.2
 ARG PHPIREDIS_TAG=v1.0.0
 ARG MONGODB_VERSION=1.4.2
+ARG TARANTOOL_TAG=0.3.2
 ARG PHPV8_VERSION=0.2.2
 ARG GRAPHQL_BRANCH=master
 
@@ -181,6 +182,15 @@ RUN set -x \
   && make \
   && make install \
   && apk del .phpiredis-build-dependencies \
+  && : "---------- Tarantool ----------" \
+  && apk add --virtual .tarantool-runtime-dependencies \
+    libltdl \
+  && git clone -o ${TARANTOOL_TAG} --depth 1 https://github.com/tarantool/tarantool-php.git /tmp/tarantool-php \
+  && cd /tmp/tarantool-php \
+  && phpize \
+  && ./configure \
+  && make \
+  && make install \
   && : "---------- MongoDB ----------" \
   && apk add --virtual .mongodb-build-dependencies \
     cmake \
