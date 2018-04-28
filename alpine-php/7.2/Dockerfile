@@ -13,6 +13,7 @@ ARG XDEBUG_TAG=2.6.0
 ARG MSGPACK_TAG=msgpack-2.0.2
 ARG REDIS_TAG=4.0.2
 ARG PHPIREDIS_TAG=v1.0.0
+ARG TARANTOOL_VERSION=0.3.2
 ARG MONGODB_VERSION=1.4.3
 ARG TARANTOOL_TAG=0.3.2
 ARG AMQP_TAG=v1.9.3
@@ -201,8 +202,10 @@ RUN set -x \
   && : "---------- Tarantool ----------" \
   && apk add --virtual .tarantool-runtime-dependencies \
     libltdl \
-  && git clone -o ${TARANTOOL_TAG} --depth 1 https://github.com/tarantool/tarantool-php.git /tmp/tarantool-php \
-  && cd /tmp/tarantool-php \
+  && TARANTOOL_FILENAME="tarantool-php-${TARANTOOL_VERSION}" \
+  && TARANTOOL_SOURCE="https://github.com/tarantool/tarantool-php/archive/${TARANTOOL_VERSION}.tar.gz" \
+  && curl -fSL --connect-timeout 30 ${TARANTOOL_SOURCE} | tar xz -C /tmp \
+  && cd /tmp/${TARANTOOL_FILENAME} \
   && phpize \
   && ./configure \
   && make \

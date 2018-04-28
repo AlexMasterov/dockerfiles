@@ -11,7 +11,7 @@ ARG REALPATH_TURBO_TAG=v2.0.0
 ARG REDIS_TAG=4.0.2
 ARG PHPIREDIS_TAG=v1.0.0
 ARG MONGODB_VERSION=1.4.3
-ARG TARANTOOL_TAG=0.3.2
+ARG TARANTOOL_VERSION=0.3.2
 ARG PHPV8_VERSION=0.2.2
 ARG GRAPHQL_BRANCH=master
 
@@ -185,8 +185,10 @@ RUN set -x \
   && : "---------- Tarantool ----------" \
   && apk add --virtual .tarantool-runtime-dependencies \
     libltdl \
-  && git clone -o ${TARANTOOL_TAG} --depth 1 https://github.com/tarantool/tarantool-php.git /tmp/tarantool-php \
-  && cd /tmp/tarantool-php \
+  && TARANTOOL_FILENAME="tarantool-php-${TARANTOOL_VERSION}" \
+  && TARANTOOL_SOURCE="https://github.com/tarantool/tarantool-php/archive/${TARANTOOL_VERSION}.tar.gz" \
+  && curl -fSL --connect-timeout 30 ${TARANTOOL_SOURCE} | tar xz -C /tmp \
+  && cd /tmp/${TARANTOOL_FILENAME} \
   && phpize \
   && ./configure \
   && make \
