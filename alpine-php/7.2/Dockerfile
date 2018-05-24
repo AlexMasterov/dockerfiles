@@ -19,9 +19,6 @@ ARG TARANTOOL_TAG=0.3.2
 ARG AMQP_TAG=v1.9.3
 ARG PHPV8_VERSION=0.2.2
 
-ARG LIBBSON_VERSION=1.9.5
-ARG LIBMONGOC_VERSION=1.10.0
-
 COPY --from=libv8 /usr/local/v8 /usr/local/v8
 
 RUN set -x \
@@ -213,37 +210,6 @@ RUN set -x \
   && : "---------- MongoDB ----------" \
   && apk add --virtual .mongodb-build-dependencies \
     cmake \
-  && : "---------- libbson ----------" \
-  && LIBBSON_FILENAME="libbson-${LIBBSON_VERSION}" \
-  && LIBBSON_SOURCE="https://github.com/mongodb/libbson/releases/download/${LIBBSON_VERSION}/${LIBBSON_FILENAME}.tar.gz" \
-  && curl -fSL --connect-timeout 30 ${LIBBSON_SOURCE} | tar xz -C /tmp \
-  && cd /tmp/${LIBBSON_FILENAME} \
-  && cmake \
-    -DCMAKE_BUILD_TYPE=Release \
-    -DENABLE_STATIC=OFF \
-    -DENABLE_TESTS:BOOL=OFF \
-    -DENABLE_EXAMPLES:BOOL=OFF \
-    . \
-  && make \
-  && make install \
-  && : "---------- mongo-c-driver ----------" \
-  && LIBMONGOC_FILENAME="mongo-c-driver-${LIBMONGOC_VERSION}" \
-  && LIBMONGOC_SOURCE="https://github.com/mongodb/mongo-c-driver/releases/download/${LIBMONGOC_VERSION}/${LIBMONGOC_FILENAME}.tar.gz" \
-  && curl -fSL --connect-timeout 30 ${LIBMONGOC_SOURCE} | tar xz -C /tmp \
-  && cd /tmp/${LIBMONGOC_FILENAME} \
-  && cmake \
-    -DCMAKE_BUILD_TYPE=Release \
-    -DENABLE_AUTOMATIC_INIT_AND_CLEANUP:BOOL=OFF \
-    -DENABLE_STATIC=OFF \
-    -DENABLE_TESTS:BOOL=OFF \
-    -DENABLE_EXAMPLES:BOOL=OFF \
-    -DENABLE_SSL=LIBRESSL \
-    -DENABLE_SASL=OFF \
-    . \
-  && make \
-  && make install \
-  && : "---------- mongo-php-driver ----------" \
-  && apk add --virtual .mongodb-build-dependencies \
     pkgconfig \
   && apk add --virtual .mongodb-runtime-dependencies \
     libressl2.6-libtls \
@@ -253,8 +219,7 @@ RUN set -x \
   && cd /tmp/${MONGODB_FILENAME} \
   && phpize \
   && ./configure \
-    --with-libbson=system \
-    --with-libmongoc=system \
+    --with-mongodb-ssl=libressl \
   && make \
   && make install \
   && apk del .mongodb-build-dependencies \

@@ -19,8 +19,6 @@ ARG AMQP_TAG=v1.9.3
 ARG PHPV8_VERSION=0.1.9
 ARG GRAPHQL_BRANCH=master
 
-ARG LIBBSON_VERSION=1.9.5
-ARG LIBMONGOC_VERSION=1.10.0
 # https://github.com/AlexMasterov/dockerfiles#alpine-libv8
 ARG V8_SOURCE=https://www.dropbox.com/s/lhd6x20r47z39v0/alpine-libv8-6.4.34.tar.gz
 ARG V8_DIR=/usr/local/v8
@@ -222,36 +220,6 @@ RUN set -x \
   && : "---------- Mongodb ----------" \
   && apk add --virtual .mongodb-build-dependencies \
     cmake \
-  && : "---------- libbson ----------" \
-  && LIBBSON_FILENAME="libbson-${LIBBSON_VERSION}" \
-  && LIBBSON_SOURCE="https://github.com/mongodb/libbson/releases/download/${LIBBSON_VERSION}/${LIBBSON_FILENAME}.tar.gz" \
-  && curl -fSL --connect-timeout 30 ${LIBBSON_SOURCE} | tar xz -C /tmp \
-  && cd /tmp/${LIBBSON_FILENAME} \
-  && cmake \
-    -DCMAKE_BUILD_TYPE=Release \
-    -DENABLE_STATIC=OFF \
-    -DENABLE_TESTS:BOOL=OFF \
-    -DENABLE_EXAMPLES:BOOL=OFF \
-    . \
-  && make \
-  && make install \
-  && : "---------- mongo-c-driver ----------" \
-  && LIBMONGOC_FILENAME="mongo-c-driver-${LIBMONGOC_VERSION}" \
-  && LIBMONGOC_SOURCE="https://github.com/mongodb/mongo-c-driver/releases/download/${LIBMONGOC_VERSION}/${LIBMONGOC_FILENAME}.tar.gz" \
-  && curl -fSL --connect-timeout 30 ${LIBMONGOC_SOURCE} | tar xz -C /tmp \
-  && cd /tmp/${LIBMONGOC_FILENAME} \
-  && cmake \
-    -DCMAKE_BUILD_TYPE=Release \
-    -DENABLE_AUTOMATIC_INIT_AND_CLEANUP:BOOL=OFF \
-    -DENABLE_STATIC=OFF \
-    -DENABLE_TESTS:BOOL=OFF \
-    -DENABLE_EXAMPLES:BOOL=OFF \
-    -DENABLE_SSL=LIBRESSL \
-    -DENABLE_SASL=OFF \
-    . \
-  && make \
-  && make install \
-  && apk add --virtual .mongodb-build-dependencies \
     pkgconfig \
   && apk add --virtual .mongodb-runtime-dependencies \
     libressl2.6-libtls \
@@ -262,8 +230,7 @@ RUN set -x \
   && cd /tmp/${MONGODB_FILENAME} \
   && phpize \
   && ./configure \
-    --with-libbson=system \
-    --with-libmongoc=system \
+    --with-mongodb-ssl=libressl \
   && make \
   && make install \
   && apk del .mongodb-build-dependencies \
