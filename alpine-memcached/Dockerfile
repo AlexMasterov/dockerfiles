@@ -4,7 +4,7 @@ LABEL repository.hub="alexmasterov/alpine-memcached" \
       repository.url="https://github.com/AlexMasterov/dockerfiles" \
       maintainer="Alex Masterov <alex.masterow@gmail.com>"
 
-ARG MEMCACHED_VERSION=1.5.7
+ARG MEMCACHED_VERSION=1.5.8
 
 RUN set -x \
   && apk add --update \
