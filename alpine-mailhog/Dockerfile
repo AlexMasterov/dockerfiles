@@ -1,4 +1,4 @@
-FROM golang:1.9-alpine
+FROM golang:1.10-alpine
 
 LABEL repository.hub="alexmasterov/alpine-mailhog" \
       repository.url="https://github.com/AlexMasterov/dockerfiles" \
