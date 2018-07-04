@@ -4,7 +4,7 @@ LABEL repository.hub="alexmasterov/alpine-nginx-tarantool" \
       repository.url="https://github.com/AlexMasterov/dockerfiles" \
       maintainer="Alex Masterov <alex.masterow@gmail.com>"
 
-ARG NGINX_VERSION=1.15.0
+ARG NGINX_VERSION=1.15.1
 ARG NGINX_CONFIG=/etc/nginx
 
 ARG LUAJIT_BRANCH=tarantool-1.7
@@ -68,8 +68,8 @@ RUN set -x \
   && : "---------- Nginx Tarantool Module  ----------" \
   && TARANTOOL_UPSTREAM_GIT="https://github.com/tarantool/nginx_upstream_module.git" \
   && TARANTOOL_UPSTREAM_DIR="/tmp/nginx_upstream_module" \
-  && git clone --depth 1 ${TARANTOOL_UPSTREAM_GIT} ${TARANTOOL_UPSTREAM_DIR} \
-  && git clone --depth 1 https://github.com/lloyd/yajl.git /tmp/yajl \
+  && git clone --single-branch --depth 1 ${TARANTOOL_UPSTREAM_GIT} ${TARANTOOL_UPSTREAM_DIR} \
+  && git clone --single-branch --depth 1 https://github.com/lloyd/yajl.git /tmp/yajl \
   && cd /tmp/yajl \
   && cmake \
     -DCMAKE_BUILD_TYPE=Release \
@@ -77,7 +77,7 @@ RUN set -x \
   && make \
   && make install \
   && : "---------- Msgpuck  ----------" \
-  && git clone --depth 1 https://github.com/rtsisyk/msgpuck.git /tmp/msgpuck \
+  && git clone --single-branch --depth 1 https://github.com/rtsisyk/msgpuck.git /tmp/msgpuck \
   && cd /tmp/msgpuck \
   && cmake \
     -DCMAKE_BUILD_TYPE=Release \
@@ -137,7 +137,7 @@ RUN set -x \
       | sort -u \
       | xargs -r apk info --installed \
       | sort -u \
-	)" \
+    )" \
   && apk add --virtual .nginx-runtime-dependencies \
     ${runtimeDeps} \
   && : "---------- Removing build dependencies, clean temporary files ----------" \
