@@ -5,7 +5,7 @@ LABEL repository.hub="alexmasterov/alpine-php:7.2" \
       repository.url="https://github.com/AlexMasterov/dockerfiles" \
       maintainer="Alex Masterov <alex.masterow@gmail.com>"
 
-ARG PHP_VERSION=7.2.7
+ARG PHP_VERSION=7.2.8
 ARG PHP_CONFIG=/etc/php
 
 ARG REALPATH_TURBO_TAG=v2.0.0
@@ -45,6 +45,7 @@ RUN set -x \
     jpeg-dev \
     libmcrypt-dev \
     libpng-dev \
+    libsodium-dev \
     libtool \
     libwebp-dev \
     libxml2-dev \
@@ -110,6 +111,7 @@ RUN set -x \
     --enable-opcache \
       --enable-huge-code-pages \
       --enable-opcache-file \
+    --enable-option-checking=fatal \
     --enable-pcntl \
     --enable-phar \
     --enable-session \
@@ -121,6 +123,7 @@ RUN set -x \
     --enable-xmlwriter \
     --enable-zip \
       --with-pcre-dir=/usr \
+    --with-sodium=/usr \
     --with-bz2=/usr \
     --with-curl=/usr \
     --with-gd \
