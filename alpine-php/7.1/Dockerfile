@@ -5,7 +5,7 @@ LABEL repository.hub="alexmasterov/alpine-php:7.1" \
       repository.url="https://github.com/AlexMasterov/dockerfiles" \
       maintainer="Alex Masterov <alex.masterow@gmail.com>"
 
-ARG PHP_VERSION=7.1.19
+ARG PHP_VERSION=7.1.20
 ARG PHP_CONFIG=/etc/php
 
 ARG REALPATH_TURBO_TAG=v2.0.0
@@ -103,6 +103,7 @@ RUN set -x \
     --enable-opcache \
       --enable-huge-code-pages \
       --enable-opcache-file \
+    --enable-option-checking=fatal \
     --enable-pcntl \
     --enable-phar \
     --enable-session \

@@ -106,6 +106,7 @@ RUN set -x \
     --enable-opcache \
       --enable-huge-code-pages \
       --enable-opcache-file \
+    --enable-option-checking=fatal \
     --enable-pcntl \
     --enable-phar \
     --enable-session \
