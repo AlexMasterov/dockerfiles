@@ -1,4 +1,4 @@
-FROM alpine:edge
+FROM alpine:3.8
 
 LABEL repository.hub="alexmasterov/alpine-nginx-tarantool" \
       repository.url="https://github.com/AlexMasterov/dockerfiles" \
@@ -8,11 +8,11 @@ ARG NGINX_VERSION=1.15.2
 ARG NGINX_CONFIG=/etc/nginx
 
 ARG LUAJIT_BRANCH=tarantool-1.7
-ARG LUAROCKS_TAG=2.4.4
+ARG LUAROCKS_TAG=3.0.0
 
 ARG DEVELKIT_MODULE_TAG=v0.3.0
-ARG LUA_MODULE_TAG=v0.10.12
-ARG TARANTOOL_UPSTREAM_TAG=v2.6-rc3
+ARG LUA_MODULE_TAG=v0.10.13
+ARG TARANTOOL_UPSTREAM_TAG=v2.7
 
 ENV LUAJIT_LIB=/usr/local/lib \
     LUAJIT_INC=/usr/local/include/luajit-2.1
@@ -68,7 +68,7 @@ RUN set -x \
   && : "---------- Nginx Tarantool Module  ----------" \
   && TARANTOOL_UPSTREAM_GIT="https://github.com/tarantool/nginx_upstream_module.git" \
   && TARANTOOL_UPSTREAM_DIR="/tmp/nginx_upstream_module" \
-  && git clone --single-branch --depth 1 ${TARANTOOL_UPSTREAM_GIT} ${TARANTOOL_UPSTREAM_DIR} \
+  && git clone -o ${TARANTOOL_UPSTREAM_TAG} --depth 1 ${TARANTOOL_UPSTREAM_GIT} ${TARANTOOL_UPSTREAM_DIR} \
   && git clone --single-branch --depth 1 https://github.com/lloyd/yajl.git /tmp/yajl \
   && cd /tmp/yajl \
   && cmake \
