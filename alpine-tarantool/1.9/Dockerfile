@@ -1,4 +1,4 @@
-FROM alpine:edge
+FROM alpine:3.8
 
 LABEL repository.hub="alexmasterov/alpine-tarantool:1.9" \
       repository.url="https://github.com/AlexMasterov/dockerfiles" \

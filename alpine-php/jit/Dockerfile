@@ -1,5 +1,5 @@
 FROM alexmasterov/alpine-libv8:6.7 as libv8
-FROM alpine:3.7
+FROM alpine:3.8
 
 LABEL repository.hub="alexmasterov/alpine-php:jit" \
       repository.url="https://github.com/AlexMasterov/dockerfiles" \
@@ -25,6 +25,7 @@ RUN set -x \
 
 RUN set -x \
   && apk add --virtual .php-build-dependencies \
+    argon2-dev \
     autoconf \
     binutils \
     bison \
@@ -51,9 +52,6 @@ RUN set -x \
     re2c \
     readline-dev \
     sqlite-dev \
-  && apk add --no-cache --virtual .php-build-dependencies \
-    --repository https://dl-3.alpinelinux.org/alpine/edge/main/ \
-    argon2-dev \
   && : "---------- Proper iconv ----------" \
   && apk add --no-cache --virtual .iconv-runtime-dependencies \
     --repository https://dl-3.alpinelinux.org/alpine/edge/testing/ \
@@ -184,7 +182,7 @@ RUN set -x \
     cmake \
     pkgconfig \
   && apk add --virtual .mongodb-runtime-dependencies \
-    libressl2.6-libtls \
+    libressl2.7-libtls \
   && MONGODB_FILENAME="mongodb-${MONGODB_VERSION}" \
   && MONGODB_SOURCE="https://github.com/mongodb/mongo-php-driver/releases/download/${MONGODB_VERSION}/${MONGODB_FILENAME}.tgz" \
   && curl -fSL --connect-timeout 30 ${MONGODB_SOURCE} | tar xz -C /tmp \
