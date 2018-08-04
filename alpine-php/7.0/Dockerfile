@@ -1,4 +1,4 @@
-FROM alpine:3.8
+FROM alpine:3.7
 
 LABEL repository.hub="alexmasterov/alpine-php:7.0" \
       repository.url="https://github.com/AlexMasterov/dockerfiles" \
@@ -224,7 +224,7 @@ RUN set -x \
     cmake \
     pkgconfig \
   && apk add --virtual .mongodb-runtime-dependencies \
-    libressl2.7-libtls \
+    libressl2.6-libtls \
   && : "---------- mongo-php-driver ----------" \
   && MONGODB_FILENAME="mongodb-${MONGODB_VERSION}" \
   && MONGODB_SOURCE="https://github.com/mongodb/mongo-php-driver/releases/download/${MONGODB_VERSION}/${MONGODB_FILENAME}.tgz" \
