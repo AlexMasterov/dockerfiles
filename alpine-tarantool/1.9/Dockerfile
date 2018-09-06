@@ -4,7 +4,7 @@ LABEL repository.hub="alexmasterov/alpine-tarantool:1.9" \
       repository.url="https://github.com/AlexMasterov/dockerfiles" \
       maintainer="Alex Masterov <alex.masterow@gmail.com>"
 
-ARG TARANTOOL_TAG=1.9.1
+ARG TARANTOOL_TAG=1.9.2
 ARG TARANTOOL_BUILD_TYPE=RelWithDebInfo
 ARG TARANTOOL_BACKTRACE=ON
 ARG TARANTOOL_DIST=ON
