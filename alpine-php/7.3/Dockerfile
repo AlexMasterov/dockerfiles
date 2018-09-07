@@ -140,7 +140,7 @@ RUN set -x \
       | sort -u \
 	)" \
   && apk add --virtual .php-runtime-dependencies \
-    ${runtimeDeps}
+    ${runtimeDeps} \
   && : "---------- Removing build dependencies, clean temporary files ----------" \
   && apk del .php-build-dependencies \
   && rm -rf /var/cache/apk/* /var/tmp/* /tmp/*
