@@ -5,13 +5,13 @@ LABEL repository.hub="alexmasterov/alpine-php:7.1" \
       repository.url="https://github.com/AlexMasterov/dockerfiles" \
       maintainer="Alex Masterov <alex.masterow@gmail.com>"
 
-ARG PHP_VERSION=7.1.21
+ARG PHP_VERSION=7.1.22
 ARG PHP_CONFIG=/etc/php
 
 ARG REALPATH_TURBO_TAG=v2.0.0
 ARG XDEBUG_TAG=2.6.1
 ARG MSGPACK_TAG=msgpack-2.0.2
-ARG REDIS_TAG=4.1.0
+ARG REDIS_TAG=4.1.1
 ARG PHPIREDIS_TAG=v1.0.0
 ARG MEMCACHED_TAG=v3.0.4
 ARG TARANTOOL_VERSION=0.3.2
