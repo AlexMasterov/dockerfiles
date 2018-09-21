@@ -1,4 +1,3 @@
-FROM alexmasterov/alpine-libv8:6.7 as libv8
 FROM alpine:3.8
 
 LABEL repository.hub="alexmasterov/alpine-php:jit" \
@@ -6,13 +5,6 @@ LABEL repository.hub="alexmasterov/alpine-php:jit" \
       maintainer="Alex Masterov <alex.masterow@gmail.com>"
 
 ARG PHP_CONFIG=/etc/php
-
-ARG REALPATH_TURBO_TAG=v2.0.0
-ARG MONGODB_VERSION=1.5.2
-ARG PHPV8_VERSION=0.2.2
-ARG GRAPHQL_BRANCH=master
-
-COPY --from=libv8 /usr/local/v8 /usr/local/v8
 
 RUN set -x \
   && apk add --update \
@@ -148,58 +140,6 @@ RUN set -x \
 	)" \
   && apk add --virtual .php-runtime-dependencies \
     ${runtimeDeps} \
-  && : "---------- https://bugs.php.net/bug.php?id=52312 ----------" \
-  && git clone -o ${REALPATH_TURBO_TAG} --depth 1 https://github.com/Whissi/realpath_turbo.git /tmp/realpath_turbo \
-  && cd /tmp/realpath_turbo \
-  && phpize \
-  && ./configure \
-  && make \
-  && make install \
-  && : "---------- MongoDB ----------" \
-  && apk add --virtual .mongodb-build-dependencies \
-    cmake \
-    pkgconfig \
-  && apk add --virtual .mongodb-runtime-dependencies \
-    libressl2.7-libtls \
-  && MONGODB_FILENAME="mongodb-${MONGODB_VERSION}" \
-  && MONGODB_SOURCE="https://github.com/mongodb/mongo-php-driver/releases/download/${MONGODB_VERSION}/${MONGODB_FILENAME}.tgz" \
-  && curl -fSL --connect-timeout 30 ${MONGODB_SOURCE} | tar xz -C /tmp \
-  && cd /tmp/${MONGODB_FILENAME} \
-  && phpize \
-  && ./configure \
-    --with-mongodb-ssl=libressl \
-  && make \
-  && make install \
-  && apk del .mongodb-build-dependencies \
-  && : "---------- php-v8 ----------" \
-  && PHPV8_FILENAME="php-v8-${PHPV8_VERSION}" \
-  && PHPV8_SOURCE="https://github.com/pinepain/php-v8/archive/v${PHPV8_VERSION}.tar.gz" \
-  && curl -fSL --connect-timeout 30 ${PHPV8_SOURCE} | tar xz -C /tmp \
-  && cd /tmp/${PHPV8_FILENAME} \
-  && phpize \
-  && ./configure \
-    --with-v8=/usr/local/v8 \
-  && make \
-  && make install \
-  && : "---------- graphql-parser ----------" \
-  && apk add --virtual .graphql-build-dependencies \
-    bison \
-    cmake \
-    flex \
-    python2 \
-  && git clone -b ${GRAPHQL_BRANCH} --depth 1 https://github.com/dosten/graphql-parser-php.git /tmp/graphql \
-  && : "---------- libgraphqlparser ----------" \
-  && cd /tmp/graphql/deps/libgraphqlparser \
-  && cmake . \
-  && make \
-  && make install \
-  && : "---------- graphql-parser-php ----------" \
-  && cd /tmp/graphql \
-  && phpize \
-  && ./configure \
-  && make \
-  && make install \
-  && apk del .graphql-build-dependencies \
   && : "---------- Removing build dependencies, clean temporary files ----------" \
   && apk del .php-build-dependencies \
   && rm -rf /var/cache/apk/* /var/tmp/* /tmp/*
