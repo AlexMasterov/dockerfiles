@@ -8,8 +8,6 @@ LABEL repository.hub="alexmasterov/alpine-php:jit" \
 ARG PHP_CONFIG=/etc/php
 
 ARG REALPATH_TURBO_TAG=v2.0.0
-ARG REDIS_TAG=4.1.0
-ARG PHPIREDIS_TAG=v1.0.0
 ARG MONGODB_VERSION=1.5.2
 ARG PHPV8_VERSION=0.2.2
 ARG GRAPHQL_BRANCH=master
@@ -157,26 +155,6 @@ RUN set -x \
   && ./configure \
   && make \
   && make install \
-  && : "---------- Redis ----------" \
-  && git clone -o ${REDIS_TAG} --depth 1 https://github.com/phpredis/phpredis.git /tmp/redis \
-  && cd /tmp/redis \
-  && phpize \
-  && ./configure \
-  && make \
-  && make install \
-  && : "---------- Phpiredis ----------" \
-  && : "---------- https://blog.remirepo.net/post/2016/11/13/Redis-from-PHP ----------" \
-  && apk add --virtual .phpiredis-build-dependencies \
-    hiredis-dev \
-  && apk add --virtual .phpiredis-runtime-dependencies \
-    hiredis \
-  && git clone -o ${PHPIREDIS_TAG} --depth 1 https://github.com/nrk/phpiredis.git /tmp/phpiredis \
-  && cd /tmp/phpiredis \
-  && phpize \
-  && ./configure \
-  && make \
-  && make install \
-  && apk del .phpiredis-build-dependencies \
   && : "---------- MongoDB ----------" \
   && apk add --virtual .mongodb-build-dependencies \
     cmake \
