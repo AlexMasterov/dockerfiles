@@ -4,7 +4,7 @@ LABEL repository.hub="alexmasterov/alpine-tarantool:1.9" \
       repository.url="https://github.com/AlexMasterov/dockerfiles" \
       maintainer="Alex Masterov <alex.masterow@gmail.com>"
 
-ARG TARANTOOL_TAG=1.9.2
+ARG TARANTOOL_TAG=1.10.2
 ARG TARANTOOL_BUILD_TYPE=RelWithDebInfo
 ARG TARANTOOL_BACKTRACE=ON
 ARG TARANTOOL_DIST=ON
@@ -40,7 +40,7 @@ RUN set -x \
     $(test "${TARANTOOL_BUNDLED_LIBYAML}" = 'OFF' && echo 'yaml-dev') \
   && : "---------- Tarantool ----------" \
   && TARANTOOL_DIR="/tmp/tarantool" \
-  && git clone -o ${TARANTOOL_TAG} https://github.com/tarantool/tarantool.git ${TARANTOOL_DIR} \
+  && git clone -o ${TARANTOOL_TAG} --depth 3 https://github.com/tarantool/tarantool.git ${TARANTOOL_DIR} \
   && git -C ${TARANTOOL_DIR} submodule update \
     --init --recursive --jobs $(getconf _NPROCESSORS_ONLN) \
   && cd ${TARANTOOL_DIR} \
