@@ -40,7 +40,7 @@ RUN set -x \
     $(test "${TARANTOOL_BUNDLED_LIBYAML}" = 'OFF' && echo 'yaml-dev') \
   && : "---------- Tarantool ----------" \
   && TARANTOOL_DIR="/tmp/tarantool" \
-  && git clone -o ${TARANTOOL_TAG} --depth 3 https://github.com/tarantool/tarantool.git ${TARANTOOL_DIR} \
+  && git clone -o ${TARANTOOL_TAG} https://github.com/tarantool/tarantool.git ${TARANTOOL_DIR} \
   && git -C ${TARANTOOL_DIR} submodule update \
     --init --recursive --jobs $(getconf _NPROCESSORS_ONLN) \
   && cd ${TARANTOOL_DIR} \
