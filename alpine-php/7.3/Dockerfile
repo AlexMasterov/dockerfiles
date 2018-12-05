@@ -4,7 +4,7 @@ LABEL repository.hub="alexmasterov/alpine-php:7.3" \
       repository.url="https://github.com/AlexMasterov/dockerfiles" \
       maintainer="Alex Masterov <alex.masterow@gmail.com>"
 
-ARG PHP_VERSION=7.3.0RC5
+ARG PHP_VERSION=7.3.0
 ARG PHP_CONFIG=/etc/php
 
 RUN set -x \
@@ -60,7 +60,7 @@ RUN set -x \
   && export CPPFLAGS=${CFLAGS} \
   && export MAKEFLAGS="-j $(expr $(getconf _NPROCESSORS_ONLN) \+ 1)" \
   && : "---------- PHP ----------" \
-  && PHP_SOURCE="https://downloads.php.net/~cmb/php-${PHP_VERSION}.tar.xz" \
+  && PHP_SOURCE="https://secure.php.net/get/php-${PHP_VERSION}.tar.xz/from/this/mirror" \
   && curl -fSL --connect-timeout 30 ${PHP_SOURCE} | tar xJ -C /tmp \
   && cd /tmp/php-${PHP_VERSION} \
   && : "---------- Build ----------" \
