@@ -12,7 +12,6 @@ ARG REALPATH_TURBO_TAG=v2.0.0
 ARG XDEBUG_TAG=2.6.1
 ARG MSGPACK_TAG=msgpack-2.0.2
 ARG REDIS_TAG=4.2.0
-ARG PHPIREDIS_TAG=v1.0.0
 ARG TARANTOOL_VERSION=0.3.2
 ARG MONGODB_VERSION=1.5.3
 ARG TARANTOOL_TAG=0.3.2
@@ -183,19 +182,6 @@ RUN set -x \
   && ./configure \
   && make \
   && make install \
-  && : "---------- Phpiredis ----------" \
-  && : "---------- https://blog.remirepo.net/post/2016/11/13/Redis-from-PHP ----------" \
-  && apk add --virtual .phpiredis-build-dependencies \
-    hiredis-dev \
-  && apk add --virtual .phpiredis-runtime-dependencies \
-    hiredis \
-  && git clone -o ${PHPIREDIS_TAG} --depth 1 https://github.com/nrk/phpiredis.git /tmp/phpiredis \
-  && cd /tmp/phpiredis \
-  && phpize \
-  && ./configure \
-  && make \
-  && make install \
-  && apk del .phpiredis-build-dependencies \
   && : "---------- Tarantool ----------" \
   && apk add --virtual .tarantool-runtime-dependencies \
     libltdl \
