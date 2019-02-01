@@ -1,4 +1,4 @@
-FROM alpine:3.8
+FROM alpine:3.9
 
 LABEL repository.hub="alexmasterov/alpine-nginx-tarantool" \
       repository.url="https://github.com/AlexMasterov/dockerfiles" \
@@ -30,9 +30,9 @@ RUN set -x \
     g++ \
     gcc \
     git \
-    libressl-dev \
     linux-headers \
     make \
+    openssl-dev \
     pcre-dev \
     zlib-dev \
   && : "---------- Build flags ----------" \
@@ -77,7 +77,7 @@ RUN set -x \
   && make \
   && make install \
   && : "---------- Msgpuck  ----------" \
-  && git clone --single-branch --depth 1 https://github.com/rtsisyk/msgpuck.git /tmp/msgpuck \
+  && git clone --depth 1 https://github.com/rtsisyk/msgpuck.git /tmp/msgpuck \
   && cd /tmp/msgpuck \
   && cmake \
     -DCMAKE_BUILD_TYPE=Release \
