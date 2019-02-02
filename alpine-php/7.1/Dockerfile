@@ -1,5 +1,5 @@
 FROM alexmasterov/alpine-libv8:6.7 as libv8
-FROM alpine:3.8
+FROM alpine:3.9
 
 LABEL repository.hub="alexmasterov/alpine-php:7.1" \
       repository.url="https://github.com/AlexMasterov/dockerfiles" \
@@ -12,12 +12,11 @@ ARG REALPATH_TURBO_TAG=v2.0.0
 ARG XDEBUG_TAG=2.6.1
 ARG MSGPACK_TAG=msgpack-2.0.2
 ARG REDIS_TAG=4.2.0
-ARG MEMCACHED_TAG=v3.0.4
+ARG MEMCACHED_TAG=v3.1.3
 ARG TARANTOOL_VERSION=0.3.2
 ARG MONGODB_VERSION=1.5.3
-ARG AMQP_TAG=v1.9.3
+ARG AMQP_TAG=v1.9.4
 ARG PHPV8_VERSION=0.2.2
-ARG GRAPHQL_BRANCH=master
 
 COPY --from=libv8 /usr/local/v8 /usr/local/v8
 
@@ -208,15 +207,13 @@ RUN set -x \
   && apk add --virtual .mongodb-build-dependencies \
     cmake \
     pkgconfig \
-  && apk add --virtual .mongodb-runtime-dependencies \
-    libressl2.7-libtls \
   && MONGODB_FILENAME="mongodb-${MONGODB_VERSION}" \
   && MONGODB_SOURCE="https://github.com/mongodb/mongo-php-driver/releases/download/${MONGODB_VERSION}/${MONGODB_FILENAME}.tgz" \
   && curl -fSL --connect-timeout 30 ${MONGODB_SOURCE} | tar xz -C /tmp \
   && cd /tmp/${MONGODB_FILENAME} \
   && phpize \
   && ./configure \
-    --with-mongodb-ssl=libressl \
+    --with-mongodb-ssl=openssl \
   && make \
   && make install \
   && apk del .mongodb-build-dependencies \
