@@ -4,7 +4,7 @@ LABEL repository.hub="alexmasterov/alpine-redis:4.0" \
       repository.url="https://github.com/AlexMasterov/dockerfiles" \
       maintainer="Alex Masterov <alex.masterow@gmail.com>"
 
-ARG REDIS_VERSION=4.0.11
+ARG REDIS_VERSION=4.0.13
 ARG REDIS_MALLOC=jemalloc
 
 RUN set -x \
