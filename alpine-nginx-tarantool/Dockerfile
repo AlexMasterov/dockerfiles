@@ -4,15 +4,15 @@ LABEL repository.hub="alexmasterov/alpine-nginx-tarantool" \
       repository.url="https://github.com/AlexMasterov/dockerfiles" \
       maintainer="Alex Masterov <alex.masterow@gmail.com>"
 
-ARG NGINX_VERSION=1.16.0
+ARG NGINX_VERSION=1.17.0
 ARG NGINX_CONFIG=/etc/nginx
 
 ARG LUAJIT_BRANCH=tarantool-1.7
-ARG LUAROCKS_TAG=3.0.4
+ARG LUAROCKS_TAG=3.1.2
 
 ARG DEVELKIT_MODULE_TAG=v0.3.1rc1
-ARG LUA_MODULE_TAG=v0.10.13
-ARG TARANTOOL_UPSTREAM_TAG=v2.7
+ARG LUA_MODULE_TAG=v0.10.15
+ARG TARANTOOL_UPSTREAM_TAG=v2.7.1
 
 ENV LUAJIT_LIB=/usr/local/lib \
     LUAJIT_INC=/usr/local/include/luajit-2.1
