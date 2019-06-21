@@ -46,7 +46,7 @@ RUN set -x \
     sqlite-dev \
   && : "---------- Proper iconv ----------" \
   && apk add --no-cache --virtual .ext-runtime-dependencies \
-    --repository https://nl.alpinelinux.org/alpine/edge/testing/ \
+    --repository https://nl.alpinelinux.org/alpine/edge/community/ \
     gnu-libiconv-dev \
   && : "---------- Replace binary and headers ----------" \
   && (mv /usr/bin/gnu-iconv /usr/bin/iconv; \
