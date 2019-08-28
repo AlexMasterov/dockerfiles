@@ -1,4 +1,4 @@
-FROM alpine:3.8
+FROM alpine:3.10
 
 LABEL repository.hub="alexmasterov/alpine-php:jit" \
       repository.url="https://github.com/AlexMasterov/dockerfiles" \
@@ -6,15 +6,15 @@ LABEL repository.hub="alexmasterov/alpine-php:jit" \
 
 ARG PHP_CONFIG=/etc/php
 
-RUN set -x \
-  && apk add --update \
+RUN set -eux; \
+  apk add --update \
     ssmtp \
-    tini \
-  && addgroup -g 82 -S www-data \
-  && adduser -u 82 -S -D -h /var/cache/www-data -s /sbin/nologin -G www-data www-data
+    tini; \
+  addgroup -g 82 -S www-data; \
+  adduser -u 82 -S -D -h /var/cache/www-data -s /sbin/nologin -G www-data www-data
 
-RUN set -x \
-  && apk add --virtual .php-build-dependencies \
+RUN set -eux; \
+  apk add --virtual .php-build-dependencies \
     argon2-dev \
     autoconf \
     binutils \
@@ -27,6 +27,7 @@ RUN set -x \
     g++ \
     gcc \
     git \
+    gnu-libiconv-dev \
     icu-dev \
     jpeg-dev \
     libmcrypt-dev \
@@ -42,28 +43,26 @@ RUN set -x \
     re2c \
     readline-dev \
     sqlite-dev \
-  && : "---------- Proper iconv ----------" \
-  && apk add --no-cache --virtual .iconv-runtime-dependencies \
-    --repository https://nl.alpinelinux.org/alpine/edge/testing/ \
-    gnu-libiconv-dev \
-  && : "---------- Replace binary and headers ----------" \
-  && (mv /usr/bin/gnu-iconv /usr/bin/iconv; \
-      mv /usr/include/gnu-libiconv/*.h /usr/include; rm -rf /usr/include/gnu-libiconv) \
-  && : "---------- Proper libpcre2 ----------" \
-  && (cd /usr/lib; \
-      ln -sf libpcre2-posix.a libpcre2.a; ln -sf libpcre2-posix.so libpcre2.so) \
-  && : "---------- Build flags ----------" \
-  && export LDFLAGS="-Wl,-O2 -Wl,--hash-style=both -pie" \
-  && export CFLAGS="-O2 -march=native -fstack-protector-strong -fpic -fpie" \
-  && export CPPFLAGS=${CFLAGS} \
-  && export MAKEFLAGS="-j $(expr $(getconf _NPROCESSORS_ONLN) \+ 1)" \
-  && : "---------- PHP ----------" \
-  && PHP_BRANCH="jit-dynasm" \
-  && git clone -b ${PHP_BRANCH} --depth 1 https://github.com/zendtech/php-src.git /tmp/php-src \
-  && cd /tmp/php-src \
-  && : "---------- Build ----------" \
-  && ./buildconf --force \
-  && ./configure \
+  : "---------- Proper iconv: replace binary and headers ----------"; \
+  mv /usr/bin/gnu-iconv /usr/bin/iconv; \
+  mv /usr/include/gnu-libiconv/*.h /usr/include; \
+  rm -rf /usr/include/gnu-libiconv; \
+  : "---------- Proper libpcre2 ----------"; \
+  (cd /usr/lib; \
+    ln -sf libpcre2-posix.a libpcre2.a; \
+    ln -sf libpcre2-posix.so libpcre2.so); \
+  : "---------- Build flags ----------"; \
+  export LDFLAGS="-Wl,-O2 -Wl,--hash-style=both -pie"; \
+  export CFLAGS="-O2 -march=native -fstack-protector-strong -fpic -fpie"; \
+  export CPPFLAGS=${CFLAGS}; \
+  export MAKEFLAGS="-j $(expr $(getconf _NPROCESSORS_ONLN) \+ 1)"; \
+  : "---------- PHP ----------"; \
+  PHP_BRANCH="jit-dynasm"; \
+  git clone -b ${PHP_BRANCH} --depth 1 https://github.com/zendtech/php-src.git /tmp/php-src; \
+  cd /tmp/php-src; \
+  : "---------- Build ----------"; \
+  ./buildconf --force; \
+  ./configure \
     --prefix=/usr \
     --sysconfdir=${PHP_CONFIG} \
     --with-config-file-path=${PHP_CONFIG} \
@@ -128,21 +127,23 @@ RUN set -x \
     --with-pgsql \
     --with-readline=/usr \
     --with-xmlrpc \
-    --with-xsl=/usr \
-  && make \
-  && make install \
-  && runtimeDeps="$( \
+    --with-xsl=/usr; \
+  make; \
+  make install; \
+  runtimeDeps="$( \
     scanelf --needed --nobanner --recursive /usr/sbin/php-fpm \
       | awk '{ gsub(/,/, "\nso:", $2); print "so:" $2 }' \
       | sort -u \
       | xargs -r apk info --installed \
       | sort -u \
-	)" \
-  && apk add --virtual .php-runtime-dependencies \
-    ${runtimeDeps} \
-  && : "---------- Removing build dependencies, clean temporary files ----------" \
-  && apk del .php-build-dependencies \
-  && rm -rf /var/cache/apk/* /var/tmp/* /tmp/*
+	)"; \
+  apk add --virtual .php-runtime-dependencies \
+    ${runtimeDeps}; \
+  : "---------- Removing build dependencies, clean temporary files ----------"; \
+  apk del --no-network .php-build-dependencies; \
+  rm -rf /var/cache/apk/* /var/tmp/* /tmp/*
+
+STOPSIGNAL SIGQUIT
 
 ENTRYPOINT ["tini", "--"]
 CMD ["php-fpm"]
