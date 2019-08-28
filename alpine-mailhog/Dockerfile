@@ -1,20 +1,20 @@
-FROM golang:1.11-alpine
+FROM golang:1.12-alpine
 
 LABEL repository.hub="alexmasterov/alpine-mailhog" \
       repository.url="https://github.com/AlexMasterov/dockerfiles" \
       maintainer="Alex Masterov <alex.masterow@gmail.com>"
 
-RUN set -x \
-  && apk add --update \
+RUN set -eux; \
+  apk add --update \
     bzr \
-    tini \
-  && apk add --virtual .mailhog-build-dependencies \
-    git \
-  && : "---------- MailHog ----------" \
-  && go get github.com/mailhog/MailHog \
-  && : "---------- Removing build dependencies, clean temporary files ----------" \
-  && apk del .mailhog-build-dependencies \
-  && rm -rf /var/cache/apk/* /var/tmp/* /tmp/*
+    tini; \
+  apk add --virtual .mailhog-build-dependencies \
+    git; \
+  : "---------- MailHog ----------"; \
+  go get github.com/mailhog/MailHog; \
+  : "---------- Removing build dependencies, clean temporary files ----------"; \
+  apk del --no-network .mailhog-build-dependencies; \
+  rm -rf /var/cache/apk/* /var/tmp/* /tmp/*
 
 ENTRYPOINT ["/sbin/tini", "--"]
 CMD ["/go/bin/MailHog"]
