@@ -6,8 +6,7 @@ LABEL repository.hub="alexmasterov/alpine-mailhog" \
 
 RUN set -eux; \
   apk add --update \
-    bzr \
-    tini; \
+    bzr; \
   apk add --virtual .mailhog-build-dependencies \
     git; \
   : "---------- MailHog ----------"; \
@@ -16,5 +15,4 @@ RUN set -eux; \
   apk del --no-network .mailhog-build-dependencies; \
   rm -rf /var/cache/apk/* /var/tmp/* /tmp/*
 
-ENTRYPOINT ["/sbin/tini", "--"]
 CMD ["/go/bin/MailHog"]
