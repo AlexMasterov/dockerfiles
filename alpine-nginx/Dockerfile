@@ -4,14 +4,15 @@ LABEL repository.hub="alexmasterov/alpine-nginx" \
       repository.url="https://github.com/AlexMasterov/dockerfiles" \
       maintainer="Alex Masterov <alex.masterow@gmail.com>"
 
-ARG NGINX_VERSION=1.17.8
+ARG NGINX_VERSION=1.17.9
 ARG NGINX_CONFIG=/etc/nginx
 
 ARG HEADERS_MORE_TAG=v0.33
 
 RUN set -eux; \
   apk add --update \
-    tini; \
+    tini \
+    tzdata; \
   addgroup -g 82 -S nginx; \
   adduser -u 82 -S -D -h /var/cache/nginx -s /sbin/nologin -G nginx nginx
 
