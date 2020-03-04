@@ -90,6 +90,8 @@ RUN set -eux; \
     )"; \
   apk add --virtual .nginx-runtime-dependencies \
     ${runtimeDeps}; \
+  : "---------- Strip files ----------"; \
+  find /usr/sbin -type f -perm +0111 -exec strip --strip-unneeded '{}' + || true; \
   : "---------- Removing build dependencies, clean temporary files ----------"; \
   apk del --no-network .nginx-build-dependencies; \
   rm -rf /var/cache/apk/* /var/tmp/* /tmp/*
