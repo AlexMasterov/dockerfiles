@@ -4,18 +4,17 @@ LABEL repository.hub="alexmasterov/alpine-redis:5.0" \
       repository.url="https://github.com/AlexMasterov/dockerfiles" \
       maintainer="Alex Masterov <alex.masterow@gmail.com>"
 
-ARG REDIS_VERSION=5.0.7
+ARG REDIS_VERSION=5.0.8
 ARG REDIS_MALLOC=jemalloc
 
 RUN set -eux; \
-  apk update; \
-  apk add \
+  apk add --no-cache \
     tzdata; \
   addgroup -g 82 -S redis; \
   adduser -u 82 -S -D -h /var/cache/redis -s /sbin/nologin -G redis redis
 
 RUN set -eux; \
-  apk add --virtual .redis-build-dependencies \
+  apk add --no-cache --virtual .redis-build-dependencies \
     gcc \
     linux-headers \
     make \
