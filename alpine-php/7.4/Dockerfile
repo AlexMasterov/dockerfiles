@@ -4,29 +4,31 @@ LABEL repository.hub="alexmasterov/alpine-php:7.4" \
       repository.url="https://github.com/AlexMasterov/dockerfiles" \
       maintainer="Alex Masterov <alex.masterow@gmail.com>"
 
-ARG PHP_VERSION=7.4.3
+ARG PHP_VERSION=7.4.4
 ARG PHP_CONFIG=/etc/php
 
+ARG XDEBUG_TAG=2.9.4
+
 RUN set -eux; \
-  apk add --update \
+  apk add --no-cache \
     ssmtp \
-    tini; \
+    tzdata; \
   addgroup -g 82 -S www-data; \
   adduser -u 82 -S -D -h /var/cache/www-data -s /sbin/nologin -G www-data www-data
 
 RUN set -eux; \
-  apk add --virtual .php-build-dependencies \
+  apk add --no-cache --virtual .php-build-dependencies \
     argon2-dev \
     autoconf \
     binutils \
     bison \
     bzip2-dev \
-    curl \
     curl-dev \
     file \
     freetype-dev \
     g++ \
     gcc \
+    gd-dev \
     git \
     gnu-libiconv-dev \
     icu-dev \
@@ -40,6 +42,7 @@ RUN set -eux; \
     libxslt-dev \
     libzip-dev \
     make \
+    oniguruma-dev \
     pcre2-dev \
     postgresql-dev \
     re2c \
@@ -60,7 +63,7 @@ RUN set -eux; \
   export MAKEFLAGS="-j $(expr $(getconf _NPROCESSORS_ONLN) \+ 1)"; \
   : "---------- PHP ----------"; \
   PHP_SOURCE="https://secure.php.net/get/php-${PHP_VERSION}.tar.xz/from/this/mirror"; \
-  curl -fSL --connect-timeout 30 ${PHP_SOURCE} | tar xJ -C /tmp; \
+  wget ${PHP_SOURCE} -T 30 -O - | tar xJ -C /tmp; \
   cd /tmp/php-${PHP_VERSION}; \
   : "---------- Build ----------"; \
   ./configure \
@@ -84,16 +87,14 @@ RUN set -eux; \
       --with-fpm-group=www-data \
       --with-fpm-user=www-data \
     --enable-ftp \
+    --enable-gd \
     --enable-inline-optimization \
     --enable-intl \
     --enable-json \
-    --enable-libxml \
-      --with-libxml-dir=/usr \
     --enable-mbregex \
     --enable-mbstring \
     --enable-opcache \
       --enable-huge-code-pages \
-      --enable-opcache-file \
     --enable-option-checking=fatal \
     --enable-pcntl \
     --enable-phar \
@@ -104,27 +105,26 @@ RUN set -eux; \
     --enable-xml \
     --enable-xmlreader \
     --enable-xmlwriter \
+    --with-sqlite3=/usr \
     --with-bz2=/usr \
     --with-curl=/usr \
+    --with-libxml=/usr \
     --with-sodium=/usr \
-    --with-gd \
-      --with-freetype-dir=/usr \
-      --with-jpeg-dir=/usr \
-      --with-png-dir=/usr \
-      --with-webp-dir=/usr \
-      --with-xpm-dir=no \
-      --with-zlib-dir=/usr \
+    --with-external-gd=/usr \
+      --with-freetype=/usr \
+      --with-jpeg=/usr \
+      --with-webp=/usr \
+      --with-xpm=no \
     --with-iconv=/usr \
-    --with-libzip=/usr \
     --with-mhash \
+    --with-zip=/usr \
     --with-openssl=/usr \
       --with-system-ciphers \
     --with-password-argon2 \
-    --with-pcre-regex \
-      --with-pcre-jit \
+    --with-pcre-jit \
     --with-pdo-mysql=mysqlnd \
     --with-pdo-pgsql \
-    --with-pdo-sqlite \
+    --with-pdo-sqlite=/usr \
     --with-pgsql \
     --with-readline=/usr \
     --with-xmlrpc \
@@ -140,11 +140,19 @@ RUN set -eux; \
 	)"; \
   apk add --virtual .php-runtime-dependencies \
     ${runtimeDeps}; \
+  : "---------- xDebug ----------"; \
+  git clone -o ${XDEBUG_TAG} --depth 1 https://github.com/xdebug/xdebug.git /tmp/xdebug; \
+  cd /tmp/xdebug; \
+  phpize; \
+  ./configure; \
+  make; \
+  make install; \
+  : "---------- Strip files ----------"; \
+  find /usr/bin /usr/sbin -type f -perm +0111 -exec strip --strip-unneeded '{}' + || true; \
   : "---------- Removing build dependencies, clean temporary files ----------"; \
   apk del --no-network .php-build-dependencies; \
   rm -rf /var/cache/apk/* /var/tmp/* /tmp/*
 
 STOPSIGNAL SIGQUIT
 
-ENTRYPOINT ["tini", "--"]
 CMD ["php-fpm"]
