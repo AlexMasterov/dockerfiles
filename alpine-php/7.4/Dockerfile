@@ -8,6 +8,7 @@ ARG PHP_VERSION=7.4.4
 ARG PHP_CONFIG=/etc/php
 
 ARG XDEBUG_TAG=2.9.4
+ARG REDIS_TAG=5.2.1
 
 RUN set -eux; \
   apk add --no-cache \
@@ -143,6 +144,13 @@ RUN set -eux; \
   : "---------- xDebug ----------"; \
   git clone -o ${XDEBUG_TAG} --depth 1 https://github.com/xdebug/xdebug.git /tmp/xdebug; \
   cd /tmp/xdebug; \
+  phpize; \
+  ./configure; \
+  make; \
+  make install; \
+  : "---------- Redis ----------"; \
+  git clone -o ${REDIS_TAG} --depth 1 https://github.com/phpredis/phpredis.git /tmp/redis; \
+  cd /tmp/redis; \
   phpize; \
   ./configure; \
   make; \
