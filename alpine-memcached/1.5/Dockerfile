@@ -7,14 +7,13 @@ LABEL repository.hub="alexmasterov/alpine-memcached:1.5" \
 ARG MEMCACHED_VERSION=1.5.22
 
 RUN set -eux; \
-  apk add --update \
-    tini; \
+  apk add --no-cache \
+    tzdata; \
   addgroup -g 82 -S memcache; \
   adduser -u 82 -S -D -h /var/cache/memcache -s /sbin/nologin -G memcache memcache
 
 RUN set -eux; \
-  apk add --virtual .memcached-build-dependencies \
-    curl \
+  apk add --no-cache --virtual .memcached-build-dependencies \
     g++ \
     gcc \
     libevent-dev \
@@ -23,7 +22,7 @@ RUN set -eux; \
     libevent; \
   : "---------- Memcached ----------"; \
   MEMCACHED_SOURCE="https://memcached.org/files/memcached-${MEMCACHED_VERSION}.tar.gz"; \
-  curl -fSL --connect-timeout 30 ${MEMCACHED_SOURCE} | tar xz -C /tmp; \
+  wget ${MEMCACHED_SOURCE} -T 30 -O - | tar xz -C /tmp; \
   cd /tmp/memcached-${MEMCACHED_VERSION}; \
   : "---------- Build ----------"; \
   ./configure \
