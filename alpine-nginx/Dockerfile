@@ -10,15 +10,13 @@ ARG NGINX_CONFIG=/etc/nginx
 ARG HEADERS_MORE_TAG=v0.33
 
 RUN set -eux; \
-  apk add --update \
-    tini \
+  apk add --no-cache \
     tzdata; \
   addgroup -g 82 -S nginx; \
   adduser -u 82 -S -D -h /var/cache/nginx -s /sbin/nologin -G nginx nginx
 
 RUN set -eux; \
-  apk add --virtual .nginx-build-dependencies \
-    curl \
+  apk add --no-cache --virtual .nginx-build-dependencies \
     g++ \
     gcc \
     git \
@@ -40,7 +38,7 @@ RUN set -eux; \
   git clone -o ${HEADERS_MORE_TAG} --depth 1 ${HEADERS_MORE_GIT} ${HEADERS_MORE_DIR}; \
   : "---------- Nginx ----------"; \
   NGINX_SOURCE="https://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz"; \
-  curl -fSL --connect-timeout 30 ${NGINX_SOURCE} | tar xz -C /tmp; \
+  wget ${NGINX_SOURCE} -T 30 -O - | tar xz -C /tmp; \
   cd /tmp/nginx-${NGINX_VERSION}; \
   ./configure \
     --prefix=${NGINX_CONFIG} \
@@ -96,5 +94,4 @@ RUN set -eux; \
   apk del --no-network .nginx-build-dependencies; \
   rm -rf /var/cache/apk/* /var/tmp/* /tmp/*
 
-ENTRYPOINT ["tini", "--"]
 CMD ["nginx"]
