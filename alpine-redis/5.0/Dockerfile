@@ -15,21 +15,21 @@ RUN set -eux; \
 
 RUN set -eux; \
   apk add --no-cache --virtual .redis-build-dependencies \
+    g++ \
     gcc \
     linux-headers \
-    make \
-    musl-dev; \
+    make; \
   : "---------- Redis ----------"; \
   REDIS_SOURCE="https://github.com/antirez/redis/archive/${REDIS_VERSION}.tar.gz"; \
   wget ${REDIS_SOURCE} -T 30 -O - | tar xz -C /tmp; \
   cd /tmp/redis-${REDIS_VERSION}; \
-  : "---------- Patch 'src/Makefile': Remove deduplicate 'redis-server' copies ----------"; \
+  : "---------- Patch 'src/Makefile': remove deduplicate 'redis-server' copies ----------"; \
   INSTALL_REGEXP='^\s+?\$\(REDIS_INSTALL\) \$\(REDIS_CHECK_(RDB|AOF)_NAME\) \$\(INSTALL_BIN\)'; \
   LN_REGEXP='(^\s+?@ln -sf \$\(REDIS_SERVER_NAME\) \$\(INSTALL_BIN\)\/).+$'; \
   LN_REPLACE_REGEXP='\1$(REDIS_SENTINEL_NAME)\n\1$(REDIS_CHECK_RDB_NAME)\n\1$(REDIS_CHECK_AOF_NAME)'; \
   sed -ri "/${INSTALL_REGEXP}/d" src/Makefile; \
   sed -ri "s/${LN_REGEXP}/${LN_REPLACE_REGEXP}/" src/Makefile; \
-  : "---------- Patch 'src/server.h': Disable Redis protected mode ----------"; \
+  : "---------- Patch 'src/server.h': disable Redis protected mode ----------"; \
   sed -ri 's/^(#define CONFIG_DEFAULT_PROTECTED_MODE).+/\1 0/' src/server.h; \
   : "---------- Build ----------"; \
   make \
