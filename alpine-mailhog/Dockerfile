@@ -5,9 +5,7 @@ LABEL repository.hub="alexmasterov/alpine-mailhog" \
       maintainer="Alex Masterov <alex.masterow@gmail.com>"
 
 RUN set -eux; \
-  apk add --update \
-    bzr; \
-  apk add --virtual .mailhog-build-dependencies \
+  apk add --update --virtual .mailhog-build-dependencies \
     git; \
   : "---------- MailHog ----------"; \
   go get github.com/mailhog/MailHog; \
