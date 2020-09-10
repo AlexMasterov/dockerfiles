@@ -4,14 +4,14 @@ LABEL repository.hub="alexmasterov/alpine-nginx-tarantool" \
       repository.url="https://github.com/AlexMasterov/dockerfiles" \
       maintainer="Alex Masterov <alex.masterow@gmail.com>"
 
-ARG NGINX_VERSION=1.17.5
+ARG NGINX_VERSION=1.19.2
 ARG NGINX_CONFIG=/etc/nginx
 
 ARG LUAJIT_BRANCH=tarantool
-ARG LUAROCKS_TAG=3.1.3
+ARG LUAROCKS_TAG=3.3.1
 
 ARG DEVELKIT_MODULE_TAG=v0.3.1
-ARG LUA_MODULE_TAG=v0.10.15
+ARG LUA_MODULE_TAG=v0.10.17
 ARG TARANTOOL_UPSTREAM_TAG=v2.7.1
 
 ENV LUAJIT_LIB=/usr/local/lib \
@@ -50,7 +50,7 @@ RUN set -eux; \
   make install; \
   ln -sf /usr/local/bin/luajit-2.1.0-beta3 /usr/local/bin/lua; \
   : "---------- LuaRocks ----------"; \
-  git clone -b ${LUAROCKS_TAG} --depth 1 https://github.com/luarocks/luarocks.git /tmp/luarocks; \
+  git clone -o ${LUAROCKS_TAG} --depth 1 https://github.com/luarocks/luarocks.git /tmp/luarocks; \
   cd /tmp/luarocks; \
   ./configure \
     --with-lua-bin=/usr/local/bin \
@@ -140,6 +140,8 @@ RUN set -eux; \
     )"; \
   apk add --virtual .nginx-runtime-dependencies \
     ${runtimeDeps}; \
+  : "---------- Strip files ----------"; \
+  find /usr/sbin -type f -perm +0111 -exec strip --strip-unneeded '{}' + || true; \
   : "---------- Removing build dependencies, clean temporary files ----------"; \
   apk del --no-network .nginx-build-dependencies; \
   rm -rf /var/cache/apk/* /var/tmp/* /tmp/*
