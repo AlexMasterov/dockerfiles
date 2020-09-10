@@ -18,13 +18,13 @@ ENV LUAJIT_LIB=/usr/local/lib \
     LUAJIT_INC=/usr/local/include/luajit-2.1
 
 RUN set -eux; \
-  apk add --update \
-    tini; \
+  apk add --no-cache \
+    tzdata; \
   addgroup -g 82 -S nginx; \
   adduser -u 82 -S -D -h /var/cache/nginx -s /sbin/nologin -G nginx nginx
 
 RUN set -eux; \
-  apk add --virtual .nginx-build-dependencies \
+  apk add --no-cache --virtual .nginx-build-dependencies \
     cmake \
     curl \
     g++ \
@@ -146,5 +146,4 @@ RUN set -eux; \
   apk del --no-network .nginx-build-dependencies; \
   rm -rf /var/cache/apk/* /var/tmp/* /tmp/*
 
-ENTRYPOINT ["tini", "--"]
 CMD ["nginx"]
