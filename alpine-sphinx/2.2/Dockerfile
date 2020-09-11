@@ -13,28 +13,29 @@ RUN set -eux; \
   adduser -u 82 -S -D -h /var/cache/sphinx -s /sbin/nologin -G sphinx sphinx
 
 RUN set -eux; \
-  apk add --no-cache --virtual .sphinx-build-dependencies \
+  apk add --no-cache --virtual .sphinx-build \
     expat-dev \
     g++ \
     gcc \
     make \
     mariadb-connector-c-dev \
+    patch \
     postgresql-dev \
     re2-dev \
     snowball-dev; \
-  apk add --virtual .sphinx-runtime-dependencies \
+  apk add --virtual .sphinx-runtime \
     expat \
     libpq \
     libstdc++ \
     mariadb-connector-c; \
-  : "---------- Sphinx ----------"; \
+  : "-- Download Sphinx"; \
   SPHINX_SOURCE="http://sphinxsearch.com/files/sphinx-${SPHINX_VERSION}.tar.gz"; \
   wget ${SPHINX_SOURCE} -T 30 -O - | tar xz -C /tmp; \
   cd /tmp/sphinx-${SPHINX_VERSION}; \
-  : "---------- Patches ----------"; \
+  : "-- Patch 'src/sphinx.cpp' (pagesize)"; \
   PAGESIZE_PATCH="http://git.alpinelinux.org/cgit/aports/plain/community/sphinx/sphinx-pagesize.patch"; \
   wget ${PAGESIZE_PATCH} -T 30 -O - | patch -p1 -u; \
-  : "---------- Build ----------"; \
+  : "-- Build Sphinx"; \
   ./configure \
     --prefix=/usr \
     --exec-prefix=/usr \
@@ -49,8 +50,8 @@ RUN set -eux; \
     --with-re2; \
   make -j $(getconf _NPROCESSORS_ONLN); \
   make install; \
-  : "---------- Removing build dependencies, clean temporary files ----------"; \
-  apk del .sphinx-build-dependencies; \
+  : "-- Removing build dependencies, clean temporary files"; \
+  apk del --no-network .sphinx-build; \
   rm -rf /var/cache/apk/* /var/tmp/* /tmp/*
 
 CMD ["searchd"]
