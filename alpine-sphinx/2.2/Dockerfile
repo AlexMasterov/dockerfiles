@@ -7,6 +7,8 @@ LABEL repository.hub="alexmasterov/alpine-sphinx:2.2" \
 ARG SPHINX_VERSION=2.2.11-release
 
 RUN set -eux; \
+  apk add --no-cache \
+    tzdata; \
   addgroup -g 82 -S sphinx; \
   adduser -u 82 -S -D -h /var/cache/sphinx -s /sbin/nologin -G sphinx sphinx
 
@@ -24,10 +26,10 @@ RUN set -eux; \
   : "-- Download Sphinx"; \
   SPHINX_SOURCE="https://sphinxsearch.com/files/sphinx-${SPHINX_VERSION}.tar.gz"; \
   wget ${SPHINX_SOURCE} -T 30 -O - | tar xz -C /tmp; \
-  cd /tmp/sphinx-$SPHINX_VERSION; \
+  cd /tmp/sphinx-${SPHINX_VERSION}; \
   : "-- Patch 'src/sphinx.cpp': pagesize"; \
   PAGESIZE_PATCH="https://git.alpinelinux.org/cgit/aports/plain/community/sphinx/sphinx-pagesize.patch"; \
-  wget $PAGESIZE_PATCH -T 30 -O - | patch -p1 -u; \
+  wget ${PAGESIZE_PATCH} -T 30 -O - | patch -p1 -u; \
   : "-- Build Sphinx"; \
   ./configure \
     --prefix=/usr \
@@ -49,10 +51,9 @@ RUN set -eux; \
       | sort -u \
       | sed -e 's/^/so:\1/' \
       | xargs -r apk info --installed \
+      | sort -u \
     )"; \
-  apk add --no-cache --virtual .sphinx-runtime \
-    $runtimeDeps \
-    tzdata; \
+  apk add --no-cache --virtual .sphinx-runtime ${runtimeDeps}; \
   : "-- Strip files"; \
   find /usr/bin -type f -perm +0111 -exec strip --strip-unneeded '{}' + || true; \
   : "-- Remove build dependencies, clean temporary files"; \

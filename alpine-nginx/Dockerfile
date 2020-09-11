@@ -10,6 +10,8 @@ ARG NGINX_CONFIG=/etc/nginx
 ARG HEADERS_MORE_TAG=v0.33
 
 RUN set -eux; \
+  apk add --no-cache \
+    tzdata; \
   addgroup -g 82 -S nginx; \
   adduser -u 82 -S -D -h /var/cache/nginx -s /sbin/nologin -G nginx nginx
 
@@ -31,15 +33,15 @@ RUN set -eux; \
   : "-- Download 'Headers More' module"; \
   HEADERS_MORE_GIT="https://github.com/openresty/headers-more-nginx-module.git"; \
   HEADERS_MORE_DIR="/tmp/headers-more-nginx-module"; \
-  git clone -o $HEADERS_MORE_TAG --depth 1 $HEADERS_MORE_GIT $HEADERS_MORE_DIR; \
+  git clone -o ${HEADERS_MORE_TAG} --depth 1 ${HEADERS_MORE_GIT} ${HEADERS_MORE_DIR}; \
   : "-- Download Nginx"; \
   NGINX_SOURCE="https://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz"; \
-  wget $NGINX_SOURCE -T 30 -O - | tar xz -C /tmp; \
+  wget ${NGINX_SOURCE} -T 30 -O - | tar xz -C /tmp; \
   : "-- Build Nginx"; \
-  cd /tmp/nginx-$NGINX_VERSION; \
+  cd /tmp/nginx-${NGINX_VERSION}; \
   ./configure \
-    --prefix=$NGINX_CONFIG \
-    --conf-path=$NGINX_CONFIG/nginx.conf \
+    --prefix=${NGINX_CONFIG} \
+    --conf-path=${NGINX_CONFIG}/nginx.conf \
     --modules-path=/usr/lib/nginx/modules \
     --sbin-path=/usr/sbin/nginx \
     --pid-path=/var/run/nginx.pid \
@@ -75,7 +77,7 @@ RUN set -eux; \
     --with-stream \
     --with-stream_ssl_module  \
     --with-threads \
-    --add-module=$HEADERS_MORE_DIR; \
+    --add-module=${HEADERS_MORE_DIR}; \
   make; \
   make install; \
   runtimeDeps="$( \
@@ -84,15 +86,14 @@ RUN set -eux; \
       | sort -u \
       | sed -e 's/^/so:\1/' \
       | xargs -r apk info --installed \
+      | sort -u \
     )"; \
-  apk add --no-cache --virtual .nginx-runtime \
-    $runtimeDeps \
-    tzdata; \
+  apk add --no-cache --virtual .nginx-runtime ${runtimeDeps}; \
   : "-- Strip files"; \
   find /usr/sbin -type f -perm +0111 -exec strip --strip-unneeded '{}' + || true; \
-  : "-- Removing build dependencies, clean temporary files"; \
+  : "-- Remove build dependencies, clean temporary files"; \
   apk del .nginx-build; \
-  rm -rf /var/tmp/* /tmp/*
+  rm -rf /tmp/* /var/tmp/*
 
 STOPSIGNAL SIGTERM
 

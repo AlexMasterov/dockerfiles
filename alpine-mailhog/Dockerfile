@@ -9,7 +9,7 @@ RUN set -eux; \
     git; \
   : "-- Download MailHog"; \
   go get github.com/mailhog/MailHog; \
-  : "-- Removing build dependencies, clean temporary files"; \
+  : "-- Remove build dependencies, clean temporary files"; \
   apk del .mailhog-build; \
   rm -rf /tmp/* /var/tmp/*
 

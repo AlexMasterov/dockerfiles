@@ -7,6 +7,8 @@ LABEL repository.hub="alexmasterov/alpine-memcached:1.5" \
 ARG MEMCACHED_VERSION=1.5.22
 
 RUN set -eux; \
+  apk add --no-cache \
+    tzdata; \
   addgroup -g 82 -S memcache; \
   adduser -u 82 -S -D -h /var/cache/memcache -s /sbin/nologin -G memcache memcache
 
@@ -19,8 +21,8 @@ RUN set -eux; \
     openssl-dev; \
   : "---------- Download Memcached ----------"; \
   MEMCACHED_SOURCE="https://memcached.org/files/memcached-${MEMCACHED_VERSION}.tar.gz"; \
-  wget $MEMCACHED_SOURCE -T 30 -O - | tar xz -C /tmp; \
-  cd /tmp/memcached-$MEMCACHED_VERSION; \
+  wget ${MEMCACHED_SOURCE} -T 30 -O - | tar xz -C /tmp; \
+  cd /tmp/memcached-${MEMCACHED_VERSION}; \
   : "---------- Build Memcached----------"; \
   ./configure \
     CFLAGS="-O2 -march=native" \
@@ -33,16 +35,13 @@ RUN set -eux; \
       | sort -u \
       | sed -e 's/^/so:\1/' \
       | xargs -r apk info --installed \
+      | sort -u \
     )"; \
-  apk add --no-cache --virtual .memcached-runtime \
-    $runtimeDeps \
-    tzdata; \
+  apk add --no-cache --virtual .memcached-runtime ${runtimeDeps}; \
   : "-- Strip files"; \
   find /usr/local/bin -type f -perm +0111 -exec strip --strip-unneeded '{}' + || true; \
-  : "-- Removing build dependencies, clean temporary files"; \
+  : "-- Remove build dependencies, clean temporary files"; \
   apk del .memcached-build; \
-  rm -rf /var/tmp/* /tmp/*
-
-USER memcache
+  rm -rf /tmp/* /var/tmp/*
 
 CMD ["memcached"]

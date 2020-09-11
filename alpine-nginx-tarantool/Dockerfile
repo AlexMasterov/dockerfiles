@@ -24,9 +24,8 @@ RUN set -eux; \
   adduser -u 82 -S -D -h /var/cache/nginx -s /sbin/nologin -G nginx nginx
 
 RUN set -eux; \
-  apk add --no-cache --virtual .nginx-build-dependencies \
+  apk add --no-cache --virtual .nginx-build \
     cmake \
-    curl \
     g++ \
     gcc \
     git \
@@ -35,12 +34,13 @@ RUN set -eux; \
     openssl-dev \
     pcre-dev \
     zlib-dev; \
-  : "---------- Build flags ----------"; \
-  export LDFLAGS="-Wl,-O2 -Wl,--hash-style=both -pie"; \
-  export CFLAGS="-O2 -march=native -fstack-protector-strong -fpic -fpie"; \
-  export MAKEFLAGS="-j $(expr $(getconf _NPROCESSORS_ONLN) \+ 1)"; \
-  : "---------- LuaJIT ----------"; \
-  apk add --virtual .luajit-runtime-dependencies \
+  : "-- Setup build flags"; \
+  export \
+    LDFLAGS="-Wl,-O2 -Wl,--hash-style=both -pie" \
+    CFLAGS="-O2 -march=native -fstack-protector-strong -fpic -fpie" \
+    MAKEFLAGS="-j $(expr $(getconf _NPROCESSORS_ONLN) \+ 1)"; \
+  : "-- LuaJIT"; \
+  apk add --no-cache --virtual .luajit-runtime \
     libgcc; \
   git clone -b ${LUAJIT_BRANCH} --depth 1 https://github.com/tarantool/luajit.git /tmp/luajit; \
   cd /tmp/luajit; \
@@ -49,7 +49,7 @@ RUN set -eux; \
     XCFLAGS+="-DLUAJIT_ENABLE_GC64"; \
   make install; \
   ln -sf /usr/local/bin/luajit-2.1.0-beta3 /usr/local/bin/lua; \
-  : "---------- LuaRocks ----------"; \
+  : "-- LuaRocks"; \
   git clone -o ${LUAROCKS_TAG} --depth 1 https://github.com/luarocks/luarocks.git /tmp/luarocks; \
   cd /tmp/luarocks; \
   ./configure \
@@ -57,15 +57,15 @@ RUN set -eux; \
     --with-lua-include=/usr/local/include/luajit-2.1; \
   make build; \
   make install; \
-  : "---------- Nginx Development Kit ----------"; \
+  : "-- Nginx Development Kit"; \
   DEVELKIT_MODULE_DIR="/tmp/devel-kit"; \
   DEVELKIT_MODULE_GIT="https://github.com/simpl/ngx_devel_kit.git"; \
   git clone -o ${DEVELKIT_MODULE_TAG} --depth 1 ${DEVELKIT_MODULE_GIT} ${DEVELKIT_MODULE_DIR}; \
-  : "---------- Nginx Lua Module  ----------"; \
+  : "-- Nginx Lua Module"; \
   LUA_MODULE_DIR="/tmp/lua-module"; \
   LUA_MODULE_GIT="https://github.com/openresty/lua-nginx-module.git"; \
   git clone -o ${LUA_MODULE_TAG} --depth 1 ${LUA_MODULE_GIT} ${LUA_MODULE_DIR}; \
-  : "---------- Nginx Tarantool Module  ----------"; \
+  : "-- Nginx Tarantool Module"; \
   TARANTOOL_UPSTREAM_GIT="https://github.com/tarantool/nginx_upstream_module.git"; \
   TARANTOOL_UPSTREAM_DIR="/tmp/nginx_upstream_module"; \
   git clone -o ${TARANTOOL_UPSTREAM_TAG} --depth 1 ${TARANTOOL_UPSTREAM_GIT} ${TARANTOOL_UPSTREAM_DIR}; \
@@ -76,7 +76,7 @@ RUN set -eux; \
     .; \
   make; \
   make install; \
-  : "---------- Msgpuck  ----------"; \
+  : "-- Msgpuck"; \
   git clone --depth 1 https://github.com/rtsisyk/msgpuck.git /tmp/msgpuck; \
   cd /tmp/msgpuck; \
   cmake \
@@ -84,9 +84,9 @@ RUN set -eux; \
     .; \
   make; \
   make install; \
-  : "---------- Nginx  ----------"; \
+  : "-- Nginx"; \
   NGINX_SOURCE="https://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz"; \
-  curl -fSL --connect-timeout 30 ${NGINX_SOURCE} | tar xz -C /tmp; \
+  wget ${NGINX_SOURCE} -T 30 -O - | tar xz -C /tmp; \
   cd /tmp/nginx-${NGINX_VERSION}; \
   ./configure \
     --prefix=${NGINX_CONFIG} \
@@ -132,18 +132,20 @@ RUN set -eux; \
   make; \
   make install; \
   runtimeDeps="$( \
-    scanelf --needed --nobanner --recursive /usr/sbin/nginx /usr/lib/nginx/modules/*.so \
-      | awk '{ gsub(/,/, "\nso:", $2); print "so:" $2 }' \
+    scanelf --needed --nobanner --recursive -F '%n #f' /usr/sbin/nginx /usr/lib/nginx/modules/*.so \
+      | tr ',' '\n' \
       | sort -u \
+      | sed -e 's/^/so:\1/' \
       | xargs -r apk info --installed \
       | sort -u \
     )"; \
-  apk add --virtual .nginx-runtime-dependencies \
-    ${runtimeDeps}; \
-  : "---------- Strip files ----------"; \
+  apk add --no-cache --virtual .nginx-runtime ${runtimeDeps}; \
+  : "-- Strip files"; \
   find /usr/sbin -type f -perm +0111 -exec strip --strip-unneeded '{}' + || true; \
-  : "---------- Removing build dependencies, clean temporary files ----------"; \
-  apk del --no-network .nginx-build-dependencies; \
-  rm -rf /var/cache/apk/* /var/tmp/* /tmp/*
+  : "-- Remove build dependencies, clean temporary files"; \
+  apk del .nginx-build; \
+  rm -rf /tmp/* /var/tmp/*
+
+STOPSIGNAL SIGTERM
 
 CMD ["nginx"]
