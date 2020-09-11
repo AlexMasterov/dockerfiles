@@ -10,13 +10,11 @@ ARG NGINX_CONFIG=/etc/nginx
 ARG HEADERS_MORE_TAG=v0.33
 
 RUN set -eux; \
-  apk add --no-cache \
-    tzdata; \
   addgroup -g 82 -S nginx; \
   adduser -u 82 -S -D -h /var/cache/nginx -s /sbin/nologin -G nginx nginx
 
 RUN set -eux; \
-  apk add --no-cache --virtual .nginx-build-dependencies \
+  apk add --no-cache --virtual .nginx-build \
     g++ \
     gcc \
     git \
@@ -25,24 +23,23 @@ RUN set -eux; \
     openssl-dev \
     pcre-dev \
     zlib-dev; \
-  apk add --virtual .nginx-runtime-dependencies \
-    ca-certificates \
-    pcre; \
-  : "---------- Build flags ----------"; \
-  export LDFLAGS="-Wl,-O2 -Wl,--hash-style=both -pie"; \
-  export CFLAGS="-O2 -march=native -flto -fstack-protector-strong -fpic -fpie"; \
-  export MAKEFLAGS="-j $(expr $(getconf _NPROCESSORS_ONLN) \+ 1)"; \
-  : "---------- Headers More ----------"; \
+  : "-- Setup build flags"; \
+  export \
+    LDFLAGS="-Wl,-O2 -Wl,--hash-style=both -pie" \
+    CFLAGS="-O2 -march=native -flto -fstack-protector-strong -fpic -fpie" \
+    MAKEFLAGS="-j $(expr $(getconf _NPROCESSORS_ONLN) \+ 1)"; \
+  : "-- Download 'Headers More' module"; \
   HEADERS_MORE_GIT="https://github.com/openresty/headers-more-nginx-module.git"; \
   HEADERS_MORE_DIR="/tmp/headers-more-nginx-module"; \
-  git clone -o ${HEADERS_MORE_TAG} --depth 1 ${HEADERS_MORE_GIT} ${HEADERS_MORE_DIR}; \
-  : "---------- Nginx ----------"; \
+  git clone -o $HEADERS_MORE_TAG --depth 1 $HEADERS_MORE_GIT $HEADERS_MORE_DIR; \
+  : "-- Download Nginx"; \
   NGINX_SOURCE="https://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz"; \
-  wget ${NGINX_SOURCE} -T 30 -O - | tar xz -C /tmp; \
-  cd /tmp/nginx-${NGINX_VERSION}; \
+  wget $NGINX_SOURCE -T 30 -O - | tar xz -C /tmp; \
+  : "-- Build Nginx"; \
+  cd /tmp/nginx-$NGINX_VERSION; \
   ./configure \
-    --prefix=${NGINX_CONFIG} \
-    --conf-path=${NGINX_CONFIG}/nginx.conf \
+    --prefix=$NGINX_CONFIG \
+    --conf-path=$NGINX_CONFIG/nginx.conf \
     --modules-path=/usr/lib/nginx/modules \
     --sbin-path=/usr/sbin/nginx \
     --pid-path=/var/run/nginx.pid \
@@ -78,22 +75,25 @@ RUN set -eux; \
     --with-stream \
     --with-stream_ssl_module  \
     --with-threads \
-    --add-module=${HEADERS_MORE_DIR}; \
+    --add-module=$HEADERS_MORE_DIR; \
   make; \
   make install; \
   runtimeDeps="$( \
-    scanelf --needed --nobanner --recursive /usr/sbin/nginx /usr/lib/nginx/modules/*.so \
-      | awk '{ gsub(/,/, "\nso:", $2); print "so:" $2 }' \
+    scanelf --needed --nobanner -F '%n #f' /usr/sbin/nginx /usr/lib/nginx/modules/*.so \
+      | tr ',' '\n' \
       | sort -u \
+      | sed -e 's/^/so:\1/' \
       | xargs -r apk info --installed \
-      | sort -u \
     )"; \
-  apk add --virtual .nginx-runtime-dependencies \
-    ${runtimeDeps}; \
-  : "---------- Strip files ----------"; \
+  apk add --no-cache --virtual .nginx-runtime \
+    $runtimeDeps \
+    tzdata; \
+  : "-- Strip files"; \
   find /usr/sbin -type f -perm +0111 -exec strip --strip-unneeded '{}' + || true; \
-  : "---------- Removing build dependencies, clean temporary files ----------"; \
-  apk del --no-network .nginx-build-dependencies; \
-  rm -rf /var/cache/apk/* /var/tmp/* /tmp/*
+  : "-- Removing build dependencies, clean temporary files"; \
+  apk del .nginx-build; \
+  rm -rf /var/tmp/* /tmp/*
+
+STOPSIGNAL SIGTERM
 
 CMD ["nginx"]
