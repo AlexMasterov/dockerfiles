@@ -5,12 +5,14 @@ LABEL repository.hub="alexmasterov/alpine-mailhog" \
       maintainer="Alex Masterov <alex.masterow@gmail.com>"
 
 RUN set -eux; \
-  apk add --update --virtual .mailhog-build-dependencies \
+  apk add --no-cache --virtual .mailhog-build \
     git; \
-  : "---------- MailHog ----------"; \
+  : "-- Download MailHog"; \
   go get github.com/mailhog/MailHog; \
-  : "---------- Removing build dependencies, clean temporary files ----------"; \
-  apk del --no-network .mailhog-build-dependencies; \
-  rm -rf /var/cache/apk/* /var/tmp/* /tmp/*
+  : "-- Removing build dependencies, clean temporary files"; \
+  apk del .mailhog-build; \
+  rm -rf /tmp/* /var/tmp/*
 
-CMD ["/go/bin/MailHog"]
+WORKDIR /go/bin
+
+CMD ["MailHog"]
