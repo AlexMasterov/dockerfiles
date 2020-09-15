@@ -68,8 +68,10 @@ RUN set -eux; \
       | sort -u \
     )"; \
   apk add --no-cache --virtual .tarantool-runtime ${runtimeDeps}; \
+  : "---------- Strip files ----------"; \
+  find /usr/local/bin -type f -perm +0111 -exec strip --strip-unneeded '{}' + || true;
   : "-- Remove build dependencies, clean temporary files"; \
-  apk del .tarantool-build; \
+  apk del --no-network .tarantool-build; \
   rm -rf /tmp/* /var/tmp/*
 
 CMD ["tarantool"]

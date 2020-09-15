@@ -43,7 +43,7 @@ RUN set -eux; \
   : "-- Strip files"; \
   find /usr/local/bin -type f -perm +0111 -exec strip --strip-unneeded '{}' + || true; \
   : "-- Remove build dependencies, clean temporary files"; \
-  apk del .redis-build; \
+  apk del --no-network .redis-build; \
   rm -rf /tmp/* /var/tmp/*
 
 CMD ["redis-server"]

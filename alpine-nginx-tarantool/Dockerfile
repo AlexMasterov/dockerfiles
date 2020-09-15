@@ -143,7 +143,7 @@ RUN set -eux; \
   : "-- Strip files"; \
   find /usr/sbin -type f -perm +0111 -exec strip --strip-unneeded '{}' + || true; \
   : "-- Remove build dependencies, clean temporary files"; \
-  apk del .nginx-build; \
+  apk del --no-network .nginx-build; \
   rm -rf /tmp/* /var/tmp/*
 
 STOPSIGNAL SIGTERM

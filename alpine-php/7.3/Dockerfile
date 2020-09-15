@@ -203,7 +203,7 @@ RUN set -eux; \
     $(if_option ${EXT_PCRE}           'EXTERNAL' '--with-pcre-regex=/usr'); \
   make; \
   make install; \
-	if test "${EXT_XDEBUG}" = 'YES'; then \
+  if test "${EXT_XDEBUG}" = 'YES'; then \
     XDEBUG_SOURCE="https://github.com/xdebug/xdebug/archive/${EXT_XDEBUG_VERSION}.tar.gz"; \
     wget ${XDEBUG_SOURCE} -T 30 -O - | tar xz -C /tmp; \
     cd /tmp/xdebug-${EXT_XDEBUG_VERSION}; \
@@ -211,8 +211,8 @@ RUN set -eux; \
     ./configure; \
     make; \
     make install; \
-	fi; \
-	if test "${EXT_PHPREDIS}" = 'YES'; then \
+  fi; \
+  if test "${EXT_PHPREDIS}" = 'YES'; then \
     PHPREDIS_SOURCE="https://github.com/phpredis/phpredis/archive/${EXT_PHPREDIS_VERSION}.tar.gz"; \
     wget ${PHPREDIS_SOURCE} -T 30 -O - | tar xz -C /tmp; \
     cd /tmp/phpredis-${EXT_PHPREDIS_VERSION}; \
@@ -223,7 +223,7 @@ RUN set -eux; \
     make; \
     make install; \
   fi; \
-	if test "${EXT_MONGODB}" = 'YES'; then \
+  if test "${EXT_MONGODB}" = 'YES'; then \
     MONGODB_ARCHIVE="mongodb-${EXT_MONGODB_VERSION}"; \
     MONGODB_SOURCE="https://github.com/mongodb/mongo-php-driver/releases/download/${EXT_MONGODB_VERSION}/${MONGODB_ARCHIVE}.tgz"; \
     wget ${MONGODB_SOURCE} -T 30 -O - | tar xz -C /tmp; \
@@ -234,7 +234,7 @@ RUN set -eux; \
       $(if_option ${EXT_MONGODB_SSL} 'OPENSSL' '--enable-mongodb-crypto-system-profile=yes'); \
     make; \
     make install; \
-	fi; \ 
+  fi; \ 
   runtime_deps="$( \
     scanelf --needed --nobanner --recursive -F '%n#p' /usr/bin/php /usr/sbin/php-fpm /usr/lib/php/ \
       | tr ',' '\n' \

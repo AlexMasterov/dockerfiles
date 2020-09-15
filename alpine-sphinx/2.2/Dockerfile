@@ -46,18 +46,16 @@ RUN set -eux; \
   make -j $(getconf _NPROCESSORS_ONLN); \
   make install; \
   runtimeDeps="$( \
-    scanelf --needed --nobanner -F '%n #f' /usr/bin/searchd \
+    scanelf --needed --nobanner -F '%n#p' /usr/bin/searchd \
       | tr ',' '\n' \
       | sort -u \
       | sed -e 's/^/so:\1/' \
-      | xargs -r apk info --installed \
-      | sort -u \
     )"; \
   apk add --no-cache --virtual .sphinx-runtime ${runtimeDeps}; \
   : "-- Strip files"; \
   find /usr/bin -type f -perm +0111 -exec strip --strip-unneeded '{}' + || true; \
   : "-- Remove build dependencies, clean temporary files"; \
-  apk del .sphinx-build; \
+  apk del --no-network .sphinx-build; \
   rm -rf /tmp/* /var/tmp/*
 
 CMD ["searchd"]

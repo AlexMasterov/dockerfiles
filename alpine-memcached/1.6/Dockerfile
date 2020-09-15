@@ -30,18 +30,16 @@ RUN set -eux; \
   make -j $(getconf _NPROCESSORS_ONLN); \
   make install; \
   runtimeDeps="$( \
-    scanelf --needed --nobanner -F '%n #f' /usr/local/bin/memcached \
+    scanelf --needed --nobanner -F '%n#p' /usr/local/bin/memcached \
       | tr ',' '\n' \
       | sort -u \
       | sed -e 's/^/so:\1/' \
-      | xargs -r apk info --installed \
-      | sort -u \
     )"; \
   apk add --no-cache --virtual .memcached-runtime ${runtimeDeps}; \
   : "-- Strip files"; \
   find /usr/local/bin -type f -perm +0111 -exec strip --strip-unneeded '{}' + || true; \
   : "-- Remove build dependencies, clean temporary files"; \
-  apk del .memcached-build; \
+  apk del --no-network .memcached-build; \
   rm -rf /tmp/* /var/tmp/*
 
 CMD ["memcached"]

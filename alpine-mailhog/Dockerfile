@@ -10,7 +10,7 @@ RUN set -eux; \
   : "-- Download MailHog"; \
   go get github.com/mailhog/MailHog; \
   : "-- Remove build dependencies, clean temporary files"; \
-  apk del .mailhog-build; \
+  apk del --no-network .mailhog-build; \
   rm -rf /tmp/* /var/tmp/*
 
 WORKDIR /go/bin
