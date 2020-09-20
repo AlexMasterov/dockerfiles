@@ -7,7 +7,12 @@ LABEL repository.hub="alexmasterov/alpine-nginx" \
 ARG NGINX_VERSION=1.19.2
 ARG NGINX_CONFIG=/etc/nginx
 
-ARG HEADERS_MORE_TAG=v0.33
+ARG HTTP_SECURE_LINK=NO
+ARG HTTP_SLICE=NO
+ARG HTTP_SPLIT_CLIENTS=NO
+
+ARG HEADERS_MORE=NO
+ARG HEADERS_MORE_VERSION=0.33
 
 RUN set -eux; \
   apk add --no-cache \
@@ -19,29 +24,28 @@ RUN set -eux; \
   apk add --no-cache --virtual .nginx-build \
     g++ \
     gcc \
-    git \
     linux-headers \
     make \
     openssl-dev \
     pcre-dev \
     zlib-dev; \
-  : "-- Setup build flags"; \
-  export \
-    LDFLAGS="-Wl,-O2 -Wl,--hash-style=both -pie" \
-    CFLAGS="-O2 -march=native -flto -fstack-protector-strong -fpic -fpie" \
-    MAKEFLAGS="-j $(expr $(getconf _NPROCESSORS_ONLN) \+ 1)"; \
-  : "-- Download 'Headers More' module"; \
-  HEADERS_MORE_GIT="https://github.com/openresty/headers-more-nginx-module.git"; \
-  HEADERS_MORE_DIR="/tmp/headers-more-nginx-module"; \
-  git clone -o ${HEADERS_MORE_TAG} --depth 1 ${HEADERS_MORE_GIT} ${HEADERS_MORE_DIR}; \
+  if test "${HEADERS_MORE}" = 'YES'; then \
+    HEADERS_MORE_SOURCE="https://github.com/openresty/headers-more-nginx-module/archive/v${HEADERS_MORE_VERSION}.tar.gz"; \
+    wget ${HEADERS_MORE_SOURCE} -T 30 -O - | tar xz -C /tmp; \
+  fi; \
   : "-- Download Nginx"; \
   NGINX_SOURCE="https://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz"; \
   wget ${NGINX_SOURCE} -T 30 -O - | tar xz -C /tmp; \
+  : "-- Setup build flags"; \
+  export \
+    LDFLAGS="-Wl,-O2 -Wl,--hash-style=both -pie" \
+    CFLAGS="-O2 -march=native -flto -fstack-protector-strong -fPIC -fPIE" \
+    MAKEFLAGS="-j $(expr $(getconf _NPROCESSORS_ONLN) \+ 1)"; \
   : "-- Build Nginx"; \
   cd /tmp/nginx-${NGINX_VERSION}; \
   ./configure \
-    --prefix=${NGINX_CONFIG} \
-    --conf-path=${NGINX_CONFIG}/nginx.conf \
+    --prefix="${NGINX_CONFIG}" \
+    --conf-path="${NGINX_CONFIG}/nginx.conf" \
     --modules-path=/usr/lib/nginx/modules \
     --sbin-path=/usr/sbin/nginx \
     --pid-path=/var/run/nginx.pid \
@@ -55,40 +59,45 @@ RUN set -eux; \
     --http-scgi-temp-path=/var/cache/nginx/scgi_temp \
     --user=nginx \
     --group=nginx \
+    --without-http_auth_basic_module \
     --without-http_autoindex_module \
+    --without-http_empty_gif_module \
+    --without-http_geo_module \
+    --without-http_grpc_module \
+    --without-http_memcached_module \
+    --without-http_scgi_module \
+    $(test ${HTTP_SPLIT_CLIENTS} = 'NO' && echo --without-http_split_clients_module) \
     --without-http_ssi_module \
+    --without-http_uwsgi_module \
     --without-mail_imap_module \
     --without-mail_pop3_module \
     --without-mail_smtp_module \
-    --with-file-aio \
-    --with-http_auth_request_module \
-    --with-http_dav_module \
     --with-http_degradation_module \
     --with-http_gunzip_module \
     --with-http_gzip_static_module \
     --with-http_realip_module \
-    --with-http_secure_link_module \
-    --with-http_slice_module \
+    $(test ${HTTP_SECURE_LINK} = 'YES' && echo --with-http_secure_link_module) \
+    $(test ${HTTP_SLICE} = 'YES' && echo --with-http_slice_module) \
     --with-http_ssl_module \
-    --with-http_stub_status_module \
     --with-http_v2_module \
     --with-pcre \
-    --with-pcre-jit \
+      --with-pcre-jit \
     --with-stream \
-    --with-stream_ssl_module  \
+      --with-stream_ssl_module  \
     --with-threads \
-    --add-module=${HEADERS_MORE_DIR}; \
+    --with-file-aio \
+    $(test ${HEADERS_MORE} = 'YES' && echo \
+        --add-module="/tmp/headers-more-nginx-module-${HEADERS_MORE_VERSION}") \
+    ; \
   make; \
   make install; \
-  runtimeDeps="$( \
-    scanelf --needed --nobanner -F '%n #f' /usr/sbin/nginx /usr/lib/nginx/modules/*.so \
+  runtime_deps="$( \
+    scanelf --needed --nobanner -F '%n#p' /usr/sbin/nginx \
       | tr ',' '\n' \
       | sort -u \
       | sed -e 's/^/so:\1/' \
-      | xargs -r apk info --installed \
-      | sort -u \
     )"; \
-  apk add --no-cache --virtual .nginx-runtime ${runtimeDeps}; \
+  apk add --no-cache --virtual .nginx-runtime ${runtime_deps}; \
   : "-- Strip files"; \
   find /usr/sbin -type f -perm +0111 -exec strip --strip-unneeded '{}' + || true; \
   : "-- Remove build dependencies, clean temporary files"; \
