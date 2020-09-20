@@ -20,6 +20,7 @@ ARG PHP_PHAR=NO
 ARG PHP_POSIX=NO
 ARG PHP_TOKENIZER=YES
 
+ARG EXT_BCMATH=NO
 ARG EXT_BZ2=NO
 ARG EXT_CURL=YES
 ARG EXT_DOM=NO
@@ -151,6 +152,7 @@ RUN set -eux; \
     $(if_option ${PHP_PCNTL}     'YES' '--enable-pcntl') \
     $(if_option ${PHP_FTP}       'YES' '--enable-ftp') \
     $(if_option ${PHP_ARGON2}    'YES' '--with-password-argon2') \
+    $(if_option ${EXT_BCMATH}    'YES' '--enable-bcmath') \
     $(if_option ${EXT_SODIUM}    'YES' '--with-sodium=/usr') \
     $(if_option ${EXT_CURL}      'YES' '--with-curl=/usr') \
     $(if_option ${EXT_ZIP}       'YES' '--with-zip=/usr') \

@@ -20,10 +20,11 @@ ARG PHP_PHAR=NO
 ARG PHP_POSIX=NO
 ARG PHP_TOKENIZER=YES
 
+ARG EXT_BCMATH=NO
 ARG EXT_BZ2=NO
 ARG EXT_CURL=YES
 ARG EXT_DOM=NO
-ARG EXT_GD=EXTERNAL
+ARG EXT_GD=YES
 ARG EXT_GD_FREETYPE=NO
 ARG EXT_GD_JPEG=NO
 ARG EXT_GD_WEBP=NO
@@ -152,6 +153,7 @@ RUN set -eux; \
     $(if_option ${PHP_PCNTL}     'YES' '--enable-pcntl') \
     $(if_option ${PHP_FTP}       'YES' '--enable-ftp') \
     $(if_option ${PHP_ARGON2}    'YES' '--with-password-argon2') \
+    $(if_option ${EXT_BCMATH}    'YES' '--enable-bcmath') \
     $(if_option ${EXT_SODIUM}    'YES' '--with-sodium=/usr') \
     $(if_option ${EXT_CURL}      'YES' '--with-curl=/usr') \
     $(if_option ${EXT_ZIP}       'YES' '--with-zip=/usr') \
@@ -197,7 +199,7 @@ RUN set -eux; \
         --with-jpeg-dir=/usr \
         $(if_option ${EXT_GD_WEBP}     'EXTERNAL' '--with-webp-dir=/usr') \
         $(if_option ${EXT_GD_FREETYPE} 'EXTERNAL' '--with-freetype-dir=/usr') \
-    )
+    ) \
     $(if_option ${EXT_MBREGEX}        'NO'       '--disable-mbregex') \
     $(if_option ${EXT_MBREGEX}        'EXTERNAL' '--with-onig=/usr') \
     $(if_option ${EXT_PCRE}           'EXTERNAL' '--with-pcre-regex=/usr'); \
