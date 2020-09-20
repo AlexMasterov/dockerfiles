@@ -37,8 +37,8 @@ RUN set -eux; \
     ncurses-dev \
     perl \
     readline-dev \
-    $(test "${TARANTOOL_BACKTRACE}" = 'ON' && echo 'libunwind-dev') \
-    $(test "${TARANTOOL_BUNDLED_LIBYAML}" = 'OFF' && echo 'yaml-dev'); \
+    $(test "${TARANTOOL_BACKTRACE}" = 'ON' && echo libunwind-dev) \
+    $(test "${TARANTOOL_BUNDLED_LIBYAML}" = 'OFF' && echo yaml-dev); \
   : "-- Tarantool"; \
   TARANTOOL_DIR="/tmp/tarantool"; \
   git clone https://github.com/tarantool/tarantool.git ${TARANTOOL_DIR}; \
@@ -59,17 +59,18 @@ RUN set -eux; \
     .; \
   make -j $(getconf _NPROCESSORS_ONLN); \
   make install; \
-  runtimeDeps="$( \
-    scanelf --needed --nobanner -F '%n #f' /usr/local/bin/tarantool \
+  runtime_deps="$( \
+    scanelf --needed --nobanner -F '%n#p' /usr/local/bin/tarantool \
       | tr ',' '\n' \
       | sort -u \
       | sed -e 's/^/so:\1/' \
-      | xargs -r apk info --installed \
-      | sort -u \
     )"; \
-  apk add --no-cache --virtual .tarantool-runtime ${runtimeDeps}; \
+  apk add --no-cache --virtual .tarantool-runtime ${runtime_deps}; \
   : "---------- Strip files ----------"; \
-  find /usr/local/bin -type f -perm +0111 -exec strip --strip-unneeded '{}' + || true;
+  find \
+    /usr/bin \
+    /usr/local/bin \
+    -type f -perm +0111 -exec strip --strip-unneeded '{}' + || true; \
   : "-- Remove build dependencies, clean temporary files"; \
   apk del --no-network .tarantool-build; \
   rm -rf /tmp/* /var/tmp/*
