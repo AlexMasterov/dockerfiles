@@ -1,212 +1,245 @@
-FROM alexmasterov/alpine-libv8:6.7 as libv8
 FROM alpine:3.12
 
 LABEL repository.hub="alexmasterov/alpine-php:7.2" \
       repository.url="https://github.com/AlexMasterov/dockerfiles" \
       maintainer="Alex Masterov <alex.masterow@gmail.com>"
 
-ARG PHP_VERSION=7.2.28
+ARG PHP_VERSION=7.2.33
 ARG PHP_CONFIG=/etc/php
 
-ARG REALPATH_TURBO_TAG=v2.0.0
-ARG XDEBUG_TAG=2.7.2
-ARG MSGPACK_TAG=msgpack-2.0.3
-ARG REDIS_TAG=5.0.2
-ARG MONGODB_VERSION=1.5.5
-ARG PHPV8_VERSION=0.2.2
+ARG PHP_ARGON2=YES
+ARG PHP_CLI=YES
+ARG PHP_CTYPE=YES
+ARG PHP_FILEINFO=NO
+ARG PHP_FPM=NO
+ARG PHP_FTP=NO
+ARG PHP_INTL=NO
+ARG PHP_IPV6=NO
+ARG PHP_PCNTL=NO
+ARG PHP_PHAR=NO
+ARG PHP_POSIX=NO
+ARG PHP_TOKENIZER=YES
 
-COPY --from=libv8 /usr/local/v8 /usr/local/v8
+ARG EXT_BCMATH=NO
+ARG EXT_BZ2=NO
+ARG EXT_CURL=YES
+ARG EXT_DOM=NO
+ARG EXT_GD=YES
+ARG EXT_GD_FREETYPE=NO
+ARG EXT_GD_JPEG=NO
+ARG EXT_GD_WEBP=NO
+ARG EXT_GD_XPM=NO
+ARG EXT_LIBXML=YES
+ARG EXT_MBREGEX=NO
+ARG EXT_OPENSSL=YES
+ARG EXT_OPENSSL_SYSTEM_CIPHERS=YES
+ARG EXT_PCRE=EXTERNAL
+ARG EXT_PDO=YES
+ARG EXT_PDO_MYSQL=NO
+ARG EXT_PDO_PGSQL=YES
+ARG EXT_PDO_SQLITE=YES
+ARG EXT_POSTGRESQL=NO
+ARG EXT_SIMPLEXML=YES
+ARG EXT_SODIUM=YES
+ARG EXT_SQLITE=NO
+ARG EXT_XML=NO
+ARG EXT_XMLREADER=NO
+ARG EXT_XMLWRITER=NO
+ARG EXT_XSL=NO
+ARG EXT_ZIP=NO
+
+ARG EXT_XDEBUG=YES
+ARG EXT_XDEBUG_VERSION=2.9.7
+
+ARG EXT_PHPREDIS=NO
+ARG EXT_PHPREDIS_VERSION=5.3.1
+ARG EXT_PHPREDIS_LZ4=NO
+ARG EXT_PHPREDIS_ZSTD=NO
+
+ARG EXT_MONGODB=NO
+ARG EXT_MONGODB_VERSION=1.8.0
+ARG EXT_MONGODB_SSL=OPENSSL
 
 RUN set -eux; \
-  apk add --update \
-    ssmtp \
-    tini; \
   addgroup -g 82 -S www-data; \
   adduser -u 82 -S -D -h /var/cache/www-data -s /sbin/nologin -G www-data www-data
 
 RUN set -eux; \
-  apk add --virtual .php-build-dependencies \
-    argon2-dev \
+  function if_option { test "${1}" = "${2}" && echo "${3:-}" || echo "${4:-}"; }; \
+  apk add --no-cache --virtual .php-build \
     autoconf \
-    binutils \
     bison \
-    bzip2-dev \
-    curl \
-    curl-dev \
     file \
-    freetype-dev \
     g++ \
     gcc \
-    git \
     gnu-libiconv-dev \
-    icu-dev \
-    jpeg-dev \
-    libmcrypt-dev \
-    libpng-dev \
-    libsodium-dev \
-    libtool \
-    libwebp-dev \
-    libxml2-dev \
-    libxslt-dev \
-    libzip-dev \
     make \
-    pcre2-dev \
-    postgresql-dev \
     re2c \
-    readline-dev \
-    sqlite-dev; \
-  : "---------- Proper iconv: replace binary and headers ----------"; \
+    zlib-dev \
+    $(if_option ${PHP_INTL}       'YES'      'icu-dev') \
+    $(if_option ${PHP_ARGON2}     'YES'      'argon2-dev') \
+    $(if_option ${PHP_READLINE}   'YES'      'readline-dev') \
+    $(if_option ${EXT_ZIP}        'YES'      'libzip-dev') \
+    $(if_option ${EXT_SODIUM}     'YES'      'libsodium-dev') \
+    $(if_option ${EXT_CURL}       'YES'      'curl-dev') \
+    $(if_option ${EXT_LIBXML}     'YES'      'libxml2-dev') \
+    $(if_option ${EXT_BZ2}        'YES'      'bzip2-dev') \
+    $(if_option ${EXT_SQLITE}     'YES'      'sqlite-dev') \
+    $(if_option ${EXT_POSTGRESQL} 'YES'      'postgresql-dev') \
+    $(if_option ${EXT_OPENSSL}    'YES'      'openssl-dev') \
+    $(if_option ${EXT_OPENSSL}    'LIBRESSL' 'libressl-dev') \
+    $(if_option ${EXT_PCRE}       'EXTERNAL' 'pcre-dev') \
+    $(if_option ${EXT_MBREGEX}    'EXTERNAL' 'oniguruma-dev') \
+    $(test ${EXT_PDO} = 'YES' && echo \
+      $(if_option ${EXT_PDO_SQLITE} 'YES'     'sqlite-dev') \
+      $(if_option ${EXT_PDO_PGSQL}  'YES'     'postgresql-dev') \
+      $(if_option ${EXT_PDO_MYSQL}  'MARIADB' 'mariadb-dev') \
+    ) \
+    $(test ${EXT_GD} = 'YES' \
+      && echo \
+        libpng-dev \
+      || test ${EXT_GD} = 'EXTERNAL' && echo \
+        gd-dev \
+        libpng-dev \
+        libxpm-dev \
+        jpeg-dev \
+        $(if_option ${EXT_GD_WEBP}     'EXTERNAL' 'libwebp-dev') \
+        $(if_option ${EXT_GD_FREETYPE} 'EXTERNAL' 'freetype-dev') \
+    ) \
+    $(if_option ${EXT_PHPREDIS_LZ4}  'YES'      'lz4-dev') \
+    $(if_option ${EXT_PHPREDIS_ZSTD} 'YES'      'zstd-dev') \
+    $(if_option ${EXT_MONGODB_SSL}   'OPENSSL'  'openssl-dev') \
+    $(if_option ${EXT_MONGODB_SSL}   'LIBRESSL' 'libressl-dev'); \ 
+  : "-- Proper iconv: replace binary and headers"; \
   mv /usr/bin/gnu-iconv /usr/bin/iconv; \
   mv /usr/include/gnu-libiconv/*.h /usr/include; \
   rm -rf /usr/include/gnu-libiconv; \
-  : "---------- Proper libpcre2 ----------"; \
-  (cd /usr/lib; \
-    ln -sf libpcre2-posix.a libpcre2.a; \
-    ln -sf libpcre2-posix.so libpcre2.so); \
-  : "---------- Build flags ----------"; \
-  export LDFLAGS="-Wl,-O2 -Wl,--hash-style=both -pie"; \
-  export CFLAGS="-O2 -march=native -fstack-protector-strong -fpic -fpie"; \
-  export CPPFLAGS=${CFLAGS}; \
-  export MAKEFLAGS="-j $(expr $(getconf _NPROCESSORS_ONLN) \+ 1)"; \
-  : "---------- PHP ----------"; \
+  : "-- Download PHP source"; \
   PHP_SOURCE="https://secure.php.net/get/php-${PHP_VERSION}.tar.xz/from/this/mirror"; \
-  curl -fSL --connect-timeout 30 ${PHP_SOURCE} | tar xJ -C /tmp; \
+  wget ${PHP_SOURCE} -T 30 -O - | tar xJ -C /tmp; \
   cd /tmp/php-${PHP_VERSION}; \
-  : "---------- Build ----------"; \
+  function if_option { test "${1}" = "${2}" && echo "${3:-}" || echo "${4:-}"; }; \
+  : "-- Setup build flags"; \
+  export MAKEFLAGS="-j $(expr $(getconf _NPROCESSORS_ONLN) \+ 1)"; \
+  LDFLAGS="-Wl,-O1 -Wl,--hash-style=both -pie"; \
+  CFLAGS="-O2 -march=native -fPIC -fPIE -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64"; \
+  CPPFLAGS=${CFLAGS}; \
+  cd /tmp/php-${PHP_VERSION}; \
   ./configure \
     --prefix=/usr \
-    --sysconfdir=${PHP_CONFIG} \
-    --with-config-file-path=${PHP_CONFIG} \
-    --with-config-file-scan-dir=${PHP_CONFIG}/conf.d \
+    --sysconfdir="${PHP_CONFIG}" \
+    --with-config-file-path="${PHP_CONFIG}" \
+    --with-config-file-scan-dir="${PHP_CONFIG}/conf.d" \
+    --with-layout="GNU" \
     --without-pear \
     --disable-cgi \
     --disable-debug \
-    --disable-ipv6 \
     --disable-phpdbg \
     --disable-rpath \
-    --disable-static \
-    --enable-bcmath \
-    --enable-calendar \
-    --enable-dom \
-    --enable-exif \
-    --enable-fd-setsize=$(ulimit -n) \
-    --enable-fpm \
-      --with-fpm-group=www-data \
-      --with-fpm-user=www-data \
-    --enable-ftp \
-    --enable-inline-optimization \
-    --enable-intl \
-    --enable-json \
-    --enable-libxml \
-      --with-libxml-dir=/usr \
-    --enable-mbregex \
-    --enable-mbstring \
-    --enable-opcache \
-      --enable-huge-code-pages \
-      --enable-opcache-file \
     --enable-option-checking=fatal \
-    --enable-pcntl \
-    --enable-phar \
-    --enable-session \
-    --enable-shmop \
-    --enable-soap \
-    --enable-sockets \
-    --enable-xml \
-    --enable-xmlreader \
-    --enable-xmlwriter \
-    --with-bz2=/usr \
-    --with-curl=/usr \
-    --with-sodium=/usr \
-    --with-gd \
-      --with-freetype-dir=/usr \
-      --with-jpeg-dir=/usr \
-      --with-png-dir=/usr \
-      --with-webp-dir=/usr \
-      --with-xpm-dir=no \
-      --with-zlib-dir=/usr \
-    --with-iconv=/usr \
-    --with-libzip=/usr \
+    --enable-fd-setsize=$(ulimit -n) \
+    --enable-mbstring \
     --with-mhash \
-    --with-openssl=/usr \
-      --with-system-ciphers \
-    --with-password-argon2 \
-    --with-pcre-regex \
-      --with-pcre-jit \
-    --with-pdo-mysql=mysqlnd \
-    --with-pdo-pgsql \
-    --with-pdo-sqlite \
-    --with-pgsql \
-    --with-readline=/usr \
-    --with-xmlrpc \
-    --with-xsl=/usr; \
+    --with-zlib=/usr \
+    --with-iconv=/usr \
+    $(if_option ${PHP_CLI}       'NO'  '--disable-cli') \
+    $(if_option ${PHP_IPV6}      'NO'  '--disable-ipv6') \
+    $(if_option ${PHP_POSIX}     'NO'  '--disable-posix') \
+    $(if_option ${PHP_CTYPE}     'NO'  '--disable-ctype') \
+    $(if_option ${PHP_PHAR}      'NO'  '--disable-phar') \
+    $(if_option ${PHP_FILEINFO}  'NO'  '--disable-fileinfo') \
+    $(if_option ${PHP_TOKENIZER} 'NO'  '--disable-tokenizer') \
+    $(if_option ${PHP_FPM}       'YES' '--enable-fpm') \
+    $(if_option ${PHP_INTL}      'YES' '--enable-intl') \
+    $(if_option ${PHP_PCNTL}     'YES' '--enable-pcntl') \
+    $(if_option ${PHP_FTP}       'YES' '--enable-ftp') \
+    $(if_option ${PHP_ARGON2}    'YES' '--with-password-argon2') \
+    $(if_option ${EXT_BCMATH}    'YES' '--enable-bcmath') \
+    $(if_option ${EXT_SODIUM}    'YES' '--with-sodium=/usr') \
+    $(if_option ${EXT_CURL}      'YES' '--with-curl=/usr') \
+    $(if_option ${EXT_ZIP}       'YES' '--with-zip=/usr') \
+    $(if_option ${EXT_BZ2}       'YES' '--with-bz2=/usr') \
+    $(if_option ${EXT_SQLITE}    'YES' '--with-sqlite3=/usr' '--without-sqlite3') \
+    $(test ${EXT_OPENSSL} != 'NO' && echo \
+      --with-openssl=/usr \
+      $(if_option ${EXT_OPENSSL_SYSTEM_CIPHERS} 'YES' '--with-system-ciphers') \
+    \ ) \
+    $(test ${EXT_PDO} = 'YES' \
+      && echo \
+        $(if_option ${EXT_PDO_SQLITE} 'YES'     '--with-pdo-sqlite=/usr' '--without-pdo-sqlite') \
+        $(if_option ${EXT_PDO_PGSQL}  'YES'     '--with-pdo-pgsql=/usr') \
+        $(if_option ${EXT_PDO_MYSQL}  'YES'     '--with-pdo-mysql=mysqlnd') \
+        $(if_option ${EXT_PDO_MYSQL}  'MARIADB' '--with-pdo-mysql=/usr') \
+      || echo \
+        --disable-pdo \
+    ) \
+    $(test ${EXT_LIBXML} = 'YES' \
+      && echo \
+        $(if_option ${EXT_XML}       'NO'  '--disable-xml') \
+        $(if_option ${EXT_XMLREADER} 'NO'  '--disable-xmlreader') \
+        $(if_option ${EXT_XMLWRITER} 'NO'  '--disable-xmlwriter') \
+        $(if_option ${EXT_SIMPLEXML} 'NO'  '--disable-simplexml') \
+        $(if_option ${EXT_DOM}       'NO'  '--disable-dom') \
+        $(if_option ${EXT_XSL}       'YES' '--with-xsl=/usr') \
+      || echo \
+        --disable-libxml \
+        --disable-xml \
+        --disable-xmlreader \
+        --disable-xmlwriter \
+        --disable-simplexml \
+        --disable-dom \
+    ) \
+    $(test ${EXT_GD} = 'YES' \
+      && echo \
+        --with-gd \
+        --with-png-dir=/usr \
+      || test ${EXT_GD} = 'EXTERNAL' && echo \
+        --with-gd=/usr \
+        --with-png-dir=/usr \
+        --with-xpm-dir=/usr \
+        --with-jpeg-dir=/usr \
+        $(if_option ${EXT_GD_WEBP}     'EXTERNAL' '--with-webp-dir=/usr') \
+        $(if_option ${EXT_GD_FREETYPE} 'EXTERNAL' '--with-freetype-dir=/usr') \
+    ) \
+    $(if_option ${EXT_MBREGEX}        'NO'       '--disable-mbregex') \
+    $(if_option ${EXT_MBREGEX}        'EXTERNAL' '--with-onig=/usr') \
+    $(if_option ${EXT_PCRE}           'EXTERNAL' '--with-pcre-regex=/usr') \
+    ; \
   make; \
   make install; \
-  runtimeDeps="$( \
-    scanelf --needed --nobanner --recursive /usr/sbin/php-fpm \
-      | awk '{ gsub(/,/, "\nso:", $2); print "so:" $2 }' \
+  if test "${EXT_XDEBUG}" = 'YES'; then \
+    XDEBUG_SOURCE="https://github.com/xdebug/xdebug/archive/${EXT_XDEBUG_VERSION}.tar.gz"; \
+    wget ${XDEBUG_SOURCE} -T 30 -O - | tar xz -C /tmp; \
+    cd /tmp/xdebug-${EXT_XDEBUG_VERSION}; \
+    phpize; \
+    ./configure; \
+    make; \
+    make install; \
+  fi; \
+  runtime_deps="$( \
+    scanelf --needed --nobanner --recursive -F '%n#p' /usr/bin/php /usr/sbin/php-fpm /usr/lib/php/ \
+      | tr ',' '\n' \
       | sort -u \
-      | xargs -r apk info --installed \
-      | sort -u \
-	)"; \
-  apk add --virtual .php-runtime-dependencies \
-    ${runtimeDeps}; \
-  : "---------- https://bugs.php.net/bug.php?id=52312 ----------"; \
-  git clone -o ${REALPATH_TURBO_TAG} --depth 1 https://github.com/Whissi/realpath_turbo.git /tmp/realpath_turbo; \
-  cd /tmp/realpath_turbo; \
-  phpize; \
-  ./configure; \
-  make; \
-  make install; \
-  : "---------- xDebug ----------"; \
-  git clone -o ${XDEBUG_TAG} --depth 1 https://github.com/xdebug/xdebug.git /tmp/xdebug; \
-  cd /tmp/xdebug; \
-  phpize; \
-  ./configure; \
-  make; \
-  make install; \
-  : "---------- Msgpack ----------"; \
-  git clone -o ${MSGPACK_TAG} --depth 1 https://github.com/msgpack/msgpack-php.git /tmp/msgpack-php; \
-  cd /tmp/msgpack-php; \
-  phpize; \
-  ./configure; \
-  make; \
-  make install; \
-  : "---------- Redis ----------"; \
-  git clone -o ${REDIS_TAG} --depth 1 https://github.com/phpredis/phpredis.git /tmp/redis; \
-  cd /tmp/redis; \
-  phpize; \
-  ./configure; \
-  make; \
-  make install; \
-  : "---------- MongoDB ----------"; \
-  apk add --virtual .mongodb-build-dependencies \
-    cmake \
-    pkgconfig; \
-  MONGODB_FILENAME="mongodb-${MONGODB_VERSION}"; \
-  MONGODB_SOURCE="https://github.com/mongodb/mongo-php-driver/releases/download/${MONGODB_VERSION}/${MONGODB_FILENAME}.tgz"; \
-  curl -fSL --connect-timeout 30 ${MONGODB_SOURCE} | tar xz -C /tmp; \
-  cd /tmp/${MONGODB_FILENAME}; \
-  phpize; \
-  ./configure \
-    --with-mongodb-ssl=openssl; \
-  make; \
-  make install; \
-  apk del --no-network .mongodb-build-dependencies; \
-  : "---------- php-v8 ----------"; \
-  PHPV8_FILENAME="php-v8-${PHPV8_VERSION}"; \
-  PHPV8_SOURCE="https://github.com/pinepain/php-v8/archive/v${PHPV8_VERSION}.tar.gz"; \
-  curl -fSL --connect-timeout 30 ${PHPV8_SOURCE} | tar xz -C /tmp; \
-  cd /tmp/${PHPV8_FILENAME}; \
-  phpize; \
-  ./configure \
-    --with-v8=/usr/local/v8; \
-  make; \
-  make install; \
-  : "---------- Removing build dependencies, clean temporary files ----------"; \
-  apk del --no-network .php-build-dependencies; \
-  rm -rf /var/cache/apk/* /var/tmp/* /tmp/*
+      | sed -e 's/^/so:\1/' \
+    )"; \
+  apk add --no-cache --virtual .php-runtime ${runtime_deps}; \
+  rm -rf \
+    /usr/php/ \
+    /usr/bin/phpize \
+    /usr/bin/php-config \
+    /usr/include/php/ \
+    /usr/lib/php/build/; \
+  : "-- Strip files"; \
+  find /usr/lib/php/* -type f -name '*.a' -delete; \
+  find \
+    /usr/bin \
+    /usr/sbin \
+    /usr/lib/php/* \
+    -type f -perm +0111 -exec strip --strip-unneeded '{}' + || true; \
+  : "-- Remove build dependencies, clean temporary files"; \
+  apk del --no-network .php-build; \
+  rm -rf /tmp/* /var/tmp/*
 
 STOPSIGNAL SIGQUIT
 
-ENTRYPOINT ["tini", "--"]
-CMD ["php-fpm"]
+CMD ["php"]
