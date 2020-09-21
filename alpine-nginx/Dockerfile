@@ -7,9 +7,13 @@ LABEL repository.hub="alexmasterov/alpine-nginx" \
 ARG NGINX_VERSION=1.19.2
 ARG NGINX_CONFIG=/etc/nginx
 
+ARG HTTP_DEGRADATION=NO
 ARG HTTP_SECURE_LINK=NO
 ARG HTTP_SLICE=NO
 ARG HTTP_SPLIT_CLIENTS=NO
+
+ARG STREAM_JS=NO
+ARG STREAM_JS_VERSION=0.4.3
 
 ARG HEADERS_MORE=NO
 ARG HEADERS_MORE_VERSION=0.33
@@ -29,6 +33,10 @@ RUN set -eux; \
     openssl-dev \
     pcre-dev \
     zlib-dev; \
+  if test "${STREAM_JS}" = 'YES'; then \
+    STREAM_JS_SOURCE="https://github.com/nginx/njs/archive/${STREAM_JS_VERSION}.tar.gz"; \
+    wget ${STREAM_JS_SOURCE} -T 30 -O - | tar xz -C /tmp; \
+  fi; \
   if test "${HEADERS_MORE}" = 'YES'; then \
     HEADERS_MORE_SOURCE="https://github.com/openresty/headers-more-nginx-module/archive/v${HEADERS_MORE_VERSION}.tar.gz"; \
     wget ${HEADERS_MORE_SOURCE} -T 30 -O - | tar xz -C /tmp; \
@@ -66,18 +74,14 @@ RUN set -eux; \
     --without-http_grpc_module \
     --without-http_memcached_module \
     --without-http_scgi_module \
-    $(test ${HTTP_SPLIT_CLIENTS} = 'NO' && echo --without-http_split_clients_module) \
     --without-http_ssi_module \
     --without-http_uwsgi_module \
     --without-mail_imap_module \
     --without-mail_pop3_module \
     --without-mail_smtp_module \
-    --with-http_degradation_module \
     --with-http_gunzip_module \
     --with-http_gzip_static_module \
     --with-http_realip_module \
-    $(test ${HTTP_SECURE_LINK} = 'YES' && echo --with-http_secure_link_module) \
-    $(test ${HTTP_SLICE} = 'YES' && echo --with-http_slice_module) \
     --with-http_ssl_module \
     --with-http_v2_module \
     --with-pcre \
@@ -86,7 +90,13 @@ RUN set -eux; \
       --with-stream_ssl_module  \
     --with-threads \
     --with-file-aio \
-    $(test ${HEADERS_MORE} = 'YES' && echo \
+    $(test "${HTTP_DEGRADATION}" = 'YES' && echo --with-http_degradation_module) \
+    $(test "${HTTP_SECURE_LINK}" = 'YES' && echo --with-http_secure_link_module) \
+    $(test "${HTTP_SLICE}" = 'YES' && echo --with-http_slice_module) \
+    $(test "${HTTP_SPLIT_CLIENTS}" = 'NO' && echo --without-http_split_clients_module) \
+    $(test "${STREAM_JS}" = 'YES' && echo \
+        --add-module="/tmp/njs-${STREAM_JS_VERSION}/nginx") \
+    $(test "${HEADERS_MORE}" = 'YES' && echo \
         --add-module="/tmp/headers-more-nginx-module-${HEADERS_MORE_VERSION}") \
     ; \
   make; \
