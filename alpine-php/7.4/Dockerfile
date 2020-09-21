@@ -11,7 +11,7 @@ ARG PHP_ARGON2=YES
 ARG PHP_CLI=YES
 ARG PHP_CTYPE=YES
 ARG PHP_FILEINFO=NO
-ARG PHP_FPM=YES
+ARG PHP_FPM=NO
 ARG PHP_FTP=NO
 ARG PHP_INTL=NO
 ARG PHP_IPV6=NO
@@ -30,6 +30,7 @@ ARG EXT_GD_JPEG=NO
 ARG EXT_GD_WEBP=NO
 ARG EXT_GD_XPM=NO
 ARG EXT_LIBXML=YES
+ARG EXT_MBREGEX=YES
 ARG EXT_OPENSSL=YES
 ARG EXT_OPENSSL_SYSTEM_CIPHERS=YES
 ARG EXT_PCRE=EXTERNAL
@@ -71,10 +72,8 @@ RUN set -eux; \
     file \
     g++ \
     gcc \
-    git \
     gnu-libiconv-dev \
     make \
-    oniguruma-dev \
     re2c \
     zlib-dev \
     $(if_option ${PHP_INTL}       'YES'      'icu-dev') \
@@ -90,6 +89,7 @@ RUN set -eux; \
     $(if_option ${EXT_OPENSSL}    'YES'      'openssl-dev') \
     $(if_option ${EXT_OPENSSL}    'LIBRESSL' 'libressl-dev') \
     $(if_option ${EXT_PCRE}       'EXTERNAL' 'pcre2-dev') \
+    $(if_option ${EXT_MBREGEX}    'YES'      'oniguruma-dev') \
     $(test ${EXT_PDO} = 'YES' && echo \
       $(if_option ${EXT_PDO_SQLITE} 'YES'     'sqlite-dev') \
       $(if_option ${EXT_PDO_PGSQL}  'YES'     'postgresql-dev') \
@@ -141,13 +141,14 @@ RUN set -eux; \
     --with-zlib=/usr \
     --with-iconv=/usr \
     $(if_option ${PHP_CLI}       'NO'  '--disable-cli') \
-    $(if_option ${PHP_FPM}       'YES' '--enable-fpm') \
     $(if_option ${PHP_IPV6}      'NO'  '--disable-ipv6') \
     $(if_option ${PHP_POSIX}     'NO'  '--disable-posix') \
     $(if_option ${PHP_CTYPE}     'NO'  '--disable-ctype') \
     $(if_option ${PHP_PHAR}      'NO'  '--disable-phar') \
     $(if_option ${PHP_FILEINFO}  'NO'  '--disable-fileinfo') \
     $(if_option ${PHP_TOKENIZER} 'NO'  '--disable-tokenizer') \
+    $(if_option ${EXT_MBREGEX}   'NO'  '--disable-mbregex') \
+    $(if_option ${PHP_FPM}       'YES' '--enable-fpm') \
     $(if_option ${PHP_INTL}      'YES' '--enable-intl') \
     $(if_option ${PHP_PCNTL}     'YES' '--enable-pcntl') \
     $(if_option ${PHP_FTP}       'YES' '--enable-ftp') \

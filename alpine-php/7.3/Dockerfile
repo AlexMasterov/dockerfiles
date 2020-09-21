@@ -11,7 +11,7 @@ ARG PHP_ARGON2=YES
 ARG PHP_CLI=YES
 ARG PHP_CTYPE=YES
 ARG PHP_FILEINFO=NO
-ARG PHP_FPM=YES
+ARG PHP_FPM=NO
 ARG PHP_FTP=NO
 ARG PHP_INTL=NO
 ARG PHP_IPV6=NO
@@ -30,6 +30,7 @@ ARG EXT_GD_JPEG=NO
 ARG EXT_GD_WEBP=NO
 ARG EXT_GD_XPM=NO
 ARG EXT_LIBXML=YES
+ARG EXT_MBREGEX=NO
 ARG EXT_OPENSSL=YES
 ARG EXT_OPENSSL_SYSTEM_CIPHERS=YES
 ARG EXT_PCRE=EXTERNAL
@@ -71,7 +72,6 @@ RUN set -eux; \
     file \
     g++ \
     gcc \
-    git \
     gnu-libiconv-dev \
     make \
     re2c \
@@ -142,13 +142,13 @@ RUN set -eux; \
     --with-zlib=/usr \
     --with-iconv=/usr \
     $(if_option ${PHP_CLI}       'NO'  '--disable-cli') \
-    $(if_option ${PHP_FPM}       'YES' '--enable-fpm') \
     $(if_option ${PHP_IPV6}      'NO'  '--disable-ipv6') \
     $(if_option ${PHP_POSIX}     'NO'  '--disable-posix') \
     $(if_option ${PHP_CTYPE}     'NO'  '--disable-ctype') \
     $(if_option ${PHP_PHAR}      'NO'  '--disable-phar') \
     $(if_option ${PHP_FILEINFO}  'NO'  '--disable-fileinfo') \
     $(if_option ${PHP_TOKENIZER} 'NO'  '--disable-tokenizer') \
+    $(if_option ${PHP_FPM}       'YES' '--enable-fpm') \
     $(if_option ${PHP_INTL}      'YES' '--enable-intl') \
     $(if_option ${PHP_PCNTL}     'YES' '--enable-pcntl') \
     $(if_option ${PHP_FTP}       'YES' '--enable-ftp') \
@@ -200,9 +200,9 @@ RUN set -eux; \
         $(if_option ${EXT_GD_WEBP}     'EXTERNAL' '--with-webp-dir=/usr') \
         $(if_option ${EXT_GD_FREETYPE} 'EXTERNAL' '--with-freetype-dir=/usr') \
     ) \
-    $(if_option ${EXT_MBREGEX}        'NO'       '--disable-mbregex') \
-    $(if_option ${EXT_MBREGEX}        'EXTERNAL' '--with-onig=/usr') \
-    $(if_option ${EXT_PCRE}           'EXTERNAL' '--with-pcre-regex=/usr'); \
+    $(if_option ${EXT_MBREGEX} 'NO'       '--disable-mbregex') \
+    $(if_option ${EXT_MBREGEX} 'EXTERNAL' '--with-onig=/usr') \
+    $(if_option ${EXT_PCRE}    'EXTERNAL' '--with-pcre-regex=/usr'); \
   make; \
   make install; \
   if test "${EXT_XDEBUG}" = 'YES'; then \
