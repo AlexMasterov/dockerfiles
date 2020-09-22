@@ -16,6 +16,9 @@ ARG HTTP_SPLIT_CLIENTS=NO
 ARG NJS=NO
 ARG NJS_VERSION=0.4.3
 
+ARG BROTLI=YES
+ARG BROTLI_VERSION=1.0.0rc
+
 ARG HEADERS_MORE=NO
 ARG HEADERS_MORE_VERSION=0.33
 
@@ -34,10 +37,16 @@ RUN set -eux; \
     make \
     openssl-dev \
     pcre-dev \
-    zlib-dev; \
+    zlib-dev \
+    $(if_option ${BROTLI} 'YES' brotli-dev) \
+    ; \
   if test "${NJS}" = 'YES'; then \
     NJS_SOURCE="https://github.com/nginx/njs/archive/${NJS_VERSION}.tar.gz"; \
     wget ${NJS_SOURCE} -T 30 -O - | tar xz -C /tmp; \
+  fi; \
+  if test "${BROTLI}" = 'YES'; then \
+    BROTLI_SOURCE="https://github.com/google/ngx_brotli/archive/v${BROTLI_VERSION}.tar.gz"; \
+    wget ${BROTLI_SOURCE} -T 30 -O - | tar xz -C /tmp; \
   fi; \
   if test "${HEADERS_MORE}" = 'YES'; then \
     HEADERS_MORE_SOURCE="https://github.com/openresty/headers-more-nginx-module/archive/v${HEADERS_MORE_VERSION}.tar.gz"; \
@@ -98,6 +107,7 @@ RUN set -eux; \
     $(if_option ${HTTP_SECURE_LINK}   'YES' --with-http_secure_link_module) \
     $(if_option ${HTTP_SLICE}         'YES' --with-http_slice_module) \
     $(if_option ${NJS}                'YES' --add-module="/tmp/njs-${NJS_VERSION}/nginx") \
+    $(if_option ${BROTLI}             'YES' --add-module="/tmp/ngx_brotli-${BROTLI_VERSION}") \
     $(if_option ${HEADERS_MORE}       'YES' --add-module="/tmp/headers-more-nginx-module-${HEADERS_MORE_VERSION}") \
     ; \
   make; \
