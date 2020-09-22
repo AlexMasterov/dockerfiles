@@ -8,12 +8,13 @@ ARG NGINX_VERSION=1.19.2
 ARG NGINX_CONFIG=/etc/nginx
 
 ARG HTTP_DEGRADATION=NO
+ARG HTTP_REFERER=NO
 ARG HTTP_SECURE_LINK=NO
 ARG HTTP_SLICE=NO
 ARG HTTP_SPLIT_CLIENTS=NO
 
-ARG STREAM_JS=NO
-ARG STREAM_JS_VERSION=0.4.3
+ARG NJS=NO
+ARG NJS_VERSION=0.4.3
 
 ARG HEADERS_MORE=NO
 ARG HEADERS_MORE_VERSION=0.33
@@ -25,6 +26,7 @@ RUN set -eux; \
   adduser -u 82 -S -D -h /var/cache/nginx -s /sbin/nologin -G nginx nginx
 
 RUN set -eux; \
+  if_option() { test "${1}" = "${2}" && echo "${3:-}"; }; \
   apk add --no-cache --virtual .nginx-build \
     g++ \
     gcc \
@@ -33,9 +35,9 @@ RUN set -eux; \
     openssl-dev \
     pcre-dev \
     zlib-dev; \
-  if test "${STREAM_JS}" = 'YES'; then \
-    STREAM_JS_SOURCE="https://github.com/nginx/njs/archive/${STREAM_JS_VERSION}.tar.gz"; \
-    wget ${STREAM_JS_SOURCE} -T 30 -O - | tar xz -C /tmp; \
+  if test "${NJS}" = 'YES'; then \
+    NJS_SOURCE="https://github.com/nginx/njs/archive/${NJS_VERSION}.tar.gz"; \
+    wget ${NJS_SOURCE} -T 30 -O - | tar xz -C /tmp; \
   fi; \
   if test "${HEADERS_MORE}" = 'YES'; then \
     HEADERS_MORE_SOURCE="https://github.com/openresty/headers-more-nginx-module/archive/v${HEADERS_MORE_VERSION}.tar.gz"; \
@@ -90,14 +92,13 @@ RUN set -eux; \
       --with-stream_ssl_module  \
     --with-threads \
     --with-file-aio \
-    $(test "${HTTP_DEGRADATION}" = 'YES' && echo --with-http_degradation_module) \
-    $(test "${HTTP_SECURE_LINK}" = 'YES' && echo --with-http_secure_link_module) \
-    $(test "${HTTP_SLICE}" = 'YES' && echo --with-http_slice_module) \
-    $(test "${HTTP_SPLIT_CLIENTS}" = 'NO' && echo --without-http_split_clients_module) \
-    $(test "${STREAM_JS}" = 'YES' && echo \
-        --add-module="/tmp/njs-${STREAM_JS_VERSION}/nginx") \
-    $(test "${HEADERS_MORE}" = 'YES' && echo \
-        --add-module="/tmp/headers-more-nginx-module-${HEADERS_MORE_VERSION}") \
+    $(if_option ${HTTP_REFERER}       'NO'  --without-http_referer_module) \
+    $(if_option ${HTTP_SPLIT_CLIENTS} 'NO'  --without-http_split_clients_module) \
+    $(if_option ${HTTP_DEGRADATION}   'YES' --with-http_degradation_module) \
+    $(if_option ${HTTP_SECURE_LINK}   'YES' --with-http_secure_link_module) \
+    $(if_option ${HTTP_SLICE}         'YES' --with-http_slice_module) \
+    $(if_option ${NJS}                'YES' --add-module="/tmp/njs-${NJS_VERSION}/nginx") \
+    $(if_option ${HEADERS_MORE}       'YES' --add-module="/tmp/headers-more-nginx-module-${HEADERS_MORE_VERSION}") \
     ; \
   make; \
   make install; \
@@ -114,6 +115,6 @@ RUN set -eux; \
   apk del --no-network .nginx-build; \
   rm -rf /tmp/* /var/tmp/*
 
-STOPSIGNAL SIGTERM
+STOPSIGNAL SIGQUIT
 
 CMD ["nginx"]
