@@ -4,7 +4,7 @@ LABEL repository.hub="alexmasterov/alpine-php:7.3" \
       repository.url="https://github.com/AlexMasterov/dockerfiles" \
       maintainer="Alex Masterov <alex.masterow@gmail.com>"
 
-ARG PHP_VERSION=7.3.22
+ARG PHP_VERSION=7.3.23
 ARG PHP_CONFIG=/etc/php
 
 ARG PHP_ARGON2=YES
@@ -49,9 +49,9 @@ ARG EXT_XSL=NO
 ARG EXT_ZIP=NO
 
 ARG EXT_XDEBUG=YES
-ARG EXT_XDEBUG_VERSION=2.9.7
+ARG EXT_XDEBUG_VERSION=2.9.8
 
-ARG EXT_PHPREDIS=YES
+ARG EXT_PHPREDIS=NO
 ARG EXT_PHPREDIS_VERSION=5.3.1
 ARG EXT_PHPREDIS_LZ4=NO
 ARG EXT_PHPREDIS_ZSTD=NO
@@ -65,7 +65,7 @@ RUN set -eux; \
   adduser -u 82 -S -D -h /var/cache/www-data -s /sbin/nologin -G www-data www-data
 
 RUN set -eux; \
-  function if_option { test "${1}" = "${2}" && echo "${3:-}" || echo "${4:-}"; }; \
+  if_option() { test "${1}" = "${2}" && echo "${3:-}" || echo "${4:-}"; }; \
   apk add --no-cache --virtual .php-build \
     autoconf \
     bison \

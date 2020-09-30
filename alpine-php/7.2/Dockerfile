@@ -49,7 +49,7 @@ ARG EXT_XSL=NO
 ARG EXT_ZIP=NO
 
 ARG EXT_XDEBUG=YES
-ARG EXT_XDEBUG_VERSION=2.9.7
+ARG EXT_XDEBUG_VERSION=2.9.8
 
 ARG EXT_PHPREDIS=NO
 ARG EXT_PHPREDIS_VERSION=5.3.1
@@ -65,7 +65,7 @@ RUN set -eux; \
   adduser -u 82 -S -D -h /var/cache/www-data -s /sbin/nologin -G www-data www-data
 
 RUN set -eux; \
-  function if_option { test "${1}" = "${2}" && echo "${3:-}" || echo "${4:-}"; }; \
+  if_option() { test "${1}" = "${2}" && echo "${3:-}" || echo "${4:-}"; }; \
   apk add --no-cache --virtual .php-build \
     autoconf \
     bison \
@@ -216,6 +216,29 @@ RUN set -eux; \
     make; \
     make install; \
   fi; \
+  if test "${EXT_PHPREDIS}" = 'YES'; then \
+    PHPREDIS_SOURCE="https://github.com/phpredis/phpredis/archive/${EXT_PHPREDIS_VERSION}.tar.gz"; \
+    wget ${PHPREDIS_SOURCE} -T 30 -O - | tar xz -C /tmp; \
+    cd /tmp/phpredis-${EXT_PHPREDIS_VERSION}; \
+    phpize; \
+    ./configure \
+      $(if_option ${EXT_PHPREDIS_LZ4}  'YES' '--enable-redis-lz4 --with-liblz4=/usr') \
+      $(if_option ${EXT_PHPREDIS_ZSTD} 'YES' '--enable-redis-zstd --with-libzstd=/usr'); \
+    make; \
+    make install; \
+  fi; \
+  if test "${EXT_MONGODB}" = 'YES'; then \
+    MONGODB_ARCHIVE="mongodb-${EXT_MONGODB_VERSION}"; \
+    MONGODB_SOURCE="https://github.com/mongodb/mongo-php-driver/releases/download/${EXT_MONGODB_VERSION}/${MONGODB_ARCHIVE}.tgz"; \
+    wget ${MONGODB_SOURCE} -T 30 -O - | tar xz -C /tmp; \
+    cd /tmp/${MONGODB_ARCHIVE}; \
+    phpize; \
+    ./configure \
+      --with-mongodb-ssl=$(echo ${EXT_MONGODB_SSL} | tr '[:upper:]' '[:lower:]') \
+      $(if_option ${EXT_MONGODB_SSL} 'OPENSSL' '--enable-mongodb-crypto-system-profile=yes'); \
+    make; \
+    make install; \
+  fi; \ 
   runtime_deps="$( \
     scanelf --needed --nobanner --recursive -F '%n#p' /usr/bin/php /usr/sbin/php-fpm /usr/lib/php/ \
       | tr ',' '\n' \
