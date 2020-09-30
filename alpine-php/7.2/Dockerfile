@@ -29,6 +29,7 @@ ARG EXT_GD_FREETYPE=NO
 ARG EXT_GD_JPEG=NO
 ARG EXT_GD_WEBP=NO
 ARG EXT_GD_XPM=NO
+ARG EXT_GMP=NO
 ARG EXT_LIBXML=YES
 ARG EXT_MBREGEX=NO
 ARG EXT_OPENSSL=YES
@@ -41,7 +42,7 @@ ARG EXT_PDO_SQLITE=YES
 ARG EXT_POSTGRESQL=NO
 ARG EXT_SIMPLEXML=YES
 ARG EXT_SODIUM=YES
-ARG EXT_SQLITE=NO
+ARG EXT_SQLITE=YES
 ARG EXT_XML=NO
 ARG EXT_XMLREADER=NO
 ARG EXT_XMLWRITER=NO
@@ -81,6 +82,7 @@ RUN set -eux; \
     $(if_option ${PHP_READLINE}   'YES'      'readline-dev') \
     $(if_option ${EXT_ZIP}        'YES'      'libzip-dev') \
     $(if_option ${EXT_SODIUM}     'YES'      'libsodium-dev') \
+    $(if_option ${EXT_GMP}        'YES'      'gmp-dev') \
     $(if_option ${EXT_CURL}       'YES'      'curl-dev') \
     $(if_option ${EXT_LIBXML}     'YES'      'libxml2-dev') \
     $(if_option ${EXT_BZ2}        'YES'      'bzip2-dev') \
@@ -158,6 +160,7 @@ RUN set -eux; \
     $(if_option ${EXT_SODIUM}    'YES' '--with-sodium=/usr') \
     $(if_option ${EXT_CURL}      'YES' '--with-curl=/usr') \
     $(if_option ${EXT_ZIP}       'YES' '--with-zip=/usr') \
+    $(if_option ${EXT_GMP}       'YES' '--with-gmp=/usr') \
     $(if_option ${EXT_BZ2}       'YES' '--with-bz2=/usr') \
     $(if_option ${EXT_SQLITE}    'YES' '--with-sqlite3=/usr' '--without-sqlite3') \
     $(test ${EXT_OPENSSL} != 'NO' && echo \
