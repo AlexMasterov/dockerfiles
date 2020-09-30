@@ -52,6 +52,11 @@ ARG EXT_ZIP=NO
 ARG EXT_XDEBUG=YES
 ARG EXT_XDEBUG_VERSION=2.9.8
 
+ARG EXT_APCU=NO
+ARG EXT_APCU_VERSION=5.1.18
+ARG EXT_APCU_RWLOCKS=YES
+ARG EXT_APCU_SPINLOCKS=NO
+
 ARG EXT_PHPREDIS=NO
 ARG EXT_PHPREDIS_VERSION=5.3.1
 ARG EXT_PHPREDIS_LZ4=NO
@@ -220,6 +225,17 @@ RUN set -eux; \
     cd /tmp/xdebug-${EXT_XDEBUG_VERSION}; \
     phpize; \
     ./configure; \
+    make; \
+    make install; \
+  fi; \
+  if test "${EXT_APCU}" = 'YES'; then \
+    APCU_SOURCE="https://github.com/krakjoe/apcu/archive/v${EXT_APCU_VERSION}.tar.gz"; \
+    wget ${APCU_SOURCE} -T 30 -O - | tar xz -C /tmp; \
+    cd /tmp/apcu-${EXT_APCU_VERSION}; \
+    phpize; \
+    ./configure \
+      $(if_option ${EXT_APCU_RWLOCKS}   'NO'  '--disable-apcu-rwlocks') \
+      $(if_option ${EXT_APCU_SPINLOCKS} 'YES' '--enable-apcu-spinlocks'); \
     make; \
     make install; \
   fi; \
