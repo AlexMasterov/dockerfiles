@@ -57,10 +57,16 @@ ARG EXT_APCU_VERSION=5.1.18
 ARG EXT_APCU_RWLOCKS=YES
 ARG EXT_APCU_SPINLOCKS=NO
 
+ARG EXT_MSGPACK=NO
+ARG EXT_MSGPACK_VERSION=2.1.1
+
 ARG EXT_PHPREDIS=NO
 ARG EXT_PHPREDIS_VERSION=5.3.1
 ARG EXT_PHPREDIS_LZ4=NO
 ARG EXT_PHPREDIS_ZSTD=NO
+ARG EXT_PHPREDIS_SESSION=YES
+ARG EXT_PHPREDIS_JSON=YES
+ARG EXT_PHPREDIS_MSGPACK=NO
 
 ARG EXT_MONGODB=NO
 ARG EXT_MONGODB_VERSION=1.8.0
@@ -75,6 +81,8 @@ RUN set -eux; \
 
 RUN set -eux; \
   if_option() { test "${1}" = "${2}" && echo "${3:-}" || echo "${4:-}"; }; \
+  load_ext() { wget "${1}" -T 30 -O - | tar xz -C /tmp; }; \
+  make_ext() { phpize; ./configure ${@}; make; make install; }; \
   apk add --no-cache --virtual .php-build \
     autoconf \
     bison \
@@ -206,57 +214,44 @@ RUN set -eux; \
   make; \
   make install; \
   if test "${EXT_XDEBUG}" = 'YES'; then \
-    XDEBUG_SOURCE="https://github.com/xdebug/xdebug/archive/${EXT_XDEBUG_VERSION}.tar.gz"; \
-    wget ${XDEBUG_SOURCE} -T 30 -O - | tar xz -C /tmp; \
+    load_ext "https://github.com/xdebug/xdebug/archive/${EXT_XDEBUG_VERSION}.tar.gz"; \
     cd /tmp/xdebug-${EXT_XDEBUG_VERSION}; \
-    phpize; \
-    ./configure; \
-    make; \
-    make install; \
+    make_ext; \
   fi; \
   if test "${EXT_APCU}" = 'YES'; then \
-    APCU_SOURCE="https://github.com/krakjoe/apcu/archive/v${EXT_APCU_VERSION}.tar.gz"; \
-    wget ${APCU_SOURCE} -T 30 -O - | tar xz -C /tmp; \
+    load_ext "https://github.com/krakjoe/apcu/archive/v${EXT_APCU_VERSION}.tar.gz"; \
     cd /tmp/apcu-${EXT_APCU_VERSION}; \
-    phpize; \
-    ./configure \
-      $(if_option ${EXT_APCU_RWLOCKS}   'NO'  '--disable-apcu-rwlocks') \
-      $(if_option ${EXT_APCU_SPINLOCKS} 'YES' '--enable-apcu-spinlocks'); \
-    make; \
-    make install; \
+    make_ext \
+      --$(if_option ${EXT_APCU_RWLOCKS}   'YES' 'enable' 'disable')-apcu-rwlocks \
+      --$(if_option ${EXT_APCU_SPINLOCKS} 'YES' 'enable' 'disable')-apcu-spinlocks; \
+  fi; \
+  if test "${EXT_MSGPACK}" = 'YES'; then \
+    load_ext "https://github.com/msgpack/msgpack-php/archive/msgpack-${EXT_MSGPACK_VERSION}.tar.gz"; \
+    cd /tmp/msgpack-php-msgpack-${EXT_MSGPACK_VERSION}; \
+    make_ext; \
   fi; \
   if test "${EXT_PHPREDIS}" = 'YES'; then \
-    PHPREDIS_SOURCE="https://github.com/phpredis/phpredis/archive/${EXT_PHPREDIS_VERSION}.tar.gz"; \
-    wget ${PHPREDIS_SOURCE} -T 30 -O - | tar xz -C /tmp; \
+    load_ext "https://github.com/phpredis/phpredis/archive/${EXT_PHPREDIS_VERSION}.tar.gz"; \
     cd /tmp/phpredis-${EXT_PHPREDIS_VERSION}; \
-    phpize; \
-    ./configure \
-      $(if_option ${EXT_PHPREDIS_LZ4}  'YES' '--enable-redis-lz4 --with-liblz4=/usr') \
-      $(if_option ${EXT_PHPREDIS_ZSTD} 'YES' '--enable-redis-zstd --with-libzstd=/usr'); \
-    make; \
-    make install; \
+    make_ext \
+      --$(if_option ${EXT_PHPREDIS_LZ4}     'YES' 'enable-redis-lz4 --with-liblz4=/usr') \
+      --$(if_option ${EXT_PHPREDIS_ZSTD}    'YES' 'enable-redis-zstd --with-libzstd=/usr') \
+      --$(if_option ${EXT_PHPREDIS_SESSION} 'YES' 'enable' 'disable')-redis-session \
+      --$(if_option ${EXT_PHPREDIS_JSON}    'YES' 'enable' 'disable')-redis-json \
+      --$(if_option ${EXT_PHPREDIS_MSGPACK} 'YES' 'enable' 'disable')-redis-msgpack; \
   fi; \
   if test "${EXT_MONGODB}" = 'YES'; then \
     MONGODB_ARCHIVE="mongodb-${EXT_MONGODB_VERSION}"; \
-    MONGODB_SOURCE="https://github.com/mongodb/mongo-php-driver/releases/download/${EXT_MONGODB_VERSION}/${MONGODB_ARCHIVE}.tgz"; \
-    wget ${MONGODB_SOURCE} -T 30 -O - | tar xz -C /tmp; \
+    load_ext "https://github.com/mongodb/mongo-php-driver/releases/download/${EXT_MONGODB_VERSION}/${MONGODB_ARCHIVE}.tgz"; \
     cd /tmp/${MONGODB_ARCHIVE}; \
-    phpize; \
-    ./configure \
+    make_ext \
       --with-mongodb-ssl=$(echo ${EXT_MONGODB_SSL} | tr '[:upper:]' '[:lower:]') \
       $(if_option ${EXT_MONGODB_SSL} 'OPENSSL' '--enable-mongodb-crypto-system-profile=yes'); \
-    make; \
-    make install; \
   fi; \ 
   if test "${EXT_AMQP}" = 'YES'; then \
-    AMQP_SOURCE="https://github.com/php-amqp/php-amqp/archive/v${EXT_AMQP_VERSION}.tar.gz"; \
-    wget ${AMQP_SOURCE} -T 30 -O - | tar xz -C /tmp; \
+    load_ext "https://github.com/php-amqp/php-amqp/archive/v${EXT_AMQP_VERSION}.tar.gz"; \
     cd /tmp/php-amqp-${EXT_AMQP_VERSION}; \
-    phpize; \
-    ./configure \
-      --with-librabbitmq-dir=/usr; \
-    make; \
-    make install; \
+    make_ext --with-librabbitmq-dir=/usr; \
   fi; \
   runtime_deps="$( \
     scanelf --needed --nobanner --recursive -F '%n#p' /usr/bin/php /usr/sbin/php-fpm /usr/lib/php/ \
