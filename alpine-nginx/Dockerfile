@@ -4,7 +4,7 @@ LABEL repository.hub="alexmasterov/alpine-nginx" \
       repository.url="https://github.com/AlexMasterov/dockerfiles" \
       maintainer="Alex Masterov <alex.masterow@gmail.com>"
 
-ARG NGINX_VERSION=1.19.2
+ARG NGINX_VERSION=1.19.3
 ARG NGINX_CONFIG=/etc/nginx
 
 ARG HTTP_DEGRADATION=NO
@@ -16,7 +16,7 @@ ARG HTTP_SPLIT_CLIENTS=NO
 ARG NJS=NO
 ARG NJS_VERSION=0.4.3
 
-ARG BROTLI=YES
+ARG BROTLI=NO
 ARG BROTLI_VERSION=1.0.0rc
 
 ARG HEADERS_MORE=NO
