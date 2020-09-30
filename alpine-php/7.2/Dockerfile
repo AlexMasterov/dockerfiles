@@ -42,7 +42,7 @@ ARG EXT_PDO_SQLITE=YES
 ARG EXT_POSTGRESQL=NO
 ARG EXT_SIMPLEXML=YES
 ARG EXT_SODIUM=YES
-ARG EXT_SQLITE=YES
+ARG EXT_SQLITE=NO
 ARG EXT_XML=NO
 ARG EXT_XMLREADER=NO
 ARG EXT_XMLWRITER=NO
@@ -60,6 +60,9 @@ ARG EXT_PHPREDIS_ZSTD=NO
 ARG EXT_MONGODB=NO
 ARG EXT_MONGODB_VERSION=1.8.0
 ARG EXT_MONGODB_SSL=OPENSSL
+
+ARG EXT_AMQP=NO
+ARG EXT_AMQP_VERSION=1.10.2
 
 RUN set -eux; \
   addgroup -g 82 -S www-data; \
@@ -111,7 +114,8 @@ RUN set -eux; \
     $(if_option ${EXT_PHPREDIS_LZ4}  'YES'      'lz4-dev') \
     $(if_option ${EXT_PHPREDIS_ZSTD} 'YES'      'zstd-dev') \
     $(if_option ${EXT_MONGODB_SSL}   'OPENSSL'  'openssl-dev') \
-    $(if_option ${EXT_MONGODB_SSL}   'LIBRESSL' 'libressl-dev'); \ 
+    $(if_option ${EXT_MONGODB_SSL}   'LIBRESSL' 'libressl-dev') \
+    $(if_option ${EXT_AMQP}          'YES'      'rabbitmq-c-dev'); \ 
   : "-- Proper iconv: replace binary and headers"; \
   mv /usr/bin/gnu-iconv /usr/bin/iconv; \
   mv /usr/include/gnu-libiconv/*.h /usr/include; \
@@ -242,6 +246,16 @@ RUN set -eux; \
     make; \
     make install; \
   fi; \ 
+  if test "${EXT_AMQP}" = 'YES'; then \
+    AMQP_SOURCE="https://github.com/php-amqp/php-amqp/archive/v${EXT_AMQP_VERSION}.tar.gz"; \
+    wget ${AMQP_SOURCE} -T 30 -O - | tar xz -C /tmp; \
+    cd /tmp/php-amqp-${EXT_AMQP_VERSION}; \
+    phpize; \
+    ./configure \
+      --with-librabbitmq-dir=/usr; \
+    make; \
+    make install; \
+  fi; \
   runtime_deps="$( \
     scanelf --needed --nobanner --recursive -F '%n#p' /usr/bin/php /usr/sbin/php-fpm /usr/lib/php/ \
       | tr ',' '\n' \
