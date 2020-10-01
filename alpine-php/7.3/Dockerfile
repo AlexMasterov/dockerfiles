@@ -80,9 +80,9 @@ RUN set -eux; \
   adduser -u 82 -S -D -h /var/cache/www-data -s /sbin/nologin -G www-data www-data
 
 RUN set -eux; \
-  if_option() { test "${1}" = "${2}" && echo "${3:-}" || echo "${4:-}"; }; \
-  load_ext() { wget "${1}" -T 30 -O - | tar xz -C /tmp; }; \
-  make_ext() { phpize; ./configure ${@}; make; make install; }; \
+  if_option() { [ ${1} = ${2} ] && echo ${3:-} || echo ${4:-}; }; \
+  load_archive() { wget ${1} -T 30 -O - | tar xz -C /tmp; }; \
+  make_ext() { phpize; ./configure ${*:-}; make; make install; }; \
   apk add --no-cache --virtual .php-build \
     autoconf \
     bison \
@@ -108,15 +108,15 @@ RUN set -eux; \
     $(if_option ${EXT_OPENSSL}    'LIBRESSL' 'libressl-dev') \
     $(if_option ${EXT_PCRE}       'EXTERNAL' 'pcre2-dev') \
     $(if_option ${EXT_MBREGEX}    'EXTERNAL' 'oniguruma-dev') \
-    $(test ${EXT_PDO} = 'YES' && echo \
+    $([ ${EXT_PDO} = 'YES' ] && echo \
       $(if_option ${EXT_PDO_SQLITE} 'YES'     'sqlite-dev') \
       $(if_option ${EXT_PDO_PGSQL}  'YES'     'postgresql-dev') \
       $(if_option ${EXT_PDO_MYSQL}  'MARIADB' 'mariadb-dev') \
     ) \
-    $(test ${EXT_GD} = 'YES' \
+    $([ ${EXT_GD} = 'YES' ] \
       && echo \
         libpng-dev \
-      || test ${EXT_GD} = 'EXTERNAL' && echo \
+      || [ ${EXT_GD} = 'EXTERNAL' ] && echo \
         gd-dev \
         libpng-dev \
         libxpm-dev \
@@ -145,8 +145,8 @@ RUN set -eux; \
   : "-- Build PHP"; \
   ./configure \
     --prefix=/usr \
-    --sysconfdir="${PHP_CONFIG}" \
-    --with-config-file-path="${PHP_CONFIG}" \
+    --sysconfdir=${PHP_CONFIG} \
+    --with-config-file-path=${PHP_CONFIG} \
     --with-config-file-scan-dir="${PHP_CONFIG}/conf.d" \
     --with-layout="GNU" \
     --without-pear \
@@ -179,11 +179,11 @@ RUN set -eux; \
     $(if_option ${EXT_GMP}       'YES' '--with-gmp=/usr') \
     $(if_option ${EXT_BZ2}       'YES' '--with-bz2=/usr') \
     $(if_option ${EXT_SQLITE}    'YES' '--with-sqlite3=/usr' '--without-sqlite3') \
-    $(test ${EXT_OPENSSL} != 'NO' && echo \
+    $([ ${EXT_OPENSSL} != 'NO' ] && echo \
       --with-openssl=/usr \
       $(if_option ${EXT_OPENSSL_SYSTEM_CIPHERS} 'YES' '--with-system-ciphers') \
     \ ) \
-    $(test ${EXT_PDO} = 'YES' \
+    $([ ${EXT_PDO} = 'YES' ] \
       && echo \
         $(if_option ${EXT_PDO_SQLITE} 'YES'     '--with-pdo-sqlite=/usr' '--without-pdo-sqlite') \
         $(if_option ${EXT_PDO_PGSQL}  'YES'     '--with-pdo-pgsql=/usr') \
@@ -192,7 +192,7 @@ RUN set -eux; \
       || echo \
         --disable-pdo \
     ) \
-    $(test ${EXT_LIBXML} = 'YES' \
+    $([ ${EXT_LIBXML} = 'YES' ] \
       && echo \
         $(if_option ${EXT_XML}       'NO'  '--disable-xml') \
         $(if_option ${EXT_XMLREADER} 'NO'  '--disable-xmlreader') \
@@ -208,11 +208,11 @@ RUN set -eux; \
         --disable-simplexml \
         --disable-dom \
     ) \
-    $(test ${EXT_GD} = 'YES' \
+    $([ ${EXT_GD} = 'YES' ] \
       && echo \
         --with-gd \
         --with-png-dir=/usr \
-      || test ${EXT_GD} = 'EXTERNAL' && echo \
+      || [ ${EXT_GD} = 'EXTERNAL' ] && echo \
         --with-gd=/usr \
         --with-png-dir=/usr \
         --with-xpm-dir=/usr \
@@ -225,25 +225,25 @@ RUN set -eux; \
     $(if_option ${EXT_PCRE}    'EXTERNAL' '--with-pcre-regex=/usr'); \
   make; \
   make install; \
-  if test "${EXT_XDEBUG}" = 'YES'; then \
-    load_ext "https://github.com/xdebug/xdebug/archive/${EXT_XDEBUG_VERSION}.tar.gz"; \
+  if [ ${EXT_XDEBUG} = 'YES' ]; then \
+    load_archive "https://github.com/xdebug/xdebug/archive/${EXT_XDEBUG_VERSION}.tar.gz"; \
     cd /tmp/xdebug-${EXT_XDEBUG_VERSION}; \
     make_ext; \
   fi; \
-  if test "${EXT_APCU}" = 'YES'; then \
-    load_ext "https://github.com/krakjoe/apcu/archive/v${EXT_APCU_VERSION}.tar.gz"; \
+  if [ ${EXT_APCU} = 'YES' ]; then \
+    load_archive "https://github.com/krakjoe/apcu/archive/v${EXT_APCU_VERSION}.tar.gz"; \
     cd /tmp/apcu-${EXT_APCU_VERSION}; \
     make_ext \
       --$(if_option ${EXT_APCU_RWLOCKS}   'YES' 'enable' 'disable')-apcu-rwlocks \
       --$(if_option ${EXT_APCU_SPINLOCKS} 'YES' 'enable' 'disable')-apcu-spinlocks; \
   fi; \
-  if test "${EXT_MSGPACK}" = 'YES'; then \
-    load_ext "https://github.com/msgpack/msgpack-php/archive/msgpack-${EXT_MSGPACK_VERSION}.tar.gz"; \
+  if [ ${EXT_MSGPACK} = 'YES' ]; then \
+    load_archive "https://github.com/msgpack/msgpack-php/archive/msgpack-${EXT_MSGPACK_VERSION}.tar.gz"; \
     cd /tmp/msgpack-php-msgpack-${EXT_MSGPACK_VERSION}; \
     make_ext; \
   fi; \
-  if test "${EXT_PHPREDIS}" = 'YES'; then \
-    load_ext "https://github.com/phpredis/phpredis/archive/${EXT_PHPREDIS_VERSION}.tar.gz"; \
+  if [ ${EXT_PHPREDIS} = 'YES' ]; then \
+    load_archive "https://github.com/phpredis/phpredis/archive/${EXT_PHPREDIS_VERSION}.tar.gz"; \
     cd /tmp/phpredis-${EXT_PHPREDIS_VERSION}; \
     make_ext \
       --$(if_option ${EXT_PHPREDIS_LZ4}     'YES' 'enable-redis-lz4 --with-liblz4=/usr') \
@@ -252,16 +252,16 @@ RUN set -eux; \
       --$(if_option ${EXT_PHPREDIS_JSON}    'YES' 'enable' 'disable')-redis-json \
       --$(if_option ${EXT_PHPREDIS_MSGPACK} 'YES' 'enable' 'disable')-redis-msgpack; \
   fi; \
-  if test "${EXT_MONGODB}" = 'YES'; then \
+  if [ ${EXT_MONGODB} = 'YES' ]; then \
     MONGODB_ARCHIVE="mongodb-${EXT_MONGODB_VERSION}"; \
-    load_ext "https://github.com/mongodb/mongo-php-driver/releases/download/${EXT_MONGODB_VERSION}/${MONGODB_ARCHIVE}.tgz"; \
+    load_archive "https://github.com/mongodb/mongo-php-driver/releases/download/${EXT_MONGODB_VERSION}/${MONGODB_ARCHIVE}.tgz"; \
     cd /tmp/${MONGODB_ARCHIVE}; \
     make_ext \
       --with-mongodb-ssl=$(echo ${EXT_MONGODB_SSL} | tr '[:upper:]' '[:lower:]') \
-      $(if_option ${EXT_MONGODB_SSL} 'OPENSSL' '--enable-mongodb-crypto-system-profile=yes'); \
+      $(if_option ${EXT_MONGODB_SSL} 'OPENSSL' --enable-mongodb-crypto-system-profile=yes); \
   fi; \ 
-  if test "${EXT_AMQP}" = 'YES'; then \
-    load_ext "https://github.com/php-amqp/php-amqp/archive/v${EXT_AMQP_VERSION}.tar.gz"; \
+  if [ ${EXT_AMQP} = 'YES' ]; then \
+    load_archive "https://github.com/php-amqp/php-amqp/archive/v${EXT_AMQP_VERSION}.tar.gz"; \
     cd /tmp/php-amqp-${EXT_AMQP_VERSION}; \
     make_ext --with-librabbitmq-dir=/usr; \
   fi; \

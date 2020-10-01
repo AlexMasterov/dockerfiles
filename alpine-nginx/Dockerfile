@@ -29,7 +29,8 @@ RUN set -eux; \
   adduser -u 82 -S -D -h /var/cache/nginx -s /sbin/nologin -G nginx nginx
 
 RUN set -eux; \
-  if_option() { test "${1}" = "${2}" && echo "${3:-}"; }; \
+  if_option() { [ ${1} = ${2} ] && echo ${3:-} || echo ${4:-}; }; \
+  load_archive() { wget ${1} -T 30 -O - | tar xz -C /tmp; }; \
   apk add --no-cache --virtual .nginx-build \
     g++ \
     gcc \
@@ -40,30 +41,23 @@ RUN set -eux; \
     zlib-dev \
     $(if_option ${BROTLI} 'YES' brotli-dev) \
     ; \
-  if test "${NJS}" = 'YES'; then \
-    NJS_SOURCE="https://github.com/nginx/njs/archive/${NJS_VERSION}.tar.gz"; \
-    wget ${NJS_SOURCE} -T 30 -O - | tar xz -C /tmp; \
+  if [ ${NJS} = 'YES' ]; then \
+    load_archive "https://github.com/nginx/njs/archive/${NJS_VERSION}.tar.gz"; \
   fi; \
-  if test "${BROTLI}" = 'YES'; then \
-    BROTLI_SOURCE="https://github.com/google/ngx_brotli/archive/v${BROTLI_VERSION}.tar.gz"; \
-    wget ${BROTLI_SOURCE} -T 30 -O - | tar xz -C /tmp; \
+  if [ ${BROTLI} = 'YES' ]; then \
+    load_archive "https://github.com/google/ngx_brotli/archive/v${BROTLI_VERSION}.tar.gz"; \
   fi; \
-  if test "${HEADERS_MORE}" = 'YES'; then \
-    HEADERS_MORE_SOURCE="https://github.com/openresty/headers-more-nginx-module/archive/v${HEADERS_MORE_VERSION}.tar.gz"; \
-    wget ${HEADERS_MORE_SOURCE} -T 30 -O - | tar xz -C /tmp; \
+  if [ ${HEADERS_MORE} = 'YES' ]; then \
+    load_archive "https://github.com/openresty/headers-more-nginx-module/archive/v${HEADERS_MORE_VERSION}.tar.gz"; \
   fi; \
   : "-- Download Nginx"; \
-  NGINX_SOURCE="https://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz"; \
-  wget ${NGINX_SOURCE} -T 30 -O - | tar xz -C /tmp; \
+  load_archive "https://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz"; \
   : "-- Setup build flags"; \
-  export \
-    LDFLAGS="-Wl,-O2 -Wl,--hash-style=both -pie" \
-    CFLAGS="-O2 -march=native -flto -fstack-protector-strong -fPIC -fPIE" \
-    MAKEFLAGS="-j $(expr $(getconf _NPROCESSORS_ONLN) \+ 1)"; \
+  export MAKEFLAGS="-j $(expr $(getconf _NPROCESSORS_ONLN) \+ 1)"; \
   : "-- Build Nginx"; \
   cd /tmp/nginx-${NGINX_VERSION}; \
   ./configure \
-    --prefix="${NGINX_CONFIG}" \
+    --prefix=${NGINX_CONFIG} \
     --conf-path="${NGINX_CONFIG}/nginx.conf" \
     --modules-path=/usr/lib/nginx/modules \
     --sbin-path=/usr/sbin/nginx \
@@ -101,6 +95,8 @@ RUN set -eux; \
       --with-stream_ssl_module  \
     --with-threads \
     --with-file-aio \
+    --with-ld-opt="-O2 -pie" \
+    --with-cc-opt="-O2 -march=native -fstack-protector-strong -flto -fpic -fpie -D FD_SETSIZE=$(ulimit -n)" \
     $(if_option ${HTTP_REFERER}       'NO'  --without-http_referer_module) \
     $(if_option ${HTTP_SPLIT_CLIENTS} 'NO'  --without-http_split_clients_module) \
     $(if_option ${HTTP_DEGRADATION}   'YES' --with-http_degradation_module) \
