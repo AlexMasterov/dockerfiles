@@ -4,7 +4,7 @@ LABEL repository.hub="alexmasterov/alpine-php:7.2" \
       repository.url="https://github.com/AlexMasterov/dockerfiles" \
       maintainer="Alex Masterov <alex.masterow@gmail.com>"
 
-ARG PHP_VERSION=7.2.33
+ARG PHP_VERSION=7.2.34
 ARG PHP_CONFIG=/etc/php
 
 ARG PHP_ARGON2=YES
@@ -220,9 +220,9 @@ RUN set -eux; \
         $(if_option ${EXT_GD_WEBP}     'EXTERNAL' '--with-webp-dir=/usr') \
         $(if_option ${EXT_GD_FREETYPE} 'EXTERNAL' '--with-freetype-dir=/usr') \
     ) \
-    $(if_option ${EXT_MBREGEX}        'NO'       '--disable-mbregex') \
-    $(if_option ${EXT_MBREGEX}        'EXTERNAL' '--with-onig=/usr') \
-    $(if_option ${EXT_PCRE}           'EXTERNAL' '--with-pcre-regex=/usr') \
+    $(if_option ${EXT_MBREGEX} 'NO'       '--disable-mbregex') \
+    $(if_option ${EXT_MBREGEX} 'EXTERNAL' '--with-onig=/usr') \
+    $(if_option ${EXT_PCRE}    'EXTERNAL' '--with-pcre-regex=/usr') \
     ; \
   make; \
   make install; \
