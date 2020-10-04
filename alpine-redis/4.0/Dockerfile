@@ -5,7 +5,12 @@ LABEL repository.hub="alexmasterov/alpine-redis:4.0" \
       maintainer="Alex Masterov <alex.masterow@gmail.com>"
 
 ARG REDIS_VERSION=4.0.14
-ARG REDIS_MALLOC=jemalloc
+
+ARG REDIS_SERVER=YES
+ARG REDIS_CLI=NO
+ARG REDIS_BENCH=NO
+
+ARG EXTRA_CFLAGS=-march=native
 
 RUN set -eux; \
   apk add --no-cache \
@@ -14,29 +19,30 @@ RUN set -eux; \
   adduser -u 82 -S -D -h /var/cache/redis -s /sbin/nologin -G redis redis
 
 RUN set -eux; \
+  if_option() { [ ${1} = ${2} ] && echo ${3:-} || echo ${4:-}; }; \
+  load_archive() { wget ${1} -T 30 -O - | tar xz -C /tmp; }; \
   apk add --no-cache --virtual .redis-build \
     gcc \
     linux-headers \
     make \
     musl-dev; \
   : "-- Download Redis"; \
-  REDIS_SOURCE="https://github.com/antirez/redis/archive/${REDIS_VERSION}.tar.gz"; \
-  wget ${REDIS_SOURCE} -T 30 -O - | tar xz -C /tmp; \
-  cd /tmp/redis-${REDIS_VERSION}; \
-  : "-- Patch 'src/Makefile': remove deduplicate 'redis-server' copies"; \
-  INSTALL_REGEXP='^\s+?\$\(REDIS_INSTALL\) \$\(REDIS_CHECK_(RDB|AOF)_NAME\) \$\(INSTALL_BIN\)'; \
-  LN_REGEXP='(^\s+?@ln -sf \$\(REDIS_SERVER_NAME\) \$\(INSTALL_BIN\)\/).+$'; \
-  LN_REPLACE_REGEXP='\1$(REDIS_SENTINEL_NAME)\n\1$(REDIS_CHECK_RDB_NAME)\n\1$(REDIS_CHECK_AOF_NAME)'; \
-  sed -ri "/${INSTALL_REGEXP}/d" src/Makefile; \
-  sed -ri "s/${LN_REGEXP}/${LN_REPLACE_REGEXP}/" src/Makefile; \
+  load_archive "https://github.com/redis/redis/archive/${REDIS_VERSION}.tar.gz"; \
+  cd /tmp/redis-${REDIS_VERSION}/src; \
   : "-- Patch 'src/config.c': disable Redis protected mode"; \
-  sed -ri 's/^(#define CONFIG_DEFAULT_PROTECTED_MODE).+/\1 0/' src/server.h; \
+  sed -ri 's/^(#define CONFIG_DEFAULT_PROTECTED_MODE).+/\1 0/' server.h; \
   : "-- Build Redis"; \
   make \
-    MALLOC=${REDIS_MALLOC} \
-    CFLAGS="-march=native" \
+    $(if_option ${REDIS_SERVER} 'YES' redis-server) \
+    $(if_option ${REDIS_CLI}    'YES' redis-cli) \
+    $(if_option ${REDIS_BENCH}  'YES' redis-benchmark) \
+    EXTRA_CFLAGS=${EXTRA_CFLAGS} \
     -j $(getconf _NPROCESSORS_ONLN); \
-  make install; \
+  mv \
+    $(if_option ${REDIS_SERVER} 'YES' redis-server) \
+    $(if_option ${REDIS_CLI}    'YES' redis-cli) \
+    $(if_option ${REDIS_BENCH}  'YES' redis-benchmark) \
+    /usr/local/bin; \
   : "-- Strip files"; \
   find /usr/local/bin -type f -perm +0111 -exec strip --strip-unneeded '{}' + || true; \
   : "-- Remove build dependencies, clean temporary files"; \
