@@ -68,6 +68,12 @@ ARG EXT_PHPREDIS_SESSION=YES
 ARG EXT_PHPREDIS_JSON=YES
 ARG EXT_PHPREDIS_MSGPACK=NO
 
+ARG EXT_MEMCACHED=NO
+ARG EXT_MEMCACHED_VERSION=3.1.5
+ARG EXT_MEMCACHED_SESSION=YES
+ARG EXT_MEMCACHED_JSON=YES
+ARG EXT_MEMCACHED_MSGPACK=NO
+
 ARG EXT_MONGODB=NO
 ARG EXT_MONGODB_VERSION=1.8.0
 ARG EXT_MONGODB_SSL=OPENSSL
@@ -126,6 +132,7 @@ RUN set -eux; \
     ) \
     $(if_option ${EXT_PHPREDIS_LZ4}  'YES'      'lz4-dev') \
     $(if_option ${EXT_PHPREDIS_ZSTD} 'YES'      'zstd-dev') \
+    $(if_option ${EXT_MEMCACHED}     'YES'      'libmemcached-dev') \
     $(if_option ${EXT_MONGODB_SSL}   'OPENSSL'  'openssl-dev') \
     $(if_option ${EXT_MONGODB_SSL}   'LIBRESSL' 'libressl-dev') \
     $(if_option ${EXT_AMQP}          'YES'      'rabbitmq-c-dev'); \ 
@@ -251,6 +258,16 @@ RUN set -eux; \
       --$(if_option ${EXT_PHPREDIS_SESSION} 'YES' 'enable' 'disable')-redis-session \
       --$(if_option ${EXT_PHPREDIS_JSON}    'YES' 'enable' 'disable')-redis-json \
       --$(if_option ${EXT_PHPREDIS_MSGPACK} 'YES' 'enable' 'disable')-redis-msgpack; \
+  fi; \
+  if [ ${EXT_MEMCACHED} = 'YES' ]; then \
+    load_archive "https://github.com/php-memcached-dev/php-memcached/archive/v${EXT_MEMCACHED_VERSION}.tar.gz"; \
+    cd /tmp/php-memcached-${EXT_MEMCACHED_VERSION}; \
+    make_ext \
+      LDFLAGS="-lpthread" \
+      --disable-memcached-sasl \
+      --$(if_option ${EXT_MEMCACHED_SESSION} 'YES' 'enable' 'disable')-memcached-session \
+      --$(if_option ${EXT_MEMCACHED_JSON}    'YES' 'enable' 'disable')-memcached-json \
+      --$(if_option ${EXT_MEMCACHED_MSGPACK} 'YES' 'enable' 'disable')-memcached-msgpack; \
   fi; \
   if [ ${EXT_MONGODB} = 'YES' ]; then \
     MONGODB_ARCHIVE="mongodb-${EXT_MONGODB_VERSION}"; \
