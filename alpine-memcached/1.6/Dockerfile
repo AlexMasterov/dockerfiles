@@ -4,7 +4,7 @@ LABEL repository.hub="alexmasterov/alpine-memcached:1.6" \
       repository.url="https://github.com/AlexMasterov/dockerfiles" \
       maintainer="Alex Masterov <alex.masterow@gmail.com>"
 
-ARG MEMCACHED_VERSION=1.6.7
+ARG MEMCACHED_VERSION=1.6.8
 
 RUN set -eux; \
   apk add --no-cache \
@@ -13,17 +13,17 @@ RUN set -eux; \
   adduser -u 82 -S -D -h /var/cache/memcache -s /sbin/nologin -G memcache memcache
 
 RUN set -eux; \
+  load_archive() { wget ${1} -T 30 -O - | tar xz -C /tmp; }; \
   apk add --no-cache --virtual .memcached-build \
     g++ \
     gcc \
     libevent-dev \
     make \
     openssl-dev; \
-  : "---------- Download Memcached ----------"; \
-  MEMCACHED_SOURCE="https://memcached.org/files/memcached-${MEMCACHED_VERSION}.tar.gz"; \
-  wget ${MEMCACHED_SOURCE} -T 30 -O - | tar xz -C /tmp; \
+  : "-- Download Memcached"; \
+  load_archive "https://memcached.org/files/memcached-${MEMCACHED_VERSION}.tar.gz"; \
   cd /tmp/memcached-${MEMCACHED_VERSION}; \
-  : "---------- Build Memcached----------"; \
+  : "-- Build Memcached"; \
   ./configure \
     CFLAGS="-O2 -march=native" \
     --enable-tls; \
