@@ -4,7 +4,7 @@ LABEL repository.hub="alexmasterov/alpine-nginx" \
       repository.url="https://github.com/AlexMasterov/dockerfiles" \
       maintainer="Alex Masterov <alex.masterow@gmail.com>"
 
-ARG NGINX_VERSION=1.19.3
+ARG NGINX_VERSION=1.19.4
 ARG NGINX_CONFIG=/etc/nginx
 
 ARG HTTP_DEGRADATION=NO
@@ -14,7 +14,7 @@ ARG HTTP_SLICE=NO
 ARG HTTP_SPLIT_CLIENTS=NO
 
 ARG NJS=NO
-ARG NJS_VERSION=0.4.3
+ARG NJS_VERSION=0.4.4
 
 ARG BROTLI=NO
 ARG BROTLI_VERSION=1.0.0rc
@@ -59,19 +59,19 @@ RUN set -eux; \
   ./configure \
     --prefix=${NGINX_CONFIG} \
     --conf-path="${NGINX_CONFIG}/nginx.conf" \
-    --modules-path=/usr/lib/nginx/modules \
-    --sbin-path=/usr/sbin/nginx \
-    --pid-path=/var/run/nginx.pid \
-    --lock-path=/var/run/nginx.lock \
-    --error-log-path=/var/log/nginx/error.log \
-    --http-log-path=/var/log/nginx/access.log \
-    --http-client-body-temp-path=/var/cache/nginx/client_temp \
-    --http-proxy-temp-path=/var/cache/nginx/proxy_temp \
-    --http-fastcgi-temp-path=/var/cache/nginx/fastcgi_temp \
-    --http-uwsgi-temp-path=/var/cache/nginx/uwsgi_temp \
-    --http-scgi-temp-path=/var/cache/nginx/scgi_temp \
-    --user=nginx \
-    --group=nginx \
+    --modules-path="/usr/lib/nginx/modules" \
+    --sbin-path="/usr/sbin/nginx" \
+    --pid-path="/var/run/nginx.pid" \
+    --lock-path="/var/run/nginx.lock" \
+    --error-log-path="/var/log/nginx/error.log" \
+    --http-log-path="/var/log/nginx/access.log" \
+    --http-client-body-temp-path="/var/cache/nginx/client_temp" \
+    --http-proxy-temp-path="/var/cache/nginx/proxy_temp" \
+    --http-fastcgi-temp-path="/var/cache/nginx/fastcgi_temp" \
+    --http-uwsgi-temp-path="/var/cache/nginx/uwsgi_temp" \
+    --http-scgi-temp-path="/var/cache/nginx/scgi_temp" \
+    --user="nginx" \
+    --group="nginx" \
     --without-http_auth_basic_module \
     --without-http_autoindex_module \
     --without-http_empty_gif_module \
