@@ -8,7 +8,7 @@ ARG REDIS_VERSION=4.0.14
 
 ARG REDIS_SERVER=YES
 ARG REDIS_CLI=NO
-ARG REDIS_BENCH=NO
+ARG REDIS_BENCHMARK=NO
 
 ARG EXTRA_CFLAGS=-march=native
 
@@ -33,15 +33,15 @@ RUN set -eux; \
   sed -ri 's/^(#define CONFIG_DEFAULT_PROTECTED_MODE).+/\1 0/' server.h; \
   : "-- Build Redis"; \
   make \
-    $(if_option ${REDIS_SERVER} 'YES' redis-server) \
-    $(if_option ${REDIS_CLI}    'YES' redis-cli) \
-    $(if_option ${REDIS_BENCH}  'YES' redis-benchmark) \
+    $(if_option ${REDIS_SERVER}    'YES' redis-server) \
+    $(if_option ${REDIS_CLI}       'YES' redis-cli) \
+    $(if_option ${REDIS_BENCHMARK} 'YES' redis-benchmark) \
     EXTRA_CFLAGS=${EXTRA_CFLAGS} \
     -j $(getconf _NPROCESSORS_ONLN); \
   mv \
-    $(if_option ${REDIS_SERVER} 'YES' redis-server) \
-    $(if_option ${REDIS_CLI}    'YES' redis-cli) \
-    $(if_option ${REDIS_BENCH}  'YES' redis-benchmark) \
+    $(if_option ${REDIS_SERVER}    'YES' redis-server) \
+    $(if_option ${REDIS_CLI}       'YES' redis-cli) \
+    $(if_option ${REDIS_BENCHMARK} 'YES' redis-benchmark) \
     /usr/local/bin; \
   : "-- Strip files"; \
   find /usr/local/bin -type f -perm +0111 -exec strip --strip-unneeded '{}' + || true; \
