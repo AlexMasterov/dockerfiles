@@ -4,7 +4,7 @@ LABEL repository.hub="alexmasterov/alpine-redis:6.0" \
       repository.url="https://github.com/AlexMasterov/dockerfiles" \
       maintainer="Alex Masterov <alex.masterow@gmail.com>"
 
-ARG REDIS_VERSION=6.0.9
+ARG REDIS_VERSION=6.0.10
 
 ARG REDIS_SERVER=YES
 ARG REDIS_CLI=NO
