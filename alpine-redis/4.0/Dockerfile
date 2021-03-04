@@ -9,8 +9,7 @@ ARG REDIS_VERSION=4.0.14
 ARG REDIS_SERVER=YES
 ARG REDIS_CLI=NO
 ARG REDIS_BENCHMARK=NO
-
-ARG EXTRA_CFLAGS=-march=native
+ARG REDIS_EXTRA_CFLAGS=-march=native
 
 RUN set -eux; \
   apk add --no-cache \
@@ -19,7 +18,7 @@ RUN set -eux; \
   adduser -u 82 -S -D -h /var/cache/redis -s /sbin/nologin -G redis redis
 
 RUN set -eux; \
-  if_option() { [ ${1} = ${2} ] && echo ${3:-} || echo ${4:-}; }; \
+  if_eq() { [ ${1} = ${2} ] && echo ${3:-} || echo ${4:-}; }; \
   load_archive() { wget ${1} -T 30 -O - | tar xz -C /tmp; }; \
   apk add --no-cache --virtual .redis-build \
     gcc \
@@ -33,15 +32,15 @@ RUN set -eux; \
   sed -ri 's/^(#define CONFIG_DEFAULT_PROTECTED_MODE).+/\1 0/' server.h; \
   : "-- Build Redis"; \
   make \
-    $(if_option ${REDIS_SERVER}    'YES' redis-server) \
-    $(if_option ${REDIS_CLI}       'YES' redis-cli) \
-    $(if_option ${REDIS_BENCHMARK} 'YES' redis-benchmark) \
-    EXTRA_CFLAGS=${EXTRA_CFLAGS} \
+    $(if_eq ${REDIS_SERVER}    'YES' redis-server) \
+    $(if_eq ${REDIS_CLI}       'YES' redis-cli) \
+    $(if_eq ${REDIS_BENCHMARK} 'YES' redis-benchmark) \
+    EXTRA_CFLAGS=${REDIS_EXTRA_CFLAGS} \
     -j $(getconf _NPROCESSORS_ONLN); \
   mv \
-    $(if_option ${REDIS_SERVER}    'YES' redis-server) \
-    $(if_option ${REDIS_CLI}       'YES' redis-cli) \
-    $(if_option ${REDIS_BENCHMARK} 'YES' redis-benchmark) \
+    $(if_eq ${REDIS_SERVER}    'YES' redis-server) \
+    $(if_eq ${REDIS_CLI}       'YES' redis-cli) \
+    $(if_eq ${REDIS_BENCHMARK} 'YES' redis-benchmark) \
     /usr/local/bin; \
   : "-- Strip files"; \
   find /usr/local/bin -type f -perm +0111 -exec strip --strip-unneeded '{}' + || true; \
