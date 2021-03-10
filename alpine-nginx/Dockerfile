@@ -29,7 +29,7 @@ RUN set -eux; \
   adduser -u 82 -S -D -h /var/cache/nginx -s /sbin/nologin -G nginx nginx
 
 RUN set -eux; \
-  if_option() { [ ${1} = ${2} ] && echo ${3:-} || echo ${4:-}; }; \
+  if_eq() { [ ${1} = ${2} ] && echo ${3:-} || echo ${4:-}; }; \
   load_archive() { wget ${1} -T 30 -O - | tar xz -C /tmp; }; \
   apk add --no-cache --virtual .nginx-build \
     g++ \
@@ -39,7 +39,7 @@ RUN set -eux; \
     openssl-dev \
     pcre-dev \
     zlib-dev \
-    $(if_option ${BROTLI} 'YES' brotli-dev) \
+    $(if_eq ${BROTLI} 'YES' brotli-dev) \
     ; \
   if [ ${NJS} = 'YES' ]; then \
     load_archive "https://github.com/nginx/njs/archive/${NJS_VERSION}.tar.gz"; \
@@ -97,14 +97,14 @@ RUN set -eux; \
     --with-file-aio \
     --with-ld-opt="-O2 -pie" \
     --with-cc-opt="-O2 -march=native -fstack-protector-strong -flto -fpic -fpie -D FD_SETSIZE=$(ulimit -n)" \
-    $(if_option ${HTTP_REFERER}       'NO'  --without-http_referer_module) \
-    $(if_option ${HTTP_SPLIT_CLIENTS} 'NO'  --without-http_split_clients_module) \
-    $(if_option ${HTTP_DEGRADATION}   'YES' --with-http_degradation_module) \
-    $(if_option ${HTTP_SECURE_LINK}   'YES' --with-http_secure_link_module) \
-    $(if_option ${HTTP_SLICE}         'YES' --with-http_slice_module) \
-    $(if_option ${NJS}                'YES' --add-module="/tmp/njs-${NJS_VERSION}/nginx") \
-    $(if_option ${BROTLI}             'YES' --add-module="/tmp/ngx_brotli-${BROTLI_VERSION}") \
-    $(if_option ${HEADERS_MORE}       'YES' --add-module="/tmp/headers-more-nginx-module-${HEADERS_MORE_VERSION}") \
+    $(if_eq ${HTTP_REFERER}       'NO'  --without-http_referer_module) \
+    $(if_eq ${HTTP_SPLIT_CLIENTS} 'NO'  --without-http_split_clients_module) \
+    $(if_eq ${HTTP_DEGRADATION}   'YES' --with-http_degradation_module) \
+    $(if_eq ${HTTP_SECURE_LINK}   'YES' --with-http_secure_link_module) \
+    $(if_eq ${HTTP_SLICE}         'YES' --with-http_slice_module) \
+    $(if_eq ${NJS}                'YES' --add-module="/tmp/njs-${NJS_VERSION}/nginx") \
+    $(if_eq ${BROTLI}             'YES' --add-module="/tmp/ngx_brotli-${BROTLI_VERSION}") \
+    $(if_eq ${HEADERS_MORE}       'YES' --add-module="/tmp/headers-more-nginx-module-${HEADERS_MORE_VERSION}") \
     ; \
   make; \
   make install; \
