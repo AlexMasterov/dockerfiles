@@ -7,6 +7,9 @@ LABEL repository.hub="alexmasterov/alpine-nginx" \
 ARG NGINX_VERSION=1.19.8
 ARG NGINX_CONFIG=/etc/nginx
 
+ARG NGINX_EXTRA_CCFLAGS=-O2 -march=native -fstack-protector-strong -flto -fpic -fpie=native
+ARG NGINX_EXTRA_LDFLAGS=-O2 -pie
+
 ARG HTTP_DEGRADATION=NO
 ARG HTTP_REFERER=NO
 ARG HTTP_SECURE_LINK=NO
@@ -95,8 +98,8 @@ RUN set -eux; \
       --with-stream_ssl_module  \
     --with-threads \
     --with-file-aio \
-    --with-ld-opt="-O2 -pie" \
-    --with-cc-opt="-O2 -march=native -fstack-protector-strong -flto -fpic -fpie -D FD_SETSIZE=$(ulimit -n)" \
+    --with-ld-opt="${NGINX_EXTRA_LDFLAGS}" \
+    --with-cc-opt="-D FD_SETSIZE=$(ulimit -n) ${NGINX_EXTRA_CCFLAGS}" \
     $(if_eq ${HTTP_REFERER}       'NO'  --without-http_referer_module) \
     $(if_eq ${HTTP_SPLIT_CLIENTS} 'NO'  --without-http_split_clients_module) \
     $(if_eq ${HTTP_DEGRADATION}   'YES' --with-http_degradation_module) \
