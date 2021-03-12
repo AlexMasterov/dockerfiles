@@ -1,5 +1,5 @@
 FROM alexmasterov/alpine-libv8:6.7 as libv8
-FROM alpine:3.12
+FROM alpine:3.13
 
 LABEL repository.hub="alexmasterov/alpine-php:7.1" \
       repository.url="https://github.com/AlexMasterov/dockerfiles" \

@@ -1,6 +1,6 @@
-FROM alpine:3.12
+FROM alpine:3.13
 
-LABEL repository.hub="alexmasterov/alpine-nginx" \
+LABEL repository.hub="alexmasterov/alpine-nginx:1.19" \
       repository.url="https://github.com/AlexMasterov/dockerfiles" \
       maintainer="Alex Masterov <alex.masterow@gmail.com>"
 

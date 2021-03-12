@@ -1,4 +1,4 @@
-FROM alpine:3.12
+FROM alpine:3.13
 
 LABEL repository.hub="alexmasterov/alpine-sphinx:2.2" \
       repository.url="https://github.com/AlexMasterov/dockerfiles" \
@@ -13,6 +13,7 @@ RUN set -eux; \
   adduser -u 82 -S -D -h /var/cache/sphinx -s /sbin/nologin -G sphinx sphinx
 
 RUN set -eux; \
+  load_archive() { wget ${1} -T 30 -O - | tar xz -C /tmp; }; \
   apk add --no-cache --virtual .sphinx-build \
     expat-dev \
     g++ \
@@ -24,8 +25,7 @@ RUN set -eux; \
     re2-dev \
     snowball-dev; \
   : "-- Download Sphinx"; \
-  SPHINX_SOURCE="https://sphinxsearch.com/files/sphinx-${SPHINX_VERSION}.tar.gz"; \
-  wget ${SPHINX_SOURCE} -T 30 -O - | tar xz -C /tmp; \
+  load_archive "https://sphinxsearch.com/files/sphinx-${SPHINX_VERSION}.tar.gz"; \
   cd /tmp/sphinx-${SPHINX_VERSION}; \
   : "-- Patch 'src/sphinx.cpp': pagesize"; \
   PAGESIZE_PATCH="https://git.alpinelinux.org/cgit/aports/plain/community/sphinx/sphinx-pagesize.patch"; \

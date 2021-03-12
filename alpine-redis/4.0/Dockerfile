@@ -1,4 +1,4 @@
-FROM alpine:3.12
+FROM alpine:3.13
 
 LABEL repository.hub="alexmasterov/alpine-redis:4.0" \
       repository.url="https://github.com/AlexMasterov/dockerfiles" \
