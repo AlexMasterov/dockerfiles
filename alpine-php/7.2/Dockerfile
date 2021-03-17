@@ -7,6 +7,9 @@ LABEL repository.hub="alexmasterov/alpine-php:7.2" \
 ARG PHP_VERSION=7.2.34
 ARG PHP_CONFIG=/etc/php
 
+ARG PHP_CFLAGS=-march=native -O2 -fpic -fpie -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64
+ARG PHP_LDFLAGS=-Wl,-O1 -Wl,--hash-style=both -pie
+
 ARG PHP_ARGON2=YES
 ARG PHP_CLI=YES
 ARG PHP_CTYPE=YES
@@ -87,7 +90,7 @@ RUN set -eux; \
 
 RUN set -eux; \
   if_option() { [ ${1} = ${2} ] && echo ${3:-} || echo ${4:-}; }; \
-  load_archive() { wget ${1} -T 30 -O - | tar xz -C /tmp; }; \
+  load_archive() { wget ${1} -T 30 -O - | tar ${2:-xz} -C /tmp; }; \
   make_ext() { phpize; ./configure ${*:-}; make; make install; }; \
   apk add --no-cache --virtual .php-build \
     autoconf \
@@ -141,15 +144,11 @@ RUN set -eux; \
   mv /usr/include/gnu-libiconv/*.h /usr/include; \
   rm -rf /usr/include/gnu-libiconv; \
   : "-- Download PHP source"; \
-  PHP_SOURCE="https://secure.php.net/get/php-${PHP_VERSION}.tar.xz/from/this/mirror"; \
-  wget ${PHP_SOURCE} -T 30 -O - | tar xJ -C /tmp; \
+  load_archive "https://secure.php.net/get/php-${PHP_VERSION}.tar.xz/from/this/mirror" xJ; \
   cd /tmp/php-${PHP_VERSION}; \
   : "-- Setup build flags"; \
   export MAKEFLAGS="-j $(expr $(getconf _NPROCESSORS_ONLN) \+ 1)"; \
-  LDFLAGS="-Wl,-O1 -Wl,--hash-style=both -pie"; \
-  CFLAGS="-O2 -march=native -fPIC -fPIE -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64"; \
-  CPPFLAGS=${CFLAGS}; \
-  cd /tmp/php-${PHP_VERSION}; \
+  : "-- Build PHP"; \
   ./configure \
     --prefix=/usr \
     --sysconfdir=${PHP_CONFIG} \
@@ -230,7 +229,9 @@ RUN set -eux; \
     $(if_option ${EXT_MBREGEX} 'NO'       '--disable-mbregex') \
     $(if_option ${EXT_MBREGEX} 'EXTERNAL' '--with-onig=/usr') \
     $(if_option ${EXT_PCRE}    'EXTERNAL' '--with-pcre-regex=/usr') \
-    ; \
+    CFLAGS=${PHP_CFLAGS} \
+    CPPFLAGS=${PHP_CFLAGS} \
+    LDFLAGS=${PHP_LDFLAGS}; \
   make; \
   make install; \
   if [ ${EXT_XDEBUG} = 'YES' ]; then \
@@ -254,21 +255,21 @@ RUN set -eux; \
     load_archive "https://github.com/phpredis/phpredis/archive/${EXT_PHPREDIS_VERSION}.tar.gz"; \
     cd /tmp/phpredis-${EXT_PHPREDIS_VERSION}; \
     make_ext \
-      --$(if_option ${EXT_PHPREDIS_LZ4}     'YES' 'enable-redis-lz4 --with-liblz4=/usr') \
-      --$(if_option ${EXT_PHPREDIS_ZSTD}    'YES' 'enable-redis-zstd --with-libzstd=/usr') \
       --$(if_option ${EXT_PHPREDIS_SESSION} 'YES' 'enable' 'disable')-redis-session \
       --$(if_option ${EXT_PHPREDIS_JSON}    'YES' 'enable' 'disable')-redis-json \
-      --$(if_option ${EXT_PHPREDIS_MSGPACK} 'YES' 'enable' 'disable')-redis-msgpack; \
+      --$(if_option ${EXT_PHPREDIS_MSGPACK} 'YES' 'enable' 'disable')-redis-msgpack \
+        $(if_option ${EXT_PHPREDIS_LZ4}     'YES' '--enable-redis-lz4  --with-liblz4=/usr') \
+        $(if_option ${EXT_PHPREDIS_ZSTD}    'YES' '--enable-redis-zstd --with-libzstd=/usr'); \
   fi; \
   if [ ${EXT_MEMCACHED} = 'YES' ]; then \
     load_archive "https://github.com/php-memcached-dev/php-memcached/archive/v${EXT_MEMCACHED_VERSION}.tar.gz"; \
     cd /tmp/php-memcached-${EXT_MEMCACHED_VERSION}; \
     make_ext \
-      LDFLAGS="-lpthread" \
       --disable-memcached-sasl \
       --$(if_option ${EXT_MEMCACHED_SESSION} 'YES' 'enable' 'disable')-memcached-session \
       --$(if_option ${EXT_MEMCACHED_JSON}    'YES' 'enable' 'disable')-memcached-json \
-      --$(if_option ${EXT_MEMCACHED_MSGPACK} 'YES' 'enable' 'disable')-memcached-msgpack; \
+      --$(if_option ${EXT_MEMCACHED_MSGPACK} 'YES' 'enable' 'disable')-memcached-msgpack \
+      LDFLAGS="-lpthread"; \
   fi; \
   if [ ${EXT_MONGODB} = 'YES' ]; then \
     MONGODB_ARCHIVE="mongodb-${EXT_MONGODB_VERSION}"; \
@@ -281,7 +282,8 @@ RUN set -eux; \
   if [ ${EXT_AMQP} = 'YES' ]; then \
     load_archive "https://github.com/php-amqp/php-amqp/archive/v${EXT_AMQP_VERSION}.tar.gz"; \
     cd /tmp/php-amqp-${EXT_AMQP_VERSION}; \
-    make_ext --with-librabbitmq-dir=/usr; \
+    make_ext \
+      --with-librabbitmq-dir=/usr; \
   fi; \
   runtime_deps="$( \
     scanelf --needed --nobanner --recursive -F '%n#p' /usr/bin/php /usr/sbin/php-fpm /usr/lib/php/ \

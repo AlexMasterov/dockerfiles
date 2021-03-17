@@ -7,6 +7,9 @@ LABEL repository.hub="alexmasterov/alpine-php:7.3" \
 ARG PHP_VERSION=7.3.27
 ARG PHP_CONFIG=/etc/php
 
+ARG PHP_CFLAGS=-march=native -O2 -fpic -fpie -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64
+ARG PHP_LDFLAGS=-Wl,-O1 -Wl,--hash-style=both -pie
+
 ARG PHP_ARGON2=YES
 ARG PHP_CLI=YES
 ARG PHP_CTYPE=YES
@@ -145,9 +148,6 @@ RUN set -eux; \
   cd /tmp/php-${PHP_VERSION}; \
   : "-- Setup build flags"; \
   export MAKEFLAGS="-j $(expr $(getconf _NPROCESSORS_ONLN) \+ 1)"; \
-  LDFLAGS="-Wl,-O1 -Wl,--hash-style=both -pie"; \
-  CFLAGS="-O2 -march=native -fpic -fpie -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64"; \
-  CPPFLAGS=${CFLAGS}; \
   : "-- Build PHP"; \
   ./configure \
     --prefix=/usr \
@@ -228,7 +228,10 @@ RUN set -eux; \
     ) \
     $(if_option ${EXT_MBREGEX} 'NO'       '--disable-mbregex') \
     $(if_option ${EXT_MBREGEX} 'EXTERNAL' '--with-onig=/usr') \
-    $(if_option ${EXT_PCRE}    'EXTERNAL' '--with-pcre-regex=/usr'); \
+    $(if_option ${EXT_PCRE}    'EXTERNAL' '--with-pcre-regex=/usr') \
+    CFLAGS=${PHP_CFLAGS} \
+    CPPFLAGS=${PHP_CFLAGS} \
+    LDFLAGS=${PHP_LDFLAGS}; \
   make; \
   make install; \
   if [ ${EXT_XDEBUG} = 'YES' ]; then \
