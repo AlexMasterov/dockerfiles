@@ -6,6 +6,10 @@ LABEL repository.hub="alexmasterov/alpine-memcached:1.5" \
 
 ARG MEMCACHED_VERSION=1.5.22
 
+ARG MEMCACHED_TLS=ON
+ARG MEMCACHED_EXTSTORE=ON
+ARG MEMCACHED_CFLAGS=-march=native -O2
+
 RUN set -eux; \
   apk add --no-cache \
     tzdata; \
@@ -13,27 +17,35 @@ RUN set -eux; \
   adduser -u 82 -S -D -h /var/cache/memcache -s /sbin/nologin -G memcache memcache
 
 RUN set -eux; \
+  if_eq() { [ ${1} = ${2} ] && echo ${3:-} || echo ${4:-}; }; \
+  load_archive() { wget ${1} -T 30 -O - | tar ${2:-xz} -C /tmp; }; \
   apk add --no-cache --virtual .memcached-build \
     g++ \
     gcc \
     libevent-dev \
     make \
-    openssl-dev; \
-  : "---------- Download Memcached ----------"; \
-  MEMCACHED_SOURCE="https://memcached.org/files/memcached-${MEMCACHED_VERSION}.tar.gz"; \
-  wget ${MEMCACHED_SOURCE} -T 30 -O - | tar xz -C /tmp; \
+    $(if_eq ${MEMCACHED_TLS} 'YES' openssl-dev); \
+  : "-- Download Memcached"; \
+  load_archive "https://memcached.org/files/memcached-${MEMCACHED_VERSION}.tar.gz"; \
   cd /tmp/memcached-${MEMCACHED_VERSION}; \
-  : "---------- Build Memcached----------"; \
+  : "-- Patch 'src/hash.[hc]': fix build failure against GCC-10"; \
+  sed -i "s/hash_func hash;/extern &/" hash.h; \
+  sed -i "s/int hash_init/hash_func hash;\n\n&/" hash.c; \
+  : "-- Build Memcached"; \
   ./configure \
-    CFLAGS="-O2 -march=native" \
-    --enable-tls; \
+    --disable-docs \
+    --disable-coverage \
+    --$(if_eq ${MEMCACHED_TLS}      'YES' 'enable' 'disable')-tls \
+    --$(if_eq ${MEMCACHED_EXTSTORE} 'YES' 'enable' 'disable')-extstore \
+    CFLAGS=${MEMCACHED_CFLAGS} \
+    CPPFLAGS=${MEMCACHED_CFLAGS}; \
   make -j $(getconf _NPROCESSORS_ONLN); \
   make install; \
   runtimeDeps="$( \
     scanelf --needed --nobanner -F '%n#p' /usr/local/bin/memcached \
       | tr ',' '\n' \
       | sort -u \
-      | sed -e 's/^/so:\1/' \
+      | sed 's/^/so:&/' \
     )"; \
   apk add --no-cache --virtual .memcached-runtime ${runtimeDeps}; \
   : "-- Strip files"; \
