@@ -4,7 +4,7 @@ LABEL repository.hub="alexmasterov/alpine-php:7.4" \
       repository.url="https://github.com/AlexMasterov/dockerfiles" \
       maintainer="Alex Masterov <alex.masterow@gmail.com>"
 
-ARG PHP_VERSION=7.4.12
+ARG PHP_VERSION=7.4.16
 ARG PHP_CONFIG=/etc/php
 
 ARG PHP_ARGON2=YES
