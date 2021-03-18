@@ -229,9 +229,9 @@ RUN set -eux; \
     $(if_eq ${EXT_MBREGEX} 'NO'       '--disable-mbregex') \
     $(if_eq ${EXT_MBREGEX} 'EXTERNAL' '--with-onig=/usr') \
     $(if_eq ${EXT_PCRE}    'EXTERNAL' '--with-pcre-regex=/usr') \
-    CFLAGS=${PHP_CFLAGS} \
-    CPPFLAGS=${PHP_CFLAGS} \
-    LDFLAGS=${PHP_LDFLAGS}; \
+    CFLAGS="${PHP_CFLAGS}" \
+    CPPFLAGS="${PHP_CFLAGS}" \
+    LDFLAGS="${PHP_LDFLAGS}"; \
   make; \
   make install; \
   if [ ${EXT_XDEBUG} = 'YES' ]; then \

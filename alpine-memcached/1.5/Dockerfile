@@ -37,8 +37,8 @@ RUN set -eux; \
     --disable-coverage \
     --$(if_eq ${MEMCACHED_TLS}      'YES' 'enable' 'disable')-tls \
     --$(if_eq ${MEMCACHED_EXTSTORE} 'YES' 'enable' 'disable')-extstore \
-    CFLAGS=${MEMCACHED_CFLAGS} \
-    CPPFLAGS=${MEMCACHED_CFLAGS}; \
+    CFLAGS="${MEMCACHED_CFLAGS}" \
+    CPPFLAGS="${MEMCACHED_CFLAGS}"; \
   make -j $(getconf _NPROCESSORS_ONLN); \
   make install; \
   runtime_deps="$( \

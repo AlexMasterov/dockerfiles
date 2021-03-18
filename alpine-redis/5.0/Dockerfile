@@ -52,7 +52,7 @@ RUN set -eux; \
     $(if_eq ${REDIS_SERVER}    'YES' redis-server) \
     $(if_eq ${REDIS_CLI}       'YES' redis-cli) \
     $(if_eq ${REDIS_BENCHMARK} 'YES' redis-benchmark) \
-    EXTRA_CFLAGS=${REDIS_EXTRA_CFLAGS} \
+    EXTRA_CFLAGS="${REDIS_EXTRA_CFLAGS}" \
     -j $(getconf _NPROCESSORS_ONLN); \
   mv \
     $(if_eq ${REDIS_SERVER}    'YES' redis-server) \
