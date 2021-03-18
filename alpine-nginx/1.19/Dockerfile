@@ -7,7 +7,7 @@ LABEL repository.hub="alexmasterov/alpine-nginx:1.19" \
 ARG NGINX_VERSION=1.19.8
 ARG NGINX_CONFIG=/etc/nginx
 
-ARG NGINX_EXTRA_CCFLAGS="-march=native -O2 -fstack-protector-strong -flto -fpic -fpie=native"
+ARG NGINX_EXTRA_CCFLAGS="-march=native -O2 -fstack-protector-strong -flto -fpic -fpie"
 ARG NGINX_EXTRA_LDFLAGS="-O2 -pie"
 
 ARG HTTP_DEGRADATION=NO
