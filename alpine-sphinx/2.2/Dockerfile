@@ -45,13 +45,13 @@ RUN set -eux; \
     --with-re2; \
   make -j $(getconf _NPROCESSORS_ONLN); \
   make install; \
-  runtimeDeps="$( \
+  runtime_deps="$( \
     scanelf --needed --nobanner -F '%n#p' /usr/bin/searchd \
       | tr ',' '\n' \
       | sort -u \
-      | sed -e 's/^/so:\1/' \
+      | sed 's/^/so:&/' \
     )"; \
-  apk add --no-cache --virtual .sphinx-runtime ${runtimeDeps}; \
+  apk add --no-cache --virtual .sphinx-runtime ${runtime_deps}; \
   : "-- Strip files"; \
   find /usr/bin -type f -perm +0111 -exec strip --strip-unneeded '{}' + || true; \
   : "-- Remove build dependencies, clean temporary files"; \

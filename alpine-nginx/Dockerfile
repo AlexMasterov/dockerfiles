@@ -7,8 +7,8 @@ LABEL repository.hub="alexmasterov/alpine-nginx:1.19" \
 ARG NGINX_VERSION=1.19.8
 ARG NGINX_CONFIG=/etc/nginx
 
-ARG NGINX_EXTRA_CCFLAGS=-O2 -march=native -fstack-protector-strong -flto -fpic -fpie=native
-ARG NGINX_EXTRA_LDFLAGS=-O2 -pie
+ARG NGINX_EXTRA_CCFLAGS="-march=native -O2 -fstack-protector-strong -flto -fpic -fpie=native"
+ARG NGINX_EXTRA_LDFLAGS="-O2 -pie"
 
 ARG HTTP_DEGRADATION=NO
 ARG HTTP_REFERER=NO
@@ -98,8 +98,8 @@ RUN set -eux; \
       --with-stream_ssl_module  \
     --with-threads \
     --with-file-aio \
-    --with-ld-opt="${NGINX_EXTRA_LDFLAGS}" \
     --with-cc-opt="-D FD_SETSIZE=$(ulimit -n) ${NGINX_EXTRA_CCFLAGS}" \
+    --with-ld-opt="${NGINX_EXTRA_LDFLAGS}" \
     $(if_eq ${HTTP_REFERER}       'NO'  --without-http_referer_module) \
     $(if_eq ${HTTP_SPLIT_CLIENTS} 'NO'  --without-http_split_clients_module) \
     $(if_eq ${HTTP_DEGRADATION}   'YES' --with-http_degradation_module) \
@@ -115,7 +115,7 @@ RUN set -eux; \
     scanelf --needed --nobanner -F '%n#p' /usr/sbin/nginx \
       | tr ',' '\n' \
       | sort -u \
-      | sed -e 's/^/so:\1/' \
+      | sed 's/^/so:\1/' \
     )"; \
   apk add --no-cache --virtual .nginx-runtime ${runtime_deps}; \
   : "-- Strip files"; \

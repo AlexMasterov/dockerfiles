@@ -7,8 +7,8 @@ LABEL repository.hub="alexmasterov/alpine-php:7.4" \
 ARG PHP_VERSION=7.4.16
 ARG PHP_CONFIG=/etc/php
 
-ARG PHP_CFLAGS=-march=native -O2 -fpic -fpie -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64
-ARG PHP_LDFLAGS=-Wl,-O1 -Wl,--hash-style=both -pie
+ARG PHP_CFLAGS="-march=native -O2 -fpic -fpie -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64"
+ARG PHP_LDFLAGS="-Wl,-O1 -Wl,--hash-style=both -pie"
 
 ARG PHP_ARGON2=YES
 ARG PHP_CLI=YES
@@ -89,7 +89,7 @@ RUN set -eux; \
   adduser -u 82 -S -D -h /var/cache/www-data -s /sbin/nologin -G www-data www-data
 
 RUN set -eux; \
-  if_option() { [ ${1} = ${2} ] && echo ${3:-} || echo ${4:-}; }; \
+  if_eq() { [ ${1} = ${2} ] && echo ${3:-} || echo ${4:-}; }; \
   load_archive() { wget ${1} -T 30 -O - | tar ${2:-xz} -C /tmp; }; \
   make_ext() { phpize; ./configure ${*:-}; make; make install; }; \
   apk add --no-cache --virtual .php-build \
@@ -102,42 +102,42 @@ RUN set -eux; \
     make \
     re2c \
     zlib-dev \
-    $(if_option ${PHP_INTL}       'YES'      'icu-dev') \
-    $(if_option ${PHP_ARGON2}     'YES'      'argon2-dev') \
-    $(if_option ${PHP_READLINE}   'YES'      'readline-dev') \
-    $(if_option ${EXT_ZIP}        'YES'      'libzip-dev') \
-    $(if_option ${EXT_SODIUM}     'YES'      'libsodium-dev') \
-    $(if_option ${EXT_GMP}        'YES'      'gmp-dev') \
-    $(if_option ${EXT_CURL}       'YES'      'curl-dev') \
-    $(if_option ${EXT_LIBXML}     'YES'      'libxml2-dev') \
-    $(if_option ${EXT_BZ2}        'YES'      'bzip2-dev') \
-    $(if_option ${EXT_SQLITE}     'YES'      'sqlite-dev') \
-    $(if_option ${EXT_POSTGRESQL} 'YES'      'postgresql-dev') \
-    $(if_option ${EXT_OPENSSL}    'YES'      'openssl-dev') \
-    $(if_option ${EXT_OPENSSL}    'LIBRESSL' 'libressl-dev') \
-    $(if_option ${EXT_PCRE}       'EXTERNAL' 'pcre2-dev') \
-    $(if_option ${EXT_MBREGEX}    'YES'      'oniguruma-dev') \
+    $(if_eq ${PHP_INTL}       'YES'      'icu-dev') \
+    $(if_eq ${PHP_ARGON2}     'YES'      'argon2-dev') \
+    $(if_eq ${PHP_READLINE}   'YES'      'readline-dev') \
+    $(if_eq ${EXT_ZIP}        'YES'      'libzip-dev') \
+    $(if_eq ${EXT_SODIUM}     'YES'      'libsodium-dev') \
+    $(if_eq ${EXT_GMP}        'YES'      'gmp-dev') \
+    $(if_eq ${EXT_CURL}       'YES'      'curl-dev') \
+    $(if_eq ${EXT_LIBXML}     'YES'      'libxml2-dev') \
+    $(if_eq ${EXT_BZ2}        'YES'      'bzip2-dev') \
+    $(if_eq ${EXT_SQLITE}     'YES'      'sqlite-dev') \
+    $(if_eq ${EXT_POSTGRESQL} 'YES'      'postgresql-dev') \
+    $(if_eq ${EXT_OPENSSL}    'YES'      'openssl-dev') \
+    $(if_eq ${EXT_OPENSSL}    'LIBRESSL' 'libressl-dev') \
+    $(if_eq ${EXT_PCRE}       'EXTERNAL' 'pcre2-dev') \
+    $(if_eq ${EXT_MBREGEX}    'YES'      'oniguruma-dev') \
     $([ ${EXT_PDO} = 'YES' ] && echo \
-      $(if_option ${EXT_PDO_SQLITE} 'YES'     'sqlite-dev') \
-      $(if_option ${EXT_PDO_PGSQL}  'YES'     'postgresql-dev') \
-      $(if_option ${EXT_PDO_MYSQL}  'MARIADB' 'mariadb-dev') \
+      $(if_eq ${EXT_PDO_SQLITE} 'YES'     'sqlite-dev') \
+      $(if_eq ${EXT_PDO_PGSQL}  'YES'     'postgresql-dev') \
+      $(if_eq ${EXT_PDO_MYSQL}  'MARIADB' 'mariadb-dev') \
     ) \ 
     $([ ${EXT_GD} = 'YES' ] \
       && echo \
         libpng-dev \
-        $(if_option ${EXT_GD_JPEG}     'EXTERNAL' 'jpeg-dev') \
-        $(if_option ${EXT_GD_XPM}      'EXTERNAL' 'libxpm-dev') \
-        $(if_option ${EXT_GD_WEBP}     'EXTERNAL' 'libwebp-dev') \
-        $(if_option ${EXT_GD_FREETYPE} 'EXTERNAL' 'freetype-dev') \
+        $(if_eq ${EXT_GD_JPEG}     'EXTERNAL' 'jpeg-dev') \
+        $(if_eq ${EXT_GD_XPM}      'EXTERNAL' 'libxpm-dev') \
+        $(if_eq ${EXT_GD_WEBP}     'EXTERNAL' 'libwebp-dev') \
+        $(if_eq ${EXT_GD_FREETYPE} 'EXTERNAL' 'freetype-dev') \
       || echo \
-        $(if_option ${EXT_GD}          'EXTERNAL' 'gd-dev') \
+        $(if_eq ${EXT_GD}          'EXTERNAL' 'gd-dev') \
     ) \
-    $(if_option ${EXT_PHPREDIS_LZ4}  'YES'      'lz4-dev') \
-    $(if_option ${EXT_PHPREDIS_ZSTD} 'YES'      'zstd-dev') \
-    $(if_option ${EXT_MEMCACHED}     'YES'      'libmemcached-dev') \
-    $(if_option ${EXT_MONGODB_SSL}   'OPENSSL'  'openssl-dev') \
-    $(if_option ${EXT_MONGODB_SSL}   'LIBRESSL' 'libressl-dev') \
-    $(if_option ${EXT_AMQP}          'YES'      'rabbitmq-c-dev'); \ 
+    $(if_eq ${EXT_PHPREDIS_LZ4}  'YES'      'lz4-dev') \
+    $(if_eq ${EXT_PHPREDIS_ZSTD} 'YES'      'zstd-dev') \
+    $(if_eq ${EXT_MEMCACHED}     'YES'      'libmemcached-dev') \
+    $(if_eq ${EXT_MONGODB_SSL}   'OPENSSL'  'openssl-dev') \
+    $(if_eq ${EXT_MONGODB_SSL}   'LIBRESSL' 'libressl-dev') \
+    $(if_eq ${EXT_AMQP}          'YES'      'rabbitmq-c-dev'); \ 
   : "-- Proper iconv: replace binary and headers"; \
   mv /usr/bin/gnu-iconv /usr/bin/iconv; \
   mv /usr/include/gnu-libiconv/*.h /usr/include; \
@@ -165,47 +165,47 @@ RUN set -eux; \
     --with-mhash \
     --with-zlib=/usr \
     --with-iconv=/usr \
-    $(if_option ${PHP_CLI}       'NO'  '--disable-cli') \
-    $(if_option ${PHP_IPV6}      'NO'  '--disable-ipv6') \
-    $(if_option ${PHP_POSIX}     'NO'  '--disable-posix') \
-    $(if_option ${PHP_CTYPE}     'NO'  '--disable-ctype') \
-    $(if_option ${PHP_PHAR}      'NO'  '--disable-phar') \
-    $(if_option ${PHP_FILEINFO}  'NO'  '--disable-fileinfo') \
-    $(if_option ${PHP_TOKENIZER} 'NO'  '--disable-tokenizer') \
-    $(if_option ${EXT_MBREGEX}   'NO'  '--disable-mbregex') \
-    $(if_option ${PHP_FPM}       'YES' '--enable-fpm') \
-    $(if_option ${PHP_INTL}      'YES' '--enable-intl') \
-    $(if_option ${PHP_PCNTL}     'YES' '--enable-pcntl') \
-    $(if_option ${PHP_FTP}       'YES' '--enable-ftp') \
-    $(if_option ${PHP_ARGON2}    'YES' '--with-password-argon2') \
-    $(if_option ${EXT_BCMATH}    'YES' '--enable-bcmath') \
-    $(if_option ${EXT_SODIUM}    'YES' '--with-sodium=/usr') \
-    $(if_option ${EXT_CURL}      'YES' '--with-curl=/usr') \
-    $(if_option ${EXT_ZIP}       'YES' '--with-zip=/usr') \
-    $(if_option ${EXT_GMP}       'YES' '--with-gmp=/usr') \
-    $(if_option ${EXT_BZ2}       'YES' '--with-bz2=/usr') \
-    $(if_option ${EXT_SQLITE}    'YES' '--with-sqlite3=/usr' '--without-sqlite3') \
+    $(if_eq ${PHP_CLI}       'NO'  '--disable-cli') \
+    $(if_eq ${PHP_IPV6}      'NO'  '--disable-ipv6') \
+    $(if_eq ${PHP_POSIX}     'NO'  '--disable-posix') \
+    $(if_eq ${PHP_CTYPE}     'NO'  '--disable-ctype') \
+    $(if_eq ${PHP_PHAR}      'NO'  '--disable-phar') \
+    $(if_eq ${PHP_FILEINFO}  'NO'  '--disable-fileinfo') \
+    $(if_eq ${PHP_TOKENIZER} 'NO'  '--disable-tokenizer') \
+    $(if_eq ${EXT_MBREGEX}   'NO'  '--disable-mbregex') \
+    $(if_eq ${PHP_FPM}       'YES' '--enable-fpm') \
+    $(if_eq ${PHP_INTL}      'YES' '--enable-intl') \
+    $(if_eq ${PHP_PCNTL}     'YES' '--enable-pcntl') \
+    $(if_eq ${PHP_FTP}       'YES' '--enable-ftp') \
+    $(if_eq ${PHP_ARGON2}    'YES' '--with-password-argon2') \
+    $(if_eq ${EXT_BCMATH}    'YES' '--enable-bcmath') \
+    $(if_eq ${EXT_SODIUM}    'YES' '--with-sodium=/usr') \
+    $(if_eq ${EXT_CURL}      'YES' '--with-curl=/usr') \
+    $(if_eq ${EXT_ZIP}       'YES' '--with-zip=/usr') \
+    $(if_eq ${EXT_GMP}       'YES' '--with-gmp=/usr') \
+    $(if_eq ${EXT_BZ2}       'YES' '--with-bz2=/usr') \
+    $(if_eq ${EXT_SQLITE}    'YES' '--with-sqlite3=/usr' '--without-sqlite3') \
     $([ ${EXT_OPENSSL} != 'NO' ] && echo \
       --with-openssl=/usr \
-      $(if_option ${EXT_OPENSSL_SYSTEM_CIPHERS} 'YES' '--with-system-ciphers') \
+      $(if_eq ${EXT_OPENSSL_SYSTEM_CIPHERS} 'YES' '--with-system-ciphers') \
     \ ) \
     $([ ${EXT_PDO} = 'YES' ] \
       && echo \
-        $(if_option ${EXT_PDO_SQLITE} 'YES'     '--with-pdo-sqlite=/usr' '--without-pdo-sqlite') \
-        $(if_option ${EXT_PDO_PGSQL}  'YES'     '--with-pdo-pgsql=/usr') \
-        $(if_option ${EXT_PDO_MYSQL}  'YES'     '--with-pdo-mysql=mysqlnd') \
-        $(if_option ${EXT_PDO_MYSQL}  'MARIADB' '--with-pdo-mysql=/usr') \
+        $(if_eq ${EXT_PDO_SQLITE} 'YES'     '--with-pdo-sqlite=/usr' '--without-pdo-sqlite') \
+        $(if_eq ${EXT_PDO_PGSQL}  'YES'     '--with-pdo-pgsql=/usr') \
+        $(if_eq ${EXT_PDO_MYSQL}  'YES'     '--with-pdo-mysql=mysqlnd') \
+        $(if_eq ${EXT_PDO_MYSQL}  'MARIADB' '--with-pdo-mysql=/usr') \
       || echo \
         --disable-pdo \
     ) \
     $([ ${EXT_LIBXML} = 'YES' ] \
       && echo \
-        $(if_option ${EXT_XML}       'NO'  '--disable-xml') \
-        $(if_option ${EXT_XMLREADER} 'NO'  '--disable-xmlreader') \
-        $(if_option ${EXT_XMLWRITER} 'NO'  '--disable-xmlwriter') \
-        $(if_option ${EXT_SIMPLEXML} 'NO'  '--disable-simplexml') \
-        $(if_option ${EXT_DOM}       'NO'  '--disable-dom') \
-        $(if_option ${EXT_XSL}       'YES' '--with-xsl=/usr') \
+        $(if_eq ${EXT_XML}       'NO'  '--disable-xml') \
+        $(if_eq ${EXT_XMLREADER} 'NO'  '--disable-xmlreader') \
+        $(if_eq ${EXT_XMLWRITER} 'NO'  '--disable-xmlwriter') \
+        $(if_eq ${EXT_SIMPLEXML} 'NO'  '--disable-simplexml') \
+        $(if_eq ${EXT_DOM}       'NO'  '--disable-dom') \
+        $(if_eq ${EXT_XSL}       'YES' '--with-xsl=/usr') \
       || echo \
         --without-libxml \
         --disable-xml \
@@ -214,9 +214,9 @@ RUN set -eux; \
         --disable-simplexml \
         --disable-dom \
     ) \
-    $(if_option ${EXT_GD}   'YES'      '--enable-gd') \
-    $(if_option ${EXT_GD}   'EXTERNAL' '--enable-gd --with-external-gd=/usr') \
-    $(if_option ${EXT_PCRE} 'EXTERNAL' '--with-external-pcre=/usr') \
+    $(if_eq ${EXT_GD}   'YES'      '--enable-gd') \
+    $(if_eq ${EXT_GD}   'EXTERNAL' '--enable-gd --with-external-gd=/usr') \
+    $(if_eq ${EXT_PCRE} 'EXTERNAL' '--with-external-pcre=/usr') \
     CFLAGS=${PHP_CFLAGS} \
     CPPFLAGS=${PHP_CFLAGS} \
     LDFLAGS=${PHP_LDFLAGS}; \
@@ -231,8 +231,8 @@ RUN set -eux; \
     load_archive "https://github.com/krakjoe/apcu/archive/v${EXT_APCU_VERSION}.tar.gz"; \
     cd /tmp/apcu-${EXT_APCU_VERSION}; \
     make_ext \
-      --$(if_option ${EXT_APCU_RWLOCKS}   'YES' 'enable' 'disable')-apcu-rwlocks \
-      --$(if_option ${EXT_APCU_SPINLOCKS} 'YES' 'enable' 'disable')-apcu-spinlocks; \
+      --$(if_eq ${EXT_APCU_RWLOCKS}   'YES' 'enable' 'disable')-apcu-rwlocks \
+      --$(if_eq ${EXT_APCU_SPINLOCKS} 'YES' 'enable' 'disable')-apcu-spinlocks; \
   fi; \
   if [ ${EXT_MSGPACK} = 'YES' ]; then \
     load_archive "https://github.com/msgpack/msgpack-php/archive/msgpack-${EXT_MSGPACK_VERSION}.tar.gz"; \
@@ -243,20 +243,20 @@ RUN set -eux; \
     load_archive "https://github.com/phpredis/phpredis/archive/${EXT_PHPREDIS_VERSION}.tar.gz"; \
     cd /tmp/phpredis-${EXT_PHPREDIS_VERSION}; \
     make_ext \
-      --$(if_option ${EXT_PHPREDIS_SESSION} 'YES' 'enable' 'disable')-redis-session \
-      --$(if_option ${EXT_PHPREDIS_JSON}    'YES' 'enable' 'disable')-redis-json \
-      --$(if_option ${EXT_PHPREDIS_MSGPACK} 'YES' 'enable' 'disable')-redis-msgpack \
-        $(if_option ${EXT_PHPREDIS_LZ4}     'YES' '--enable-redis-lz4  --with-liblz4=/usr') \
-        $(if_option ${EXT_PHPREDIS_ZSTD}    'YES' '--enable-redis-zstd --with-libzstd=/usr'); \
+      --$(if_eq ${EXT_PHPREDIS_SESSION} 'YES' 'enable' 'disable')-redis-session \
+      --$(if_eq ${EXT_PHPREDIS_JSON}    'YES' 'enable' 'disable')-redis-json \
+      --$(if_eq ${EXT_PHPREDIS_MSGPACK} 'YES' 'enable' 'disable')-redis-msgpack \
+        $(if_eq ${EXT_PHPREDIS_LZ4}     'YES' '--enable-redis-lz4  --with-liblz4=/usr') \
+        $(if_eq ${EXT_PHPREDIS_ZSTD}    'YES' '--enable-redis-zstd --with-libzstd=/usr'); \
   fi; \
   if [ ${EXT_MEMCACHED} = 'YES' ]; then \
     load_archive "https://github.com/php-memcached-dev/php-memcached/archive/v${EXT_MEMCACHED_VERSION}.tar.gz"; \
     cd /tmp/php-memcached-${EXT_MEMCACHED_VERSION}; \
     make_ext \
       --disable-memcached-sasl \
-      --$(if_option ${EXT_MEMCACHED_SESSION} 'YES' 'enable' 'disable')-memcached-session \
-      --$(if_option ${EXT_MEMCACHED_JSON}    'YES' 'enable' 'disable')-memcached-json \
-      --$(if_option ${EXT_MEMCACHED_MSGPACK} 'YES' 'enable' 'disable')-memcached-msgpack \
+      --$(if_eq ${EXT_MEMCACHED_SESSION} 'YES' 'enable' 'disable')-memcached-session \
+      --$(if_eq ${EXT_MEMCACHED_JSON}    'YES' 'enable' 'disable')-memcached-json \
+      --$(if_eq ${EXT_MEMCACHED_MSGPACK} 'YES' 'enable' 'disable')-memcached-msgpack \
       LDFLAGS="-lpthread"; \
   fi; \
   if [ ${EXT_MONGODB} = 'YES' ]; then \
@@ -265,7 +265,7 @@ RUN set -eux; \
     cd /tmp/${MONGODB_ARCHIVE}; \
     make_ext \
       --with-mongodb-ssl=$(echo ${EXT_MONGODB_SSL} | tr '[:upper:]' '[:lower:]') \
-      $(if_option ${EXT_MONGODB_SSL} 'OPENSSL' --enable-mongodb-crypto-system-profile=yes); \
+      $(if_eq ${EXT_MONGODB_SSL} 'OPENSSL' --enable-mongodb-crypto-system-profile=yes); \
   fi; \ 
   if [ ${EXT_AMQP} = 'YES' ]; then \
     load_archive "https://github.com/php-amqp/php-amqp/archive/v${EXT_AMQP_VERSION}.tar.gz"; \
@@ -277,7 +277,7 @@ RUN set -eux; \
     scanelf --needed --nobanner --recursive -F '%n#p' /usr/bin/php /usr/sbin/php-fpm /usr/lib/php/ \
       | tr ',' '\n' \
       | sort -u \
-      | sed -e 's/^/so:\1/' \
+      | sed 's/^/so:&/' \
     )"; \
   apk add --no-cache --virtual .php-runtime ${runtime_deps}; \
   rm -rf \

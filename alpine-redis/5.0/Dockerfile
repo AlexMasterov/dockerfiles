@@ -9,12 +9,12 @@ ARG REDIS_VERSION=5.0.12
 ARG REDIS_SERVER=YES
 ARG REDIS_CLI=NO
 ARG REDIS_BENCHMARK=NO
-ARG REDIS_EXTRA_CFLAGS=-march=native
+ARG REDIS_EXTRA_CFLAGS="-march=native"
 
 ARG JEMALLOC_LG_PAGE=
 ARG JEMALLOC_LG_HUGEPAGE=
 ARG JEMALLOC_LG_QUANTUM=3
-ARG JEMALLOC_EXTRA_CFLAGS=-march=native
+ARG JEMALLOC_EXTRA_CFLAGS="-march=native"
 
 RUN set -eux; \
   apk add --no-cache \
@@ -25,7 +25,7 @@ RUN set -eux; \
 RUN set -eux; \
   if_gt() { [ ${1} -gt ${2} ] && echo ${3:-} || echo ${4:-}; }; \
   if_eq() { [ ${1} = ${2} ] && echo ${3:-} || echo ${4:-}; }; \
-  load_archive() { wget ${1} -T 30 -O - | tar xz -C /tmp; }; \
+  load_archive() { wget ${1} -T 30 -O - | tar ${2:-xz} -C /tmp; }; \
   apk add --no-cache --virtual .redis-build \
     g++ \
     gcc \
@@ -40,13 +40,13 @@ RUN set -eux; \
     $(if_gt ${JEMALLOC_LG_HUGEPAGE} 0 --with-lg-hugepage=${JEMALLOC_LG_HUGEPAGE}) \
     $(if_gt ${JEMALLOC_LG_QUANTUM}  0 --with-lg-quantum=${JEMALLOC_LG_QUANTUM}) \
   "; \
-  sed -ri -E \
+  sed -ir \
     -e "$([ -n "${JEMALLOC_EXTRA_CFLAGS}" ] && echo "s/JEMALLOC_CFLAGS= /&${JEMALLOC_EXTRA_CFLAGS} /")" \
     -e "s/\s?--with-lg-(page|hugepage|quantum)=\d+//g" \
     -e "s/cd jemalloc && .\/configure /&${JEMALLOC_EXTRA_CONFIGURE} /" \
     ../deps/Makefile; \
   : "-- Patch 'src/config.c': disable Redis protected mode"; \
-  sed -ri 's/^(#define CONFIG_DEFAULT_PROTECTED_MODE).+/\1 0/' server.h; \
+  sed -i 's/^(#define CONFIG_DEFAULT_PROTECTED_MODE).+/\1 0/' server.h; \
   : "-- Build Redis"; \
   make \
     $(if_eq ${REDIS_SERVER}    'YES' redis-server) \

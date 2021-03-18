@@ -9,7 +9,7 @@ ARG REDIS_VERSION=4.0.14
 ARG REDIS_SERVER=YES
 ARG REDIS_CLI=NO
 ARG REDIS_BENCHMARK=NO
-ARG REDIS_EXTRA_CFLAGS=-march=native
+ARG REDIS_EXTRA_CFLAGS="-march=native"
 
 RUN set -eux; \
   apk add --no-cache \
@@ -19,7 +19,7 @@ RUN set -eux; \
 
 RUN set -eux; \
   if_eq() { [ ${1} = ${2} ] && echo ${3:-} || echo ${4:-}; }; \
-  load_archive() { wget ${1} -T 30 -O - | tar xz -C /tmp; }; \
+  load_archive() { wget ${1} -T 30 -O - | tar ${2:-xz} -C /tmp; }; \
   apk add --no-cache --virtual .redis-build \
     gcc \
     linux-headers \

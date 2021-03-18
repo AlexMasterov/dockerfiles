@@ -8,7 +8,7 @@ ARG MEMCACHED_VERSION=1.5.22
 
 ARG MEMCACHED_TLS=YES
 ARG MEMCACHED_EXTSTORE=YES
-ARG MEMCACHED_CFLAGS=-march=native -O2
+ARG MEMCACHED_CFLAGS="-march=native -O2"
 
 RUN set -eux; \
   apk add --no-cache \
@@ -41,13 +41,13 @@ RUN set -eux; \
     CPPFLAGS=${MEMCACHED_CFLAGS}; \
   make -j $(getconf _NPROCESSORS_ONLN); \
   make install; \
-  runtimeDeps="$( \
+  runtime_deps="$( \
     scanelf --needed --nobanner -F '%n#p' /usr/local/bin/memcached \
       | tr ',' '\n' \
       | sort -u \
       | sed 's/^/so:&/' \
     )"; \
-  apk add --no-cache --virtual .memcached-runtime ${runtimeDeps}; \
+  apk add --no-cache --virtual .memcached-runtime ${runtime_deps}; \
   : "-- Strip files"; \
   find /usr/local/bin -type f -perm +0111 -exec strip --strip-unneeded '{}' + || true; \
   : "-- Remove build dependencies, clean temporary files"; \
