@@ -12,44 +12,46 @@ ARG PHP_LDFLAGS="-Wl,-O1 -Wl,--hash-style=both -pie"
 
 ARG PHP_ARGON2=YES
 ARG PHP_CLI=YES
-ARG PHP_CTYPE=YES
-ARG PHP_FILEINFO=NO
 ARG PHP_FPM=NO
-ARG PHP_FTP=NO
-ARG PHP_INTL=NO
 ARG PHP_IPV6=NO
-ARG PHP_PCNTL=NO
-ARG PHP_PHAR=NO
-ARG PHP_POSIX=NO
-ARG PHP_TOKENIZER=YES
 
 ARG EXT_BCMATH=NO
 ARG EXT_BZ2=NO
+ARG EXT_CTYPE=YES
 ARG EXT_CURL=YES
-ARG EXT_DOM=NO
+ARG EXT_FILEINFO=NO
+ARG EXT_FILTER=YES
+ARG EXT_FTP=NO
 ARG EXT_GD=YES
 ARG EXT_GD_FREETYPE=NO
 ARG EXT_GD_JPEG=NO
 ARG EXT_GD_WEBP=NO
 ARG EXT_GD_XPM=NO
 ARG EXT_GMP=NO
+ARG EXT_INTL=NO
 ARG EXT_LIBXML=YES
+ARG EXT_LIBXML_DOM=NO
+ARG EXT_LIBXML_SIMPLEXML=YES
+ARG EXT_LIBXML_XML=NO
+ARG EXT_LIBXML_XMLREADER=NO
+ARG EXT_LIBXML_XMLWRITER=NO
+ARG EXT_LIBXML_XSL=NO
 ARG EXT_MBREGEX=NO
 ARG EXT_OPENSSL=YES
 ARG EXT_OPENSSL_SYSTEM_CIPHERS=YES
+ARG EXT_PCNTL=NO
 ARG EXT_PCRE=EXTERNAL
 ARG EXT_PDO=YES
 ARG EXT_PDO_MYSQL=NO
 ARG EXT_PDO_PGSQL=YES
 ARG EXT_PDO_SQLITE=YES
+ARG EXT_PHAR=NO
+ARG EXT_POSIX=NO
 ARG EXT_POSTGRESQL=NO
-ARG EXT_SIMPLEXML=YES
+ARG EXT_READLINE=NO
 ARG EXT_SODIUM=YES
-ARG EXT_SQLITE=NO
-ARG EXT_XML=NO
-ARG EXT_XMLREADER=NO
-ARG EXT_XMLWRITER=NO
-ARG EXT_XSL=NO
+ARG EXT_SQLITE3=NO
+ARG EXT_TOKENIZER=YES
 ARG EXT_ZIP=NO
 
 ARG EXT_XDEBUG=NO
@@ -61,7 +63,7 @@ ARG EXT_APCU_RWLOCKS=YES
 ARG EXT_APCU_SPINLOCKS=NO
 
 ARG EXT_MSGPACK=NO
-ARG EXT_MSGPACK_VERSION=2.1.1
+ARG EXT_MSGPACK_VERSION=2.1.2
 
 ARG EXT_PHPREDIS=NO
 ARG EXT_PHPREDIS_VERSION=5.3.3
@@ -102,26 +104,29 @@ RUN set -eux; \
     make \
     re2c \
     zlib-dev \
-    $(if_eq ${PHP_INTL}       'YES'      'icu-dev') \
     $(if_eq ${PHP_ARGON2}     'YES'      'argon2-dev') \
-    $(if_eq ${PHP_READLINE}   'YES'      'readline-dev') \
+    $(if_eq ${EXT_INTL}       'YES'      'icu-dev') \
+    $(if_eq ${EXT_READLINE}   'YES'      'readline-dev') \
     $(if_eq ${EXT_ZIP}        'YES'      'libzip-dev') \
     $(if_eq ${EXT_SODIUM}     'YES'      'libsodium-dev') \
     $(if_eq ${EXT_GMP}        'YES'      'gmp-dev') \
     $(if_eq ${EXT_CURL}       'YES'      'curl-dev') \
-    $(if_eq ${EXT_LIBXML}     'YES'      'libxml2-dev') \
     $(if_eq ${EXT_BZ2}        'YES'      'bzip2-dev') \
-    $(if_eq ${EXT_SQLITE}     'YES'      'sqlite-dev') \
+    $(if_eq ${EXT_SQLITE3}    'YES'      'sqlite-dev') \
     $(if_eq ${EXT_POSTGRESQL} 'YES'      'postgresql-dev') \
     $(if_eq ${EXT_OPENSSL}    'YES'      'openssl-dev') \
     $(if_eq ${EXT_OPENSSL}    'LIBRESSL' 'libressl-dev') \
     $(if_eq ${EXT_PCRE}       'EXTERNAL' 'pcre2-dev') \
     $(if_eq ${EXT_MBREGEX}    'YES'      'oniguruma-dev') \
+    $([ ${EXT_LIBXML} = 'YES' ] && echo \
+      libxml2-dev \
+      $(if_eq ${EXT_LIBXML_XSL} 'YES'      'libxslt-dev') \
+    ) \
     $([ ${EXT_PDO} = 'YES' ] && echo \
       $(if_eq ${EXT_PDO_SQLITE} 'YES'     'sqlite-dev') \
       $(if_eq ${EXT_PDO_PGSQL}  'YES'     'postgresql-dev') \
       $(if_eq ${EXT_PDO_MYSQL}  'MARIADB' 'mariadb-dev') \
-    ) \ 
+    ) \
     $([ ${EXT_GD} = 'YES' ] \
       && echo \
         libpng-dev \
@@ -137,21 +142,23 @@ RUN set -eux; \
     $(if_eq ${EXT_MEMCACHED}     'YES'      'libmemcached-dev') \
     $(if_eq ${EXT_MONGODB_SSL}   'OPENSSL'  'openssl-dev') \
     $(if_eq ${EXT_MONGODB_SSL}   'LIBRESSL' 'libressl-dev') \
-    $(if_eq ${EXT_AMQP}          'YES'      'rabbitmq-c-dev'); \ 
+    $(if_eq ${EXT_AMQP}          'YES'      'rabbitmq-c-dev'); \
   : "-- Proper iconv: replace binary and headers"; \
   mv /usr/bin/gnu-iconv /usr/bin/iconv; \
   mv /usr/include/gnu-libiconv/*.h /usr/include; \
   rm -rf /usr/include/gnu-libiconv; \
   : "-- Download PHP source"; \
-  load_archive "https://secure.php.net/get/php-${PHP_VERSION}.tar.xz/from/this/mirror" xJ; \
+  load_archive "https://www.php.net/distributions/php-${PHP_VERSION}.tar.xz" xJ; \
   cd /tmp/php-${PHP_VERSION}; \
   : "-- Setup build flags"; \
   export MAKEFLAGS="-j $(expr $(getconf _NPROCESSORS_ONLN) \+ 1)"; \
   : "-- Build PHP"; \
   ./configure \
     --prefix=/usr \
-    --sysconfdir=${PHP_CONFIG} \
-    --with-config-file-path=${PHP_CONFIG} \
+    --sysconfdir="${PHP_CONFIG}" \
+    --datarootdir=/tmp \
+    --datadir=/tmp \
+    --with-config-file-path="${PHP_CONFIG}" \
     --with-config-file-scan-dir="${PHP_CONFIG}/conf.d" \
     --with-layout="GNU" \
     --without-pear \
@@ -165,26 +172,28 @@ RUN set -eux; \
     --with-mhash \
     --with-zlib=/usr \
     --with-iconv=/usr \
-    $(if_eq ${PHP_CLI}       'NO'  '--disable-cli') \
-    $(if_eq ${PHP_IPV6}      'NO'  '--disable-ipv6') \
-    $(if_eq ${PHP_POSIX}     'NO'  '--disable-posix') \
-    $(if_eq ${PHP_CTYPE}     'NO'  '--disable-ctype') \
-    $(if_eq ${PHP_PHAR}      'NO'  '--disable-phar') \
-    $(if_eq ${PHP_FILEINFO}  'NO'  '--disable-fileinfo') \
-    $(if_eq ${PHP_TOKENIZER} 'NO'  '--disable-tokenizer') \
-    $(if_eq ${EXT_MBREGEX}   'NO'  '--disable-mbregex') \
-    $(if_eq ${PHP_FPM}       'YES' '--enable-fpm') \
-    $(if_eq ${PHP_INTL}      'YES' '--enable-intl') \
-    $(if_eq ${PHP_PCNTL}     'YES' '--enable-pcntl') \
-    $(if_eq ${PHP_FTP}       'YES' '--enable-ftp') \
     $(if_eq ${PHP_ARGON2}    'YES' '--with-password-argon2') \
+    $(if_eq ${PHP_CLI}       'NO'  '--disable-cli') \
+    $(if_eq ${PHP_FPM}       'YES' '--enable-fpm') \
+    $(if_eq ${PHP_IPV6}      'NO'  '--disable-ipv6') \
+    $(if_eq ${EXT_POSIX}     'NO'  '--disable-posix') \
+    $(if_eq ${EXT_CTYPE}     'NO'  '--disable-ctype') \
+    $(if_eq ${EXT_PHAR}      'NO'  '--disable-phar') \
+    $(if_eq ${EXT_FILEINFO}  'NO'  '--disable-fileinfo') \
+    $(if_eq ${EXT_FILTER}    'NO'  '--disable-filter') \
+    $(if_eq ${EXT_TOKENIZER} 'NO'  '--disable-tokenizer') \
+    $(if_eq ${EXT_MBREGEX}   'NO'  '--disable-mbregex') \
+    $(if_eq ${EXT_INTL}      'YES' '--enable-intl') \
+    $(if_eq ${EXT_PCNTL}     'YES' '--enable-pcntl') \
+    $(if_eq ${EXT_FTP}       'YES' '--enable-ftp') \
     $(if_eq ${EXT_BCMATH}    'YES' '--enable-bcmath') \
     $(if_eq ${EXT_SODIUM}    'YES' '--with-sodium=/usr') \
     $(if_eq ${EXT_CURL}      'YES' '--with-curl=/usr') \
     $(if_eq ${EXT_ZIP}       'YES' '--with-zip=/usr') \
     $(if_eq ${EXT_GMP}       'YES' '--with-gmp=/usr') \
     $(if_eq ${EXT_BZ2}       'YES' '--with-bz2=/usr') \
-    $(if_eq ${EXT_SQLITE}    'YES' '--with-sqlite3=/usr' '--without-sqlite3') \
+    $(if_eq ${EXT_READLINE}  'YES' '--with-readline=/usr') \
+    $(if_eq ${EXT_SQLITE3}   'YES' '--with-sqlite3=/usr' '--without-sqlite3') \
     $([ ${EXT_OPENSSL} != 'NO' ] && echo \
       --with-openssl=/usr \
       $(if_eq ${EXT_OPENSSL_SYSTEM_CIPHERS} 'YES' '--with-system-ciphers') \
@@ -200,12 +209,12 @@ RUN set -eux; \
     ) \
     $([ ${EXT_LIBXML} = 'YES' ] \
       && echo \
-        $(if_eq ${EXT_XML}       'NO'  '--disable-xml') \
-        $(if_eq ${EXT_XMLREADER} 'NO'  '--disable-xmlreader') \
-        $(if_eq ${EXT_XMLWRITER} 'NO'  '--disable-xmlwriter') \
-        $(if_eq ${EXT_SIMPLEXML} 'NO'  '--disable-simplexml') \
-        $(if_eq ${EXT_DOM}       'NO'  '--disable-dom') \
-        $(if_eq ${EXT_XSL}       'YES' '--with-xsl=/usr') \
+        $(if_eq ${EXT_LIBXML_XML}       'NO'  '--disable-xml') \
+        $(if_eq ${EXT_LIBXML_XMLREADER} 'NO'  '--disable-xmlreader') \
+        $(if_eq ${EXT_LIBXML_XMLWRITER} 'NO'  '--disable-xmlwriter') \
+        $(if_eq ${EXT_LIBXML_SIMPLEXML} 'NO'  '--disable-simplexml') \
+        $(if_eq ${EXT_LIBXML_DOM}       'NO'  '--disable-dom') \
+        $(if_eq ${EXT_LIBXML_XSL}       'YES' '--with-xsl=/usr') \
       || echo \
         --without-libxml \
         --disable-xml \
@@ -266,7 +275,7 @@ RUN set -eux; \
     make_ext \
       --with-mongodb-ssl=$(echo ${EXT_MONGODB_SSL} | tr '[:upper:]' '[:lower:]') \
       $(if_eq ${EXT_MONGODB_SSL} 'OPENSSL' --enable-mongodb-crypto-system-profile=yes); \
-  fi; \ 
+  fi; \
   if [ ${EXT_AMQP} = 'YES' ]; then \
     load_archive "https://github.com/php-amqp/php-amqp/archive/v${EXT_AMQP_VERSION}.tar.gz"; \
     cd /tmp/php-amqp-${EXT_AMQP_VERSION}; \
