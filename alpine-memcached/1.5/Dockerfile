@@ -28,9 +28,11 @@ RUN set -eux; \
   : "-- Download Memcached"; \
   load_archive "https://memcached.org/files/memcached-${MEMCACHED_VERSION}.tar.gz"; \
   cd /tmp/memcached-${MEMCACHED_VERSION}; \
-  : "-- Patch 'src/hash.[hc]': fix build failure against GCC-10"; \
+  : "-- Patch: fix build failure against GCC-10"; \
   sed -i "s/hash_func hash;/extern &/" hash.h; \
-  sed -i "s/int hash_init/hash_func hash;\n\n&/" hash.c; \
+  sed -i "s/#include \"murmur3_hash.h\"/&\n\nhash_func hash;/" hash.c; \
+  sed -i "s/crc_func crc32c;/extern &/" crc32c.h; \
+  sed -i "s/#include \"crc32c.h\"/&\n\ncrc_func crc32c;/" crc32c.c; \
   : "-- Build Memcached"; \
   ./configure \
     --disable-docs \
