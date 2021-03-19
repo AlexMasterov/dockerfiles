@@ -10,14 +10,30 @@ ARG NGINX_CONFIG=/etc/nginx
 ARG NGINX_EXTRA_CCFLAGS="-march=native -O2 -fstack-protector-strong -flto -fpic -fpie"
 ARG NGINX_EXTRA_LDFLAGS="-O2 -pie"
 
+ARG SSL_LIB=OPENSSL
+
 ARG HTTP_DEGRADATION=NO
+ARG HTTP_GUNZIP=NO
+ARG HTTP_GZIP=YES
+ARG HTTP_GZIP_STATIC=NO
 ARG HTTP_REFERER=NO
 ARG HTTP_SECURE_LINK=NO
 ARG HTTP_SLICE=NO
 ARG HTTP_SPLIT_CLIENTS=NO
+ARG HTTP_SSL=YES
+ARG HTTP_STREAM=YES
+ARG HTTP_STREAM_SSL=NO
+ARG HTTP_V2=YES
 
 ARG NJS=NO
 ARG NJS_VERSION=0.5.2
+
+ARG LUA=NO
+ARG LUA_VERSION=0.10.19
+ARG LUA_JIT_VERSION=2.1-20201229
+ARG LUA_ROCKS=NO
+ARG LUA_ROCKS_VERSION=3.5.0
+ARG DEVEL_KIT_VERSION=0.3.1
 
 ARG BROTLI=NO
 ARG BROTLI_VERSION=1.0.0rc
@@ -33,19 +49,51 @@ RUN set -eux; \
 
 RUN set -eux; \
   if_eq() { [ ${1} = ${2} ] && echo ${3:-} || echo ${4:-}; }; \
-  load_archive() { wget ${1} -T 30 -O - | tar xz -C /tmp; }; \
+  load_archive() { wget ${1} -T 30 -O - | tar ${2:-xz} -C /tmp; }; \
   apk add --no-cache --virtual .nginx-build \
     g++ \
     gcc \
     linux-headers \
     make \
-    openssl-dev \
     pcre-dev \
-    zlib-dev \
-    $(if_eq ${BROTLI} 'YES' brotli-dev) \
-    ; \
+    $(if_eq ${SSL_LIB}    'OPENSSL'  openssl-dev) \
+    $(if_eq ${SSL_LIB}    'LIBRESSL' libressl-dev) \
+    $(if_eq ${HTTP_GZIP}  'YES'      zlib-dev) \
+    $(if_eq ${BROTLI}     'YES'      brotli-dev); \
+  : "-- Setup build flags"; \
+  export MAKEFLAGS="-j $(expr $(getconf _NPROCESSORS_ONLN) \+ 1)"; \
+  : "-- Setup modules"; \
   if [ ${NJS} = 'YES' ]; then \
     load_archive "https://github.com/nginx/njs/archive/${NJS_VERSION}.tar.gz"; \
+  fi; \
+  if [ ${LUA} = 'YES' ]; then \
+    load_archive "https://github.com/vision5/ngx_devel_kit/archive/v${DEVEL_KIT_VERSION}.tar.gz"; \
+    load_archive "https://github.com/openresty/lua-nginx-module/archive/v${LUA_VERSION}.tar.gz"; \
+    load_archive "https://github.com/openresty/luajit2/archive/v${LUA_JIT_VERSION}.tar.gz"; \
+    cd /tmp/luajit2-${LUA_JIT_VERSION}; \
+    export \
+      DEVEL_KIT="/tmp/ngx_devel_kit-${DEVEL_KIT_VERSION}" \
+      LUA_MODULE="/tmp/lua-nginx-module-${LUA_VERSION}" \
+      LUAJIT_BIN="/usr/local/bin" \
+      LUAJIT_LIB="/usr/local/lib" \
+      LUAJIT_INC="/usr/local/include"; \
+    make; \
+    make install \
+      INSTALL_BIN="${LUAJIT_BIN}" \
+      INSTALL_LIB="${LUAJIT_LIB}" \
+      INSTALL_INC="${LUAJIT_INC}" \
+      INSTALL_MAN="/tmp"; \
+    if [ ${LUA_ROCKS} = 'YES' ]; then \
+      load_archive "https://github.com/luarocks/luarocks/archive/v${LUA_ROCKS_VERSION}.tar.gz"; \
+      cd /tmp/luarocks-${LUA_ROCKS_VERSION}; \
+      ./configure \
+        --with-lua-bin="${LUAJIT_BIN}" \
+        --with-lua-include="${LUAJIT_INC}" \
+        --force-config \
+        --disable-incdir-check; \
+      make build; \
+      make install; \
+    fi; \
   fi; \
   if [ ${BROTLI} = 'YES' ]; then \
     load_archive "https://github.com/google/ngx_brotli/archive/v${BROTLI_VERSION}.tar.gz"; \
@@ -55,12 +103,10 @@ RUN set -eux; \
   fi; \
   : "-- Download Nginx"; \
   load_archive "https://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz"; \
-  : "-- Setup build flags"; \
-  export MAKEFLAGS="-j $(expr $(getconf _NPROCESSORS_ONLN) \+ 1)"; \
   : "-- Build Nginx"; \
   cd /tmp/nginx-${NGINX_VERSION}; \
   ./configure \
-    --prefix=${NGINX_CONFIG} \
+    --prefix="${NGINX_CONFIG}" \
     --conf-path="${NGINX_CONFIG}/nginx.conf" \
     --modules-path="/usr/lib/nginx/modules" \
     --sbin-path="/usr/sbin/nginx" \
@@ -87,27 +133,31 @@ RUN set -eux; \
     --without-mail_imap_module \
     --without-mail_pop3_module \
     --without-mail_smtp_module \
-    --with-http_gunzip_module \
-    --with-http_gzip_static_module \
     --with-http_realip_module \
-    --with-http_ssl_module \
-    --with-http_v2_module \
     --with-pcre \
       --with-pcre-jit \
-    --with-stream \
-      --with-stream_ssl_module  \
     --with-threads \
     --with-file-aio \
     --with-cc-opt="-D FD_SETSIZE=$(ulimit -n) ${NGINX_EXTRA_CCFLAGS}" \
     --with-ld-opt="${NGINX_EXTRA_LDFLAGS}" \
-    $(if_eq ${HTTP_REFERER}       'NO'  --without-http_referer_module) \
-    $(if_eq ${HTTP_SPLIT_CLIENTS} 'NO'  --without-http_split_clients_module) \
-    $(if_eq ${HTTP_DEGRADATION}   'YES' --with-http_degradation_module) \
-    $(if_eq ${HTTP_SECURE_LINK}   'YES' --with-http_secure_link_module) \
-    $(if_eq ${HTTP_SLICE}         'YES' --with-http_slice_module) \
-    $(if_eq ${NJS}                'YES' --add-module="/tmp/njs-${NJS_VERSION}/nginx") \
-    $(if_eq ${BROTLI}             'YES' --add-module="/tmp/ngx_brotli-${BROTLI_VERSION}") \
-    $(if_eq ${HEADERS_MORE}       'YES' --add-module="/tmp/headers-more-nginx-module-${HEADERS_MORE_VERSION}") \
+    $([ ${HTTP_STREAM} = 'YES' ] && echo \
+      --with-stream \
+      $(if_eq ${HTTP_STREAM_SSL}  'YES' --with-stream_ssl_module) \
+    \ ) \
+    $(if_eq ${HTTP_GZIP}          'NO'    --without-http_gzip_module) \
+    $(if_eq ${HTTP_REFERER}       'NO'    --without-http_referer_module) \
+    $(if_eq ${HTTP_SPLIT_CLIENTS} 'NO'    --without-http_split_clients_module) \
+    $(if_eq ${HTTP_V2}            'YES'   --with-http_v2_module) \
+    $(if_eq ${HTTP_SSL}           'YES'   --with-http_ssl_module) \
+    $(if_eq ${HTTP_GUNZIP}        'YES'   --with-http_gunzip_module) \
+    $(if_eq ${HTTP_GZIP_STATIC}   'YES'   --with-http_gzip_static_module) \
+    $(if_eq ${HTTP_DEGRADATION}   'YES'   --with-http_degradation_module) \
+    $(if_eq ${HTTP_SECURE_LINK}   'YES'   --with-http_secure_link_module) \
+    $(if_eq ${HTTP_SLICE}         'YES'   --with-http_slice_module) \
+    $(if_eq ${BROTLI}             'YES'   --add-module="/tmp/ngx_brotli-${BROTLI_VERSION}") \
+    $(if_eq ${HEADERS_MORE}       'YES'   --add-module="/tmp/headers-more-nginx-module-${HEADERS_MORE_VERSION}") \
+    $(if_eq ${NJS}                'YES'   --add-module="/tmp/njs-${NJS_VERSION}/nginx") \
+    $(if_eq ${LUA}                'YES'  "--add-module=${DEVEL_KIT} --add-module=${LUA_MODULE}") \
     ; \
   make; \
   make install; \
@@ -115,7 +165,7 @@ RUN set -eux; \
     scanelf --needed --nobanner -F '%n#p' /usr/sbin/nginx \
       | tr ',' '\n' \
       | sort -u \
-      | sed 's/^/so:\1/' \
+      | sed 's/^/so:&/' \
     )"; \
   apk add --no-cache --virtual .nginx-runtime ${runtime_deps}; \
   : "-- Strip files"; \
