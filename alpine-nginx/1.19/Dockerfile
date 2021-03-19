@@ -25,6 +25,12 @@ ARG HTTP_STREAM=YES
 ARG HTTP_STREAM_SSL=NO
 ARG HTTP_V2=YES
 
+ARG BROTLI=NO
+ARG BROTLI_VERSION=1.0.0rc
+
+ARG HEADERS_MORE=NO
+ARG HEADERS_MORE_VERSION=0.33
+
 ARG NJS=NO
 ARG NJS_VERSION=0.5.2
 
@@ -35,11 +41,10 @@ ARG LUA_ROCKS=NO
 ARG LUA_ROCKS_VERSION=3.5.0
 ARG DEVEL_KIT_VERSION=0.3.1
 
-ARG BROTLI=NO
-ARG BROTLI_VERSION=1.0.0rc
-
-ARG HEADERS_MORE=NO
-ARG HEADERS_MORE_VERSION=0.33
+ARG TARANTOOL_UPSTREAM=NO
+ARG TARANTOOL_UPSTREAM_VERSION=2.7.1
+ARG YAJL_VERSION=2.1.0
+ARG MSGPUCK_VERSION=2.0
 
 RUN set -eux; \
   apk add --no-cache \
@@ -56,38 +61,44 @@ RUN set -eux; \
     linux-headers \
     make \
     pcre-dev \
-    $(if_eq ${SSL_LIB}    'OPENSSL'  openssl-dev) \
-    $(if_eq ${SSL_LIB}    'LIBRESSL' libressl-dev) \
-    $(if_eq ${HTTP_GZIP}  'YES'      zlib-dev) \
-    $(if_eq ${BROTLI}     'YES'      brotli-dev); \
+    $(if_eq ${SSL_LIB}            'OPENSSL'  openssl-dev) \
+    $(if_eq ${SSL_LIB}            'LIBRESSL' libressl-dev) \
+    $(if_eq ${HTTP_GZIP}          'YES'      zlib-dev) \
+    $(if_eq ${BROTLI}             'YES'      brotli-dev) \
+    $(if_eq ${TARANTOOL_UPSTREAM} 'YES'      cmake); \
   : "-- Setup build flags"; \
   export MAKEFLAGS="-j $(expr $(getconf _NPROCESSORS_ONLN) \+ 1)"; \
   : "-- Setup modules"; \
+  if [ ${BROTLI} = 'YES' ]; then \
+    load_archive "https://github.com/google/ngx_brotli/archive/v${BROTLI_VERSION}.tar.gz"; \
+  fi; \
+  if [ ${HEADERS_MORE} = 'YES' ]; then \
+    load_archive "https://github.com/openresty/headers-more-nginx-module/archive/v${HEADERS_MORE_VERSION}.tar.gz"; \
+  fi; \
   if [ ${NJS} = 'YES' ]; then \
     load_archive "https://github.com/nginx/njs/archive/${NJS_VERSION}.tar.gz"; \
   fi; \
   if [ ${LUA} = 'YES' ]; then \
-    load_archive "https://github.com/vision5/ngx_devel_kit/archive/v${DEVEL_KIT_VERSION}.tar.gz"; \
     load_archive "https://github.com/openresty/lua-nginx-module/archive/v${LUA_VERSION}.tar.gz"; \
+    load_archive "https://github.com/vision5/ngx_devel_kit/archive/v${DEVEL_KIT_VERSION}.tar.gz"; \
     load_archive "https://github.com/openresty/luajit2/archive/v${LUA_JIT_VERSION}.tar.gz"; \
-    cd /tmp/luajit2-${LUA_JIT_VERSION}; \
     export \
-      DEVEL_KIT="/tmp/ngx_devel_kit-${DEVEL_KIT_VERSION}" \
-      LUA_MODULE="/tmp/lua-nginx-module-${LUA_VERSION}" \
       LUAJIT_BIN="/usr/local/bin" \
       LUAJIT_LIB="/usr/local/lib" \
       LUAJIT_INC="/usr/local/include"; \
+    cd /tmp/luajit2-${LUA_JIT_VERSION}; \
     make; \
     make install \
       INSTALL_BIN="${LUAJIT_BIN}" \
       INSTALL_LIB="${LUAJIT_LIB}" \
       INSTALL_INC="${LUAJIT_INC}" \
-      INSTALL_MAN="/tmp"; \
+      INSTALL_MAN="/luajit2"; \
     if [ ${LUA_ROCKS} = 'YES' ]; then \
       load_archive "https://github.com/luarocks/luarocks/archive/v${LUA_ROCKS_VERSION}.tar.gz"; \
       cd /tmp/luarocks-${LUA_ROCKS_VERSION}; \
       ./configure \
         --with-lua-bin="${LUAJIT_BIN}" \
+        --with-lua-lib="${LUAJIT_LIB}" \
         --with-lua-include="${LUAJIT_INC}" \
         --force-config \
         --disable-incdir-check; \
@@ -95,11 +106,23 @@ RUN set -eux; \
       make install; \
     fi; \
   fi; \
-  if [ ${BROTLI} = 'YES' ]; then \
-    load_archive "https://github.com/google/ngx_brotli/archive/v${BROTLI_VERSION}.tar.gz"; \
-  fi; \
-  if [ ${HEADERS_MORE} = 'YES' ]; then \
-    load_archive "https://github.com/openresty/headers-more-nginx-module/archive/v${HEADERS_MORE_VERSION}.tar.gz"; \
+  if [ ${TARANTOOL_UPSTREAM} = 'YES' ]; then \
+    load_archive "https://github.com/tarantool/nginx_upstream_module/archive/v${TARANTOOL_UPSTREAM_VERSION}.tar.gz"; \
+    : "-- Build msgpuck"; \
+    load_archive "https://github.com/rtsisyk/msgpuck/archive/${MSGPUCK_VERSION}.tar.gz"; \
+    cd /tmp/msgpuck-${MSGPUCK_VERSION}; \
+    cmake -DCMAKE_BUILD_TYPE=Release .; \
+    make; \
+    : "-- Build yajl"; \
+    load_archive "https://github.com/lloyd/yajl/archive/${YAJL_VERSION}.tar.gz"; \
+    cd /tmp/yajl-${YAJL_VERSION}; \
+    cmake -DCMAKE_BUILD_TYPE=Release .; \
+    make yajl yajl_s; \
+    : "-- Setup Nginx compiler flags for Tarantool upstream"; \
+    MSGPUCK_DIR="/tmp/msgpuck-${MSGPUCK_VERSION}"; \
+    YAJL_DIR="/tmp/yajl-${YAJL_VERSION}/yajl-${YAJL_VERSION}"; \
+    NGINX_EXTRA_CCFLAGS="${NGINX_EXTRA_CCFLAGS} -I${MSGPUCK_DIR} -I${YAJL_DIR}/include"; \
+    NGINX_EXTRA_LDFLAGS="${NGINX_EXTRA_LDFLAGS} -L${MSGPUCK_DIR} -L${YAJL_DIR}/lib";\
   fi; \
   : "-- Download Nginx"; \
   load_archive "https://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz"; \
@@ -157,8 +180,11 @@ RUN set -eux; \
     $(if_eq ${BROTLI}             'YES'   --add-module="/tmp/ngx_brotli-${BROTLI_VERSION}") \
     $(if_eq ${HEADERS_MORE}       'YES'   --add-module="/tmp/headers-more-nginx-module-${HEADERS_MORE_VERSION}") \
     $(if_eq ${NJS}                'YES'   --add-module="/tmp/njs-${NJS_VERSION}/nginx") \
-    $(if_eq ${LUA}                'YES'  "--add-module=${DEVEL_KIT} --add-module=${LUA_MODULE}") \
-    ; \
+    $(if_eq ${TARANTOOL_UPSTREAM} 'YES'   --add-module="/tmp/nginx_upstream_module-${TARANTOOL_UPSTREAM_VERSION}") \
+    $(if_eq ${LUA}                'YES'  " \
+      --add-module=/tmp/ngx_devel_kit-${DEVEL_KIT_VERSION} \
+      --add-module=/tmp/lua-nginx-module-${LUA_VERSION}" \
+    ); \
   make; \
   make install; \
   runtime_deps="$( \
@@ -169,7 +195,11 @@ RUN set -eux; \
     )"; \
   apk add --no-cache --virtual .nginx-runtime ${runtime_deps}; \
   : "-- Strip files"; \
-  find /usr/sbin -type f -perm +0111 -exec strip --strip-unneeded '{}' + || true; \
+  find \
+    /usr/bin \
+    /usr/sbin \
+    /usr/local/bin \
+    -type f -perm +0111 -exec strip --strip-unneeded '{}' + || true; \
   : "-- Remove build dependencies, clean temporary files"; \
   apk del --no-network .nginx-build; \
   rm -rf /tmp/* /var/tmp/*
