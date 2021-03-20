@@ -6,11 +6,10 @@ LABEL repository.hub="alexmasterov/alpine-nginx:1.19" \
 
 ARG NGINX_VERSION=1.19.8
 ARG NGINX_CONFIG=/etc/nginx
-
 ARG NGINX_EXTRA_CCFLAGS="-march=native -O2 -fstack-protector-strong -flto -fpic -fpie"
 ARG NGINX_EXTRA_LDFLAGS="-O2 -pie"
 
-ARG SSL_LIB=OPENSSL
+ARG LIB_SSL=OPENSSL
 
 ARG HTTP_DEGRADATION=NO
 ARG HTTP_GUNZIP=NO
@@ -22,7 +21,7 @@ ARG HTTP_SLICE=NO
 ARG HTTP_SPLIT_CLIENTS=NO
 ARG HTTP_SSL=YES
 ARG HTTP_STREAM=YES
-ARG HTTP_STREAM_SSL=NO
+ARG HTTP_STREAM_SSL=YES
 ARG HTTP_V2=YES
 
 ARG BROTLI=NO
@@ -43,8 +42,8 @@ ARG DEVEL_KIT_VERSION=0.3.1
 
 ARG TARANTOOL_UPSTREAM=NO
 ARG TARANTOOL_UPSTREAM_VERSION=2.7.1
-ARG YAJL_VERSION=2.1.0
 ARG MSGPUCK_VERSION=2.0
+ARG YAJL_VERSION=2.1.0
 
 RUN set -eux; \
   apk add --no-cache \
@@ -53,7 +52,8 @@ RUN set -eux; \
   adduser -u 82 -S -D -h /var/cache/nginx -s /sbin/nologin -G nginx nginx
 
 RUN set -eux; \
-  if_eq() { [ ${1} = ${2} ] && echo ${3:-} || echo ${4:-}; }; \
+  if_eq() { [ ${1} = ${2} ] && shift 2 && echo ${*:-} || exit 0; }; \
+  in_str() { [ $(expr index "${1}" "${2}") != 0 ] && shift 2 && echo ${*:-} || exit 0; }; \
   load_archive() { wget ${1} -T 30 -O - | tar ${2:-xz} -C /tmp; }; \
   apk add --no-cache --virtual .nginx-build \
     g++ \
@@ -61,14 +61,17 @@ RUN set -eux; \
     linux-headers \
     make \
     pcre-dev \
-    $(if_eq ${SSL_LIB}            'OPENSSL'  openssl-dev) \
-    $(if_eq ${SSL_LIB}            'LIBRESSL' libressl-dev) \
-    $(if_eq ${HTTP_GZIP}          'YES'      zlib-dev) \
-    $(if_eq ${BROTLI}             'YES'      brotli-dev) \
-    $(if_eq ${TARANTOOL_UPSTREAM} 'YES'      cmake); \
-  : "-- Setup build flags"; \
+    $(in_str "${HTTP_SSL}${HTTP_STREAM_SSL}" 'YES' \
+      `if_eq ${LIB_SSL} 'OPENSSL'  openssl-dev` \
+      `if_eq ${LIB_SSL} 'LIBRESSL' libressl-dev` \
+    ) \ 
+    `if_eq ${HTTP_GZIP}          'YES' zlib-dev` \
+    `if_eq ${BROTLI}             'YES' brotli-dev` \
+    `if_eq ${TARANTOOL_UPSTREAM} 'YES' cmake` \
+    ; \
+  : "-- Setup make flags"; \
   export MAKEFLAGS="-j $(expr $(getconf _NPROCESSORS_ONLN) \+ 1)"; \
-  : "-- Setup modules"; \
+  : "-- Nginx: setup modules"; \
   if [ ${BROTLI} = 'YES' ]; then \
     load_archive "https://github.com/google/ngx_brotli/archive/v${BROTLI_VERSION}.tar.gz"; \
   fi; \
@@ -108,25 +111,25 @@ RUN set -eux; \
   fi; \
   if [ ${TARANTOOL_UPSTREAM} = 'YES' ]; then \
     load_archive "https://github.com/tarantool/nginx_upstream_module/archive/v${TARANTOOL_UPSTREAM_VERSION}.tar.gz"; \
-    : "-- Build msgpuck"; \
+    : "-- msgpuck: build"; \
     load_archive "https://github.com/rtsisyk/msgpuck/archive/${MSGPUCK_VERSION}.tar.gz"; \
     cd /tmp/msgpuck-${MSGPUCK_VERSION}; \
     cmake -DCMAKE_BUILD_TYPE=Release .; \
     make; \
-    : "-- Build yajl"; \
+    : "-- yajl: build"; \
     load_archive "https://github.com/lloyd/yajl/archive/${YAJL_VERSION}.tar.gz"; \
     cd /tmp/yajl-${YAJL_VERSION}; \
     cmake -DCMAKE_BUILD_TYPE=Release .; \
     make yajl yajl_s; \
-    : "-- Setup Nginx compiler flags for Tarantool upstream"; \
+    : "-- Nginx: setup compiler flags for Tarantool upstream module"; \
     MSGPUCK_DIR="/tmp/msgpuck-${MSGPUCK_VERSION}"; \
     YAJL_DIR="/tmp/yajl-${YAJL_VERSION}/yajl-${YAJL_VERSION}"; \
     NGINX_EXTRA_CCFLAGS="${NGINX_EXTRA_CCFLAGS} -I${MSGPUCK_DIR} -I${YAJL_DIR}/include"; \
-    NGINX_EXTRA_LDFLAGS="${NGINX_EXTRA_LDFLAGS} -L${MSGPUCK_DIR} -L${YAJL_DIR}/lib";\
+    NGINX_EXTRA_LDFLAGS="${NGINX_EXTRA_LDFLAGS} -L${MSGPUCK_DIR} -L${YAJL_DIR}/lib"; \
   fi; \
-  : "-- Download Nginx"; \
+  : "-- Nginx: download"; \
   load_archive "https://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz"; \
-  : "-- Build Nginx"; \
+  : "-- Nginx: build"; \
   cd /tmp/nginx-${NGINX_VERSION}; \
   ./configure \
     --prefix="${NGINX_CONFIG}" \
@@ -163,28 +166,28 @@ RUN set -eux; \
     --with-file-aio \
     --with-cc-opt="-D FD_SETSIZE=$(ulimit -n) ${NGINX_EXTRA_CCFLAGS}" \
     --with-ld-opt="${NGINX_EXTRA_LDFLAGS}" \
-    $([ ${HTTP_STREAM} = 'YES' ] && echo \
+    $(if_eq ${HTTP_STREAM} 'YES' \
       --with-stream \
-      $(if_eq ${HTTP_STREAM_SSL}  'YES' --with-stream_ssl_module) \
-    \ ) \
-    $(if_eq ${HTTP_GZIP}          'NO'    --without-http_gzip_module) \
-    $(if_eq ${HTTP_REFERER}       'NO'    --without-http_referer_module) \
-    $(if_eq ${HTTP_SPLIT_CLIENTS} 'NO'    --without-http_split_clients_module) \
-    $(if_eq ${HTTP_V2}            'YES'   --with-http_v2_module) \
-    $(if_eq ${HTTP_SSL}           'YES'   --with-http_ssl_module) \
-    $(if_eq ${HTTP_GUNZIP}        'YES'   --with-http_gunzip_module) \
-    $(if_eq ${HTTP_GZIP_STATIC}   'YES'   --with-http_gzip_static_module) \
-    $(if_eq ${HTTP_DEGRADATION}   'YES'   --with-http_degradation_module) \
-    $(if_eq ${HTTP_SECURE_LINK}   'YES'   --with-http_secure_link_module) \
-    $(if_eq ${HTTP_SLICE}         'YES'   --with-http_slice_module) \
-    $(if_eq ${BROTLI}             'YES'   --add-module="/tmp/ngx_brotli-${BROTLI_VERSION}") \
-    $(if_eq ${HEADERS_MORE}       'YES'   --add-module="/tmp/headers-more-nginx-module-${HEADERS_MORE_VERSION}") \
-    $(if_eq ${NJS}                'YES'   --add-module="/tmp/njs-${NJS_VERSION}/nginx") \
-    $(if_eq ${TARANTOOL_UPSTREAM} 'YES'   --add-module="/tmp/nginx_upstream_module-${TARANTOOL_UPSTREAM_VERSION}") \
-    $(if_eq ${LUA}                'YES'  " \
-      --add-module=/tmp/ngx_devel_kit-${DEVEL_KIT_VERSION} \
-      --add-module=/tmp/lua-nginx-module-${LUA_VERSION}" \
-    ); \
+      `if_eq ${HTTP_STREAM_SSL} 'YES' --with-stream_ssl_module` \
+    ) \
+    `if_eq ${HTTP_GZIP}          'NO'  --without-http_gzip_module` \
+    `if_eq ${HTTP_REFERER}       'NO'  --without-http_referer_module` \
+    `if_eq ${HTTP_SPLIT_CLIENTS} 'NO'  --without-http_split_clients_module` \
+    `if_eq ${HTTP_V2}            'YES' --with-http_v2_module` \
+    `if_eq ${HTTP_SSL}           'YES' --with-http_ssl_module` \
+    `if_eq ${HTTP_GUNZIP}        'YES' --with-http_gunzip_module` \
+    `if_eq ${HTTP_GZIP_STATIC}   'YES' --with-http_gzip_static_module` \
+    `if_eq ${HTTP_DEGRADATION}   'YES' --with-http_degradation_module` \
+    `if_eq ${HTTP_SECURE_LINK}   'YES' --with-http_secure_link_module` \
+    `if_eq ${HTTP_SLICE}         'YES' --with-http_slice_module` \
+    `if_eq ${BROTLI}             'YES' --add-module="/tmp/ngx_brotli-${BROTLI_VERSION}"` \
+    `if_eq ${HEADERS_MORE}       'YES' --add-module="/tmp/headers-more-nginx-module-${HEADERS_MORE_VERSION}"` \
+    `if_eq ${NJS}                'YES' --add-module="/tmp/njs-${NJS_VERSION}/nginx"` \
+    `if_eq ${TARANTOOL_UPSTREAM} 'YES' --add-module="/tmp/nginx_upstream_module-${TARANTOOL_UPSTREAM_VERSION}"` \
+    `if_eq ${LUA}                'YES' \
+      --add-module="/tmp/ngx_devel_kit-${DEVEL_KIT_VERSION}" \
+      --add-module="/tmp/lua-nginx-module-${LUA_VERSION}" \
+    `; \
   make; \
   make install; \
   runtime_deps="$( \
