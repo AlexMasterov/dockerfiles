@@ -1,4 +1,3 @@
-FROM alexmasterov/alpine-libv8:6.7 as libv8
 FROM alpine:3.13
 
 LABEL repository.hub="alexmasterov/alpine-php:7.1" \
@@ -8,232 +7,335 @@ LABEL repository.hub="alexmasterov/alpine-php:7.1" \
 ARG PHP_VERSION=7.1.33
 ARG PHP_CONFIG=/etc/php
 
-ARG REALPATH_TURBO_TAG=v2.0.0
-ARG XDEBUG_TAG=2.7.2
-ARG MSGPACK_TAG=msgpack-2.0.3
-ARG REDIS_TAG=5.0.2
-ARG MEMCACHED_TAG=v3.1.3
-ARG MONGODB_VERSION=1.5.5
-ARG AMQP_TAG=v1.9.4
-ARG PHPV8_VERSION=0.2.2
+ARG PHP_CFLAGS="-march=native -O2 -fpic -fpie -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64"
+ARG PHP_LDFLAGS="-Wl,-O1 -Wl,--hash-style=both -pie"
 
-COPY --from=libv8 /usr/local/v8 /usr/local/v8
+ARG LIB_SSL=OPENSSL
+
+ARG PHP_CLI=YES
+ARG PHP_FPM=NO
+ARG PHP_IPV6=NO
+
+ARG EXT_BCMATH=NO
+ARG EXT_BZ2=NO
+ARG EXT_CTYPE=YES
+ARG EXT_CURL=YES
+ARG EXT_DOM=NO
+ARG EXT_FILEINFO=NO
+ARG EXT_FILTER=YES
+ARG EXT_FTP=NO
+ARG EXT_GD=NO
+ARG EXT_GD_BUNDLED=YES
+ARG EXT_GD_FREETYPE=NO
+ARG EXT_GD_JPEG=NO
+ARG EXT_GD_NATIVE_TTF=NO
+ARG EXT_GD_WEBP=NO
+ARG EXT_GD_XPM=NO
+ARG EXT_GMP=NO
+ARG EXT_INTL=YES
+ARG EXT_MBSTRING=YES
+ARG EXT_MBSTRING_REGEX=YES
+ARG EXT_MBSTRING_REGEX_BUNDLED=NO
+ARG EXT_OPENSSL=YES
+ARG EXT_OPENSSL_SYSTEM_CIPHERS=YES
+ARG EXT_PCNTL=NO
+ARG EXT_PCRE_BUNDLED=NO
+ARG EXT_PDO_MYSQL=NO
+ARG EXT_PDO_MYSQL_BUNDLED=NO
+ARG EXT_PDO_PGSQL=NO
+ARG EXT_PDO_SQLITE=YES
+ARG EXT_PHAR=NO
+ARG EXT_POSIX=NO
+ARG EXT_POSTGRESQL=NO
+ARG EXT_READLINE=NO
+ARG EXT_SIMPLEXML=YES
+ARG EXT_SQLITE3=NO
+ARG EXT_TOKENIZER=YES
+ARG EXT_XML=NO
+ARG EXT_XMLREADER=NO
+ARG EXT_XMLWRITER=NO
+ARG EXT_XSL=NO
+ARG EXT_ZIP=NO
+ARG EXT_ZIP_BUNDLED=NO
+ARG EXT_ZLIB=NO
+
+ARG EXT_XDEBUG=NO
+ARG EXT_XDEBUG_VERSION=2.9.8
+
+ARG EXT_APCU=NO
+ARG EXT_APCU_VERSION=5.1.20
+ARG EXT_APCU_RWLOCKS=YES
+ARG EXT_APCU_SPINLOCKS=NO
+
+ARG EXT_MSGPACK=NO
+ARG EXT_MSGPACK_VERSION=2.1.2
+
+ARG EXT_PHPREDIS=NO
+ARG EXT_PHPREDIS_VERSION=5.3.3
+ARG EXT_PHPREDIS_SESSION=YES
+ARG EXT_PHPREDIS_JSON=YES
+ARG EXT_PHPREDIS_MSGPACK=NO
+ARG EXT_PHPREDIS_LZ4=NO
+ARG EXT_PHPREDIS_ZSTD=NO
+
+ARG EXT_MEMCACHED=NO
+ARG EXT_MEMCACHED_VERSION=3.1.5
+ARG EXT_MEMCACHED_SESSION=YES
+ARG EXT_MEMCACHED_JSON=YES
+ARG EXT_MEMCACHED_MSGPACK=NO
+
+ARG EXT_MONGODB=NO
+ARG EXT_MONGODB_VERSION=1.9.0
+ARG EXT_MONGODB_TLS=YES
+
+ARG EXT_AMQP=NO
+ARG EXT_AMQP_VERSION=1.11.0beta
 
 RUN set -eux; \
-  apk add --update \
-    ssmtp \
-    tini; \
   addgroup -g 82 -S www-data; \
   adduser -u 82 -S -D -h /var/cache/www-data -s /sbin/nologin -G www-data www-data
 
 RUN set -eux; \
-  apk add --virtual .php-build-dependencies \
+  if_eq() { [ ${1} = ${2} ] && shift 2 && echo "${*:-}"; }; \
+  if_no() { [ ${1} = 'NO' ] && shift 1 && echo "${*:-}"; }; \
+  if_yes() { [ ${1} = 'YES' ] && shift 1 && echo "${*:-}"; }; \
+  contains() { [ -z ${1##*${2}*} ] && shift 2 && echo "${*:-}"; }; \
+  to_lowercase() { echo ${1:-} | tr '[:upper:]' '[:lower:]'; }; \
+  load_archive() { wget ${1} -T 30 -O - | tar ${2:-xz} -C /tmp; }; \
+  make_ext() { phpize; ./configure ${*:-}; make; make install; }; \
+  apk add --no-cache --virtual .php-build \
     autoconf \
-    binutils \
     bison \
-    bzip2-dev \
-    curl \
-    curl-dev \
     file \
-    freetype-dev \
     g++ \
     gcc \
-    git \
     gnu-libiconv-dev \
-    icu-dev \
-    jpeg-dev \
-    libmcrypt-dev \
-    libpng-dev \
-    libtool \
-    libwebp-dev \
-    libxml2-dev \
-    libxslt-dev \
     make \
-    pcre-dev \
-    postgresql-dev \
     re2c \
-    readline-dev \
-    sqlite-dev; \
-  : "---------- Proper iconv: replace binary and headers ----------"; \
+    $(if_yes ${EXT_INTL}         icu-dev) \
+    $(if_no  ${EXT_PCRE_BUNDLED} pcre-dev) \
+    $(if_yes ${EXT_BZ2}          bzip2-dev) \
+    $(if_yes ${EXT_CURL}         curl-dev) \
+    $(if_yes ${EXT_READLINE}     readline-dev) \
+    $(if_yes ${EXT_GMP}          gmp-dev) \
+    $(if_yes ${EXT_SQLITE3}      sqlite-dev) \
+    $(if_yes ${EXT_POSTGRESQL}   postgresql-dev) \
+    $(if_yes ${EXT_OPENSSL}      $(to_lowercase ${LIB_SSL})-dev) \
+    $(if_yes ${EXT_GD} \
+      $(if_yes ${EXT_GD_BUNDLED} \
+        $(if_yes ${EXT_GD_JPEG} jpeg-dev) \
+        $(if_yes ${EXT_GD_XPM}  libxpm-dev) \
+      || echo \
+        gd-dev \
+        jpeg-dev \
+        libxpm-dev \
+      ) \
+      libpng-dev \
+      $(if_yes ${EXT_GD_WEBP}     libwebp-dev) \
+      $(if_yes ${EXT_GD_FREETYPE} freetype-dev) \
+    ) \
+    $(contains "${EXT_PDO_SQLITE}${EXT_PDO_PGSQL}${EXT_PDO_MYSQL}" 'YES' \
+      $(if_eq "${EXT_PDO_MYSQL}${EXT_PDO_MYSQL_BUNDLED}" 'YESNO' mariadb-dev) \
+      $(if_yes ${EXT_PDO_PGSQL}  postgresql-dev) \
+      $(if_yes ${EXT_PDO_SQLITE} sqlite-dev) \
+    ) \
+    $(contains "${EXT_DOM}${EXT_SIMPLEXML}${EXT_XML}${EXT_XMLREADER}${EXT_XMLWRITER}${EXT_XSL}" 'YES' \
+      libxml2-dev \
+      $(if_yes ${EXT_XSL} libxslt-dev) \
+    ) \
+    $(contains "${EXT_ZLIB}${EXT_ZIP}" 'YES' zlib-dev) \
+    $(if_eq "${EXT_ZIP}${EXT_ZIP_BUNDLED}" 'YESNO' libzip-dev) \
+    $(if_eq "${EXT_MBSTRING}${EXT_MBSTRING_REGEX}${EXT_MBSTRING_REGEX_BUNDLED}" 'YESYESNO' oniguruma-dev) \
+    \
+    $(if_yes ${EXT_MEMCACHED}     libmemcached-dev) \
+    $(if_yes ${EXT_AMQP}          rabbitmq-c-dev) \
+    $(if_yes ${EXT_PHPREDIS} \
+      $(if_yes ${EXT_PHPREDIS_LZ4}  lz4-dev) \
+      $(if_yes ${EXT_PHPREDIS_ZSTD} zstd-dev) \
+    ) \
+    $(if_eq "${EXT_MONGODB}${EXT_MONGODB_TLS}" 'YESYES' $(to_lowercase ${LIB_SSL})-dev) \
+    ; \
+  : "-- GNU iconv: replace binary and headers"; \
   mv /usr/bin/gnu-iconv /usr/bin/iconv; \
   mv /usr/include/gnu-libiconv/*.h /usr/include; \
-  rm -rf /usr/include/gnu-libiconv; \
-  : "---------- Proper libpcre2 ----------"; \
-  (cd /usr/lib; \
-    ln -sf libpcre2-posix.a libpcre2.a; \
-    ln -sf libpcre2-posix.so libpcre2.so); \
-  : "---------- Build flags ----------"; \
-  export LDFLAGS="-Wl,-O2 -Wl,--hash-style=both -pie"; \
-  export CFLAGS="-O2 -march=native -fstack-protector-strong -fpic -fpie"; \
-  export CPPFLAGS=${CFLAGS}; \
-  export MAKEFLAGS="-j $(expr $(getconf _NPROCESSORS_ONLN) \+ 1)"; \
-  : "---------- PHP ----------"; \
-  PHP_SOURCE="https://secure.php.net/get/php-${PHP_VERSION}.tar.xz/from/this/mirror"; \
-  curl -fSL --connect-timeout 30 ${PHP_SOURCE} | tar xJ -C /tmp; \
+  : "-- Setup make flags"; \
+  MAKEFLAGS="-j $(( $(getconf _NPROCESSORS_ONLN) - 1 ))"; \
+  : "-- PHP: download"; \
+  load_archive "https://www.php.net/distributions/php-${PHP_VERSION}.tar.xz" xJ; \
   cd /tmp/php-${PHP_VERSION}; \
-  : "---------- Build ----------"; \
+  : "-- PHP: build"; \
   ./configure \
     --prefix=/usr \
-    --sysconfdir=${PHP_CONFIG} \
-    --with-config-file-path=${PHP_CONFIG} \
-    --with-config-file-scan-dir=${PHP_CONFIG}/conf.d \
+    --datadir=/tmp \
+    --datarootdir=/tmp \
+    --sysconfdir="${PHP_CONFIG}" \
+    --with-config-file-path="${PHP_CONFIG}" \
+    --with-config-file-scan-dir="${PHP_CONFIG}/conf.d" \
+    --with-layout="GNU" \
     --without-pear \
     --disable-cgi \
     --disable-debug \
-    --disable-ipv6 \
     --disable-phpdbg \
     --disable-rpath \
-    --disable-static \
-    --enable-bcmath \
-    --enable-calendar \
-    --enable-dom \
-    --enable-exif \
-    --enable-fd-setsize=$(ulimit -n) \
-    --enable-fpm \
-      --with-fpm-group=www-data \
-      --with-fpm-user=www-data \
-    --enable-ftp \
-    --enable-inline-optimization \
-    --enable-intl \
-    --enable-json \
-    --enable-libxml \
-      --with-libxml-dir=/usr \
-    --enable-mbregex \
-    --enable-mbstring \
-    --enable-opcache \
-      --enable-huge-code-pages \
-      --enable-opcache-file \
     --enable-option-checking=fatal \
-    --enable-pcntl \
-    --enable-phar \
-    --enable-session \
-    --enable-shmop \
-    --enable-soap \
-    --enable-sockets \
-    --enable-xml \
-    --enable-xmlreader \
-    --enable-xmlwriter \
-    --enable-zip \
-      --with-pcre-dir=/usr \
-    --with-bz2=/usr \
-    --with-curl=/usr \
-    --with-gd \
-      --with-freetype-dir=/usr \
-      --with-jpeg-dir=/usr \
-      --with-png-dir=/usr \
-      --with-webp-dir=/usr \
-      --with-xpm-dir=no \
-      --with-zlib-dir=/usr \
-    --with-iconv=/usr \
-    --with-mcrypt=/usr \
+    --enable-fd-setsize=$(ulimit -n) \
     --with-mhash \
-    --with-openssl=/usr \
-      --with-system-ciphers \
-    --with-pcre-regex=/usr \
-      --with-pcre-jit \
-    --with-pdo-mysql=mysqlnd \
-    --with-pdo-pgsql \
-    --with-pdo-sqlite \
-    --with-pgsql \
-    --with-readline=/usr \
-    --with-xmlrpc \
-    --with-xsl=/usr; \
+    --with-iconv=/usr \
+    $(if_yes ${PHP_FPM}          --enable-fpm) \
+    $(if_no  ${PHP_CLI}          --disable-cli) \
+    $(if_no  ${PHP_IPV6}         --disable-ipv6) \
+    $(if_no  ${EXT_POSIX}        --disable-posix) \
+    $(if_no  ${EXT_CTYPE}        --disable-ctype) \
+    $(if_no  ${EXT_PHAR}         --disable-phar) \
+    $(if_no  ${EXT_FILEINFO}     --disable-fileinfo) \
+    $(if_no  ${EXT_FILTER}       --disable-filter) \
+    $(if_no  ${EXT_TOKENIZER}    --disable-tokenizer) \
+    $(if_no  ${EXT_PCRE_BUNDLED} --with-pcre-regex=/usr) \
+    $(if_yes ${EXT_INTL}         --enable-intl) \
+    $(if_yes ${EXT_PCNTL}        --enable-pcntl) \
+    $(if_yes ${EXT_FTP}          --enable-ftp) \
+    $(if_yes ${EXT_BCMATH}       --enable-bcmath) \
+    $(if_yes ${EXT_CURL}         --with-curl=/usr) \
+    $(if_yes ${EXT_GMP}          --with-gmp=/usr) \
+    $(if_yes ${EXT_BZ2}          --with-bz2=/usr) \
+    $(if_yes ${EXT_READLINE}     --with-readline=/usr) \
+    $(if_yes ${EXT_SQLITE3}      --with-sqlite3=/usr || echo --without-sqlite3) \
+    $(if_yes ${EXT_OPENSSL} \
+      --with-openssl=/usr \
+      $(if_eq "${LIB_SSL}${EXT_OPENSSL_SYSTEM_CIPHERS}" 'OPENSSLYES' --with-system-ciphers) \
+    ) \
+    $(if_yes ${EXT_ZIP} \
+      --enable-zip \
+      $(if_no ${EXT_ZIP_BUNDLED} --with-libzip=/usr) \
+    ) \
+    $(contains "${EXT_ZLIB}${EXT_ZIP}" 'YES' --with-zlib=/usr) \
+    $(contains "${EXT_DOM}${EXT_SIMPLEXML}${EXT_XML}${EXT_XMLREADER}${EXT_XMLWRITER}${EXT_XSL}" 'YES' \
+      $(if_no  ${EXT_DOM}       --disable-dom) \
+      $(if_no  ${EXT_XML}       --disable-xml) \
+      $(if_no  ${EXT_XMLREADER} --disable-xmlreader) \
+      $(if_no  ${EXT_XMLWRITER} --disable-xmlwriter) \
+      $(if_no  ${EXT_SIMPLEXML} --disable-simplexml) \
+      $(if_yes ${EXT_XSL}       --with-xsl=/usr) \
+    || echo \
+      --disable-libxml \
+      --disable-dom \
+      --disable-xml \
+      --disable-xmlreader \
+      --disable-xmlwriter \
+      --disable-simplexml \
+    ) \
+    $(contains "${EXT_PDO_SQLITE}${EXT_PDO_PGSQL}${EXT_PDO_MYSQL}" 'YES' \
+      $(if_yes ${EXT_PDO_SQLITE} --with-pdo-sqlite=/usr || echo --without-pdo-sqlite) \
+      $(if_yes ${EXT_PDO_PGSQL}  --with-pdo-pgsql=/usr) \
+      $(if_yes ${EXT_PDO_MYSQL} \
+        $(if_yes ${EXT_PDO_MYSQL_BUNDLED} --with-pdo-mysql=mysqlnd || echo --with-pdo-mysql=/usr) \
+      ) \
+    || echo \
+      --disable-pdo \
+    ) \
+    $(if_yes ${EXT_GD} \
+      $(if_yes ${EXT_GD_BUNDLED} \
+        --with-gd \
+        $(if_yes ${EXT_GD_JPEG} --with-jpeg-dir=/usr) \
+        $(if_yes ${EXT_GD_XPM}  --with-xpm-dir=/usr) \
+      || echo \
+        --with-gd=/usr \
+        --with-jpeg-dir=/usr \
+        --with-xpm-dir=/usr \
+      ) \
+      --with-png-dir=/usr \
+      $(if_yes ${EXT_GD_WEBP}       --with-webp-dir=/usr) \
+      $(if_yes ${EXT_GD_FREETYPE}   --with-freetype-dir=/usr) \
+      $(if_yes ${EXT_GD_NATIVE_TTF} --enable-gd-native-ttf) \
+    ) \
+    $(if_yes ${EXT_MBSTRING} \
+      --enable-mbstring \
+      --$(if_yes ${EXT_MBSTRING_REGEX} 'enable' || echo 'disable')-mbregex \
+      $(if_eq "${EXT_MBSTRING_REGEX}${EXT_MBSTRING_REGEX_BUNDLED}" 'YESNO' --with-onig=/usr) \
+    ) \
+    CFLAGS="${PHP_CFLAGS}" \
+    CPPFLAGS="${PHP_CFLAGS}" \
+    LDFLAGS="${PHP_LDFLAGS}"; \
   make; \
   make install; \
-  runtimeDeps="$( \
-    scanelf --needed --nobanner --recursive /usr/sbin/php-fpm \
-      | awk '{ gsub(/,/, "\nso:", $2); print "so:" $2 }' \
+  if [ ${EXT_XDEBUG} = 'YES' ]; then \
+    load_archive "https://github.com/xdebug/xdebug/archive/${EXT_XDEBUG_VERSION}.tar.gz"; \
+    cd /tmp/xdebug-${EXT_XDEBUG_VERSION}; \
+    make_ext; \
+  fi; \
+  if [ ${EXT_APCU} = 'YES' ]; then \
+    load_archive "https://github.com/krakjoe/apcu/archive/v${EXT_APCU_VERSION}.tar.gz"; \
+    cd /tmp/apcu-${EXT_APCU_VERSION}; \
+    make_ext \
+      --$(if_yes ${EXT_APCU_RWLOCKS}   'enable' || echo 'disable')-apcu-rwlocks \
+      --$(if_yes ${EXT_APCU_SPINLOCKS} 'enable' || echo 'disable')-apcu-spinlocks; \
+  fi; \
+  if [ $(contains "${EXT_MSGPACK}${EXT_PHPREDIS_JSON}${EXT_MEMCACHED_JSON}" 'YES' true) ]; then \
+    load_archive "https://github.com/msgpack/msgpack-php/archive/msgpack-${EXT_MSGPACK_VERSION}.tar.gz"; \
+    cd /tmp/msgpack-php-msgpack-${EXT_MSGPACK_VERSION}; \
+    make_ext; \
+  fi; \
+  if [ ${EXT_PHPREDIS} = 'YES' ]; then \
+    load_archive "https://github.com/phpredis/phpredis/archive/${EXT_PHPREDIS_VERSION}.tar.gz"; \
+    cd /tmp/phpredis-${EXT_PHPREDIS_VERSION}; \
+    make_ext \
+      $(if_yes ${EXT_PHPREDIS_LZ4}  --enable-redis-lz4  --with-liblz4=/usr) \
+      $(if_yes ${EXT_PHPREDIS_ZSTD} --enable-redis-zstd --with-libzstd=/usr) \
+      --$(if_yes ${EXT_PHPREDIS_SESSION} 'enable' || echo 'disable')-redis-session \
+      --$(if_yes ${EXT_PHPREDIS_JSON}    'enable' || echo 'disable')-redis-json \
+      --$(if_eq "${EXT_MSGPACK}${EXT_PHPREDIS_MSGPACK}" 'YESYES' 'enable' || echo 'disable')-redis-msgpack; \
+  fi; \
+  if [ ${EXT_MEMCACHED} = 'YES' ]; then \
+    load_archive "https://github.com/php-memcached-dev/php-memcached/archive/v${EXT_MEMCACHED_VERSION}.tar.gz"; \
+    cd /tmp/php-memcached-${EXT_MEMCACHED_VERSION}; \
+    make_ext \
+      EXTRA_LDFLAGS="-lpthread" \
+      --disable-memcached-sasl \
+      --$(if_yes ${EXT_MEMCACHED_SESSION} 'enable' || echo 'disable')-memcached-session \
+      --$(if_yes ${EXT_MEMCACHED_JSON}    'enable' || echo 'disable')-memcached-json \
+      --$(if_eq "${EXT_MSGPACK}${EXT_MEMCACHED_MSGPACK}" 'YESYES' 'enable' || echo 'disable')-memcached-msgpack; \
+  fi; \
+  if [ ${EXT_MONGODB} = 'YES' ]; then \
+    MONGODB_ARCHIVE="mongodb-${EXT_MONGODB_VERSION}"; \
+    load_archive "https://github.com/mongodb/mongo-php-driver/releases/download/${EXT_MONGODB_VERSION}/${MONGODB_ARCHIVE}.tgz"; \
+    cd /tmp/${MONGODB_ARCHIVE}; \
+    make_ext \
+      --with-mongodb-sasl=no \
+      --with-mongodb-ssl=$(if_yes ${EXT_MONGODB_TLS} $(to_lowercase ${LIB_SSL}) || echo 'no') \
+      $(if_eq "${EXT_MONGODB_TLS}${LIB_SSL}${EXT_OPENSSL_SYSTEM_CIPHERS}" 'YESOPENSSLYES' \
+        --enable-mongodb-crypto-system-profile=on; \
+      ); \
+  fi; \
+  if [ ${EXT_AMQP} = 'YES' ]; then \
+    load_archive "https://github.com/php-amqp/php-amqp/archive/v${EXT_AMQP_VERSION}.tar.gz"; \
+    cd /tmp/php-amqp-${EXT_AMQP_VERSION}; \
+    make_ext \
+      --with-librabbitmq-dir=/usr; \
+  fi; \
+  : "-- Strip files"; \
+  rm -rf \
+    /usr/share/man \
+    /usr/include/* \
+    /usr/bin/phpize \
+    /usr/bin/php-config \
+    /usr/lib/php/build/ \
+    /usr/lib/php/**/*.a; \
+  find \
+    /usr/bin \
+    /usr/sbin \
+    /usr/lib \
+    -type f -perm +0111 -exec strip --strip-unneeded '{}' + || true; \
+  runtime_deps="$( \
+    scanelf --needed --nobanner --recursive -F '%n#p' /usr/bin/php /usr/sbin/php-fpm /usr/lib/php/ \
+      | tr ',' '\n' \
       | sort -u \
-      | xargs -r apk info --installed \
-      | sort -u \
-  )"; \
-  apk add --virtual .php-runtime-dependencies \
-    ${runtimeDeps}; \
-  : "---------- https://bugs.php.net/bug.php?id=52312 ----------"; \
-  git clone -o ${REALPATH_TURBO_TAG} --depth 1 https://github.com/Whissi/realpath_turbo.git /tmp/realpath_turbo; \
-  cd /tmp/realpath_turbo; \
-  phpize; \
-  ./configure; \
-  make; \
-  make install; \
-  : "---------- xDebug ----------"; \
-  git clone -o ${XDEBUG_TAG} --depth 1 https://github.com/xdebug/xdebug.git /tmp/xdebug; \
-  cd /tmp/xdebug; \
-  phpize; \
-  ./configure; \
-  make; \
-  make install; \
-  : "---------- Msgpack ----------"; \
-  git clone -o ${MSGPACK_TAG} --depth 1 https://github.com/msgpack/msgpack-php.git /tmp/msgpack-php; \
-  cd /tmp/msgpack-php; \
-  phpize; \
-  ./configure; \
-  make; \
-  make install; \
-  : "---------- Redis ----------"; \
-  git clone -o ${REDIS_TAG} --depth 1 https://github.com/phpredis/phpredis.git /tmp/redis; \
-  cd /tmp/redis; \
-  phpize; \
-  ./configure; \
-  make; \
-  make install; \
-  : "---------- Memcached ----------"; \
-  apk add --virtual .memcached-build-dependencies \
-    libmemcached-dev \
-    cyrus-sasl-dev; \
-  apk add --virtual .memcached-runtime-dependencies \
-    libmemcached; \
-  git clone -o ${MEMCACHED_TAG} --depth 1 https://github.com/php-memcached-dev/php-memcached.git /tmp/php-memcached; \
-  cd /tmp/php-memcached; \
-  phpize; \
-  ./configure \
-    --disable-memcached-sasl \
-    --enable-memcached-msgpack \
-    --enable-memcached-json; \
-  make; \
-  make install; \
-  apk del --no-network .memcached-build-dependencies; \
-  : "---------- MongoDB ----------"; \
-  apk add --virtual .mongodb-build-dependencies \
-    cmake \
-    pkgconfig; \
-  MONGODB_FILENAME="mongodb-${MONGODB_VERSION}"; \
-  MONGODB_SOURCE="https://github.com/mongodb/mongo-php-driver/releases/download/${MONGODB_VERSION}/${MONGODB_FILENAME}.tgz"; \
-  curl -fSL --connect-timeout 30 ${MONGODB_SOURCE} | tar xz -C /tmp; \
-  cd /tmp/${MONGODB_FILENAME}; \
-  phpize; \
-  ./configure \
-    --with-mongodb-ssl=openssl; \
-  make; \
-  make install; \
-  apk del --no-network .mongodb-build-dependencies; \
-  : "---------- php-amqp (RabbitMQ) ----------"; \
-  apk add --virtual .amqp-build-dependencies \
-    rabbitmq-c-dev; \
-  apk add --virtual .amqp-runtime-dependencies \
-    rabbitmq-c; \
-  git clone -o ${AMQP_TAG} --depth 1 https://github.com/pdezwart/php-amqp.git /tmp/php-amqp; \
-  cd /tmp/php-amqp; \
-  phpize; \
-  ./configure; \
-  make; \
-  make install; \
-  apk del --no-network .amqp-build-dependencies; \
-  : "---------- php-v8 ----------"; \
-  PHPV8_FILENAME="php-v8-${PHPV8_VERSION}"; \
-  PHPV8_SOURCE="https://github.com/pinepain/php-v8/archive/v${PHPV8_VERSION}.tar.gz"; \
-  curl -fSL --connect-timeout 30 ${PHPV8_SOURCE} | tar xz -C /tmp; \
-  cd /tmp/${PHPV8_FILENAME}; \
-  phpize; \
-  ./configure \
-    --with-v8=/usr/local/v8; \
-  make; \
-  make install; \
-  : "---------- Removing build dependencies, clean temporary files ----------"; \
-  apk del --no-network .php-build-dependencies; \
-  rm -rf /var/cache/apk/* /var/tmp/* /tmp/*
+      | sed 's/^/so:&/' \
+    )"; \
+  apk add --no-cache --virtual .php-runtime ${runtime_deps}; \
+  : "-- Remove build dependencies, clean temporary files"; \
+  apk del --no-network .php-build; \
+  rm -rf /tmp/* /var/tmp/*
 
 STOPSIGNAL SIGQUIT
 
-ENTRYPOINT ["tini", "--"]
-CMD ["php-fpm"]
+CMD ["php"]
