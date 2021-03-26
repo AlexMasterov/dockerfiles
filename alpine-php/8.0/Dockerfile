@@ -73,7 +73,7 @@ ARG EXT_MSGPACK=NO
 ARG EXT_MSGPACK_VERSION=2.1.2
 
 ARG EXT_PHPREDIS=NO
-ARG EXT_PHPREDIS_VERSION=5.3.3
+ARG EXT_PHPREDIS_VERSION=5.3.4
 ARG EXT_PHPREDIS_SESSION=YES
 ARG EXT_PHPREDIS_JSON=YES
 ARG EXT_PHPREDIS_MSGPACK=NO
@@ -262,7 +262,7 @@ RUN set -eux; \
       --$(if_yes ${EXT_APCU_RWLOCKS}   'enable' || echo 'disable')-apcu-rwlocks \
       --$(if_yes ${EXT_APCU_SPINLOCKS} 'enable' || echo 'disable')-apcu-spinlocks; \
   fi; \
-  if [ $(contains "${EXT_MSGPACK}${EXT_PHPREDIS_JSON}${EXT_MEMCACHED_JSON}" 'YES' true) ]; then \
+  if [ ${EXT_MSGPACK} = 'YES' ]; then \
     load_archive "https://github.com/msgpack/msgpack-php/archive/msgpack-${EXT_MSGPACK_VERSION}.tar.gz"; \
     cd /tmp/msgpack-php-msgpack-${EXT_MSGPACK_VERSION}; \
     make_ext; \
