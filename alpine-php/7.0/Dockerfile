@@ -7,7 +7,7 @@ LABEL repository.hub="alexmasterov/alpine-php:7.0" \
 ARG PHP_VERSION=7.0.33
 ARG PHP_CONFIG=/etc/php
 
-ARG PHP_CFLAGS="-march=native -O2 -fpic -fpie -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64"
+ARG PHP_CFLAGS="-march=native -O2 -fPIC -fpie -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64"
 ARG PHP_LDFLAGS="-Wl,-O1 -Wl,--hash-style=both -pie"
 
 ARG LIB_SSL=OPENSSL
@@ -96,13 +96,14 @@ RUN set -eux; \
   adduser -u 82 -S -D -h /var/cache/www-data -s /sbin/nologin -G www-data www-data
 
 RUN set -eux; \
-  if_eq() { [ ${1} = ${2} ] && shift 2 && echo "${*:-}"; }; \
-  if_no() { [ ${1} = 'NO' ] && shift 1 && echo "${*:-}"; }; \
-  if_yes() { [ ${1} = 'YES' ] && shift 1 && echo "${*:-}"; }; \
-  contains() { [ -z ${1##*${2}*} ] && shift 2 && echo "${*:-}"; }; \
+  if_eq() { [ ${1} = ${2} ] && shift 2 && echo ${*:-}; }; \
+  if_no() { [ ${1} = 'NO' ] && shift 1 && echo ${*:-}; }; \
+  if_yes() { [ ${1} = 'YES' ] && shift 1 && echo ${*:-}; }; \
+  contains() { [ -z ${1##*${2}*} ] && shift 2 && echo ${*:-}; }; \
   to_lowercase() { echo ${1:-} | tr '[:upper:]' '[:lower:]'; }; \
-  load_archive() { wget ${1} -T 30 -O - | tar ${2:-xz} -C /tmp; }; \
+  load_archive() { wget ${1} -T 30 -O - | tar ${2:-xmz} -C /tmp; }; \
   make_ext() { phpize; ./configure ${*:-}; make; make install; }; \
+  \
   apk add --no-cache --virtual .php-build \
     autoconf \
     bison \
@@ -165,7 +166,7 @@ RUN set -eux; \
   mv /usr/bin/gnu-iconv /usr/bin/iconv; \
   mv /usr/include/gnu-libiconv/*.h /usr/include; \
   : "-- Setup make flags"; \
-  MAKEFLAGS="-j $(( $(getconf _NPROCESSORS_ONLN) - 1 ))"; \
+  export MAKEFLAGS="-j $(( $(getconf _NPROCESSORS_ONLN) - 1 ))"; \
   : "-- PHP: download"; \
   load_archive "https://www.php.net/distributions/php-${PHP_VERSION}.tar.xz" xJ; \
   cd /tmp/php-${PHP_VERSION}; \

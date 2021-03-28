@@ -17,25 +17,26 @@ RUN set -eux; \
   adduser -u 82 -S -D -h /var/cache/memcache -s /sbin/nologin -G memcache memcache
 
 RUN set -eux; \
-  if_eq() { [ ${1} = ${2} ] && echo ${3:-} || echo ${4:-}; }; \
-  load_archive() { wget ${1} -T 30 -O - | tar ${2:-xz} -C /tmp; }; \
+  if_yes() { [ ${1} = 'YES' ] && shift 1 && echo ${*:-}; }; \
+  load_archive() { wget ${1} -T 30 -O - | tar ${2:-xmz} -C /tmp; }; \
+  \
   apk add --no-cache --virtual .memcached-build \
     g++ \
     gcc \
     libevent-dev \
     make \
-    $(if_eq ${MEMCACHED_TLS} 'YES' openssl-dev); \
-  : "-- Download Memcached"; \
+    $(if_yes ${MEMCACHED_TLS} openssl-dev); \
+  : "-- Memcached: download"; \
   load_archive "https://memcached.org/files/memcached-${MEMCACHED_VERSION}.tar.gz"; \
   cd /tmp/memcached-${MEMCACHED_VERSION}; \
-  : "-- Build Memcached"; \
+  : "-- Memcached: build"; \
   ./configure \
     --disable-docs \
     --disable-coverage \
-    --$(if_eq ${MEMCACHED_TLS}      'YES' 'enable' 'disable')-tls \
-    --$(if_eq ${MEMCACHED_EXTSTORE} 'YES' 'enable' 'disable')-extstore \
-    CFLAGS="${MEMCACHED_CFLAGS}" \
-    CPPFLAGS="${MEMCACHED_CFLAGS}"; \
+    --$(if_yes ${MEMCACHED_TLS}      enable || echo disable)-tls \
+    --$(if_yes ${MEMCACHED_EXTSTORE} enable || echo disable)-extstore \
+    CFLAGS="${MEMCACHED_CFLAGS:-}" \
+    CPPFLAGS="${MEMCACHED_CFLAGS:-}"; \
   make -j $(getconf _NPROCESSORS_ONLN); \
   make install; \
   runtime_deps="$( \

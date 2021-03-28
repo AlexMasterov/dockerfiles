@@ -7,7 +7,7 @@ LABEL repository.hub="alexmasterov/alpine-php:8.0" \
 ARG PHP_VERSION=8.0.3
 ARG PHP_CONFIG=/etc/php
 
-ARG PHP_CFLAGS="-march=native -O2 -fpic -fpie -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64"
+ARG PHP_CFLAGS="-march=native -O2 -fPIC -fpie -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64"
 ARG PHP_LDFLAGS="-Wl,-O1 -Wl,--hash-style=both -pie"
 
 ARG LIB_SSL=OPENSSL
@@ -98,13 +98,14 @@ RUN set -eux; \
   adduser -u 82 -S -D -h /var/cache/www-data -s /sbin/nologin -G www-data www-data
 
 RUN set -eux; \
-  if_eq() { [ ${1} = ${2} ] && shift 2 && echo "${*:-}"; }; \
-  if_no() { [ ${1} = 'NO' ] && shift 1 && echo "${*:-}"; }; \
-  if_yes() { [ ${1} = 'YES' ] && shift 1 && echo "${*:-}"; }; \
-  contains() { [ -z ${1##*${2}*} ] && shift 2 && echo "${*:-}"; }; \
+  if_eq() { [ ${1} = ${2} ] && shift 2 && echo ${*:-}; }; \
+  if_no() { [ ${1} = 'NO' ] && shift 1 && echo ${*:-}; }; \
+  if_yes() { [ ${1} = 'YES' ] && shift 1 && echo ${*:-}; }; \
+  contains() { [ -z ${1##*${2}*} ] && shift 2 && echo ${*:-}; }; \
   to_lowercase() { echo ${1:-} | tr '[:upper:]' '[:lower:]'; }; \
-  load_archive() { wget ${1} -T 30 -O - | tar ${2:-xz} -C /tmp; }; \
+  load_archive() { wget ${1} -T 30 -O - | tar ${2:-xmz} -C /tmp; }; \
   make_ext() { phpize; ./configure ${*:-}; make; make install; }; \
+  \
   apk add --no-cache --virtual .php-build \
     autoconf \
     bison \
@@ -251,24 +252,24 @@ RUN set -eux; \
   make; \
   make install; \
   if [ ${EXT_XDEBUG} = 'YES' ]; then \
-    load_archive "https://github.com/xdebug/xdebug/archive/${EXT_XDEBUG_VERSION}.tar.gz"; \
+    load_archive https://github.com/xdebug/xdebug/archive/${EXT_XDEBUG_VERSION}.tar.gz; \
     cd /tmp/xdebug-${EXT_XDEBUG_VERSION}; \
     make_ext; \
   fi; \
   if [ ${EXT_APCU} = 'YES' ]; then \
-    load_archive "https://github.com/krakjoe/apcu/archive/v${EXT_APCU_VERSION}.tar.gz"; \
+    load_archive https://github.com/krakjoe/apcu/archive/v${EXT_APCU_VERSION}.tar.gz; \
     cd /tmp/apcu-${EXT_APCU_VERSION}; \
     make_ext \
       --$(if_yes ${EXT_APCU_RWLOCKS}   'enable' || echo 'disable')-apcu-rwlocks \
       --$(if_yes ${EXT_APCU_SPINLOCKS} 'enable' || echo 'disable')-apcu-spinlocks; \
   fi; \
   if [ ${EXT_MSGPACK} = 'YES' ]; then \
-    load_archive "https://github.com/msgpack/msgpack-php/archive/msgpack-${EXT_MSGPACK_VERSION}.tar.gz"; \
+    load_archive https://github.com/msgpack/msgpack-php/archive/msgpack-${EXT_MSGPACK_VERSION}.tar.gz; \
     cd /tmp/msgpack-php-msgpack-${EXT_MSGPACK_VERSION}; \
     make_ext; \
   fi; \
   if [ ${EXT_PHPREDIS} = 'YES' ]; then \
-    load_archive "https://github.com/phpredis/phpredis/archive/${EXT_PHPREDIS_VERSION}.tar.gz"; \
+    load_archive https://github.com/phpredis/phpredis/archive/${EXT_PHPREDIS_VERSION}.tar.gz; \
     cd /tmp/phpredis-${EXT_PHPREDIS_VERSION}; \
     make_ext \
       $(if_yes ${EXT_PHPREDIS_LZ4}  --enable-redis-lz4  --with-liblz4=/usr) \
@@ -278,7 +279,7 @@ RUN set -eux; \
       --$(if_eq "${EXT_MSGPACK}${EXT_PHPREDIS_MSGPACK}" 'YESYES' 'enable' || echo 'disable')-redis-msgpack; \
   fi; \
   if [ ${EXT_MEMCACHED} = 'YES' ]; then \
-    load_archive "https://github.com/php-memcached-dev/php-memcached/archive/v${EXT_MEMCACHED_VERSION}.tar.gz"; \
+    load_archive https://github.com/php-memcached-dev/php-memcached/archive/v${EXT_MEMCACHED_VERSION}.tar.gz; \
     cd /tmp/php-memcached-${EXT_MEMCACHED_VERSION}; \
     make_ext \
       EXTRA_LDFLAGS="-lpthread" \
@@ -289,7 +290,7 @@ RUN set -eux; \
   fi; \
   if [ ${EXT_MONGODB} = 'YES' ]; then \
     MONGODB_ARCHIVE="mongodb-${EXT_MONGODB_VERSION}"; \
-    load_archive "https://github.com/mongodb/mongo-php-driver/releases/download/${EXT_MONGODB_VERSION}/${MONGODB_ARCHIVE}.tgz"; \
+    load_archive https://github.com/mongodb/mongo-php-driver/releases/download/${EXT_MONGODB_VERSION}/${MONGODB_ARCHIVE}.tgz; \
     cd /tmp/${MONGODB_ARCHIVE}; \
     make_ext \
       --with-mongodb-sasl=no \
@@ -299,7 +300,7 @@ RUN set -eux; \
       ); \
   fi; \
   if [ ${EXT_AMQP} = 'YES' ]; then \
-    load_archive "https://github.com/php-amqp/php-amqp/archive/v${EXT_AMQP_VERSION}.tar.gz"; \
+    load_archive https://github.com/php-amqp/php-amqp/archive/v${EXT_AMQP_VERSION}.tar.gz; \
     cd /tmp/php-amqp-${EXT_AMQP_VERSION}; \
     make_ext \
       --with-librabbitmq-dir=/usr; \
