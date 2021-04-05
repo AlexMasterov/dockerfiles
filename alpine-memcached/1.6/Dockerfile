@@ -21,6 +21,7 @@ RUN set -eux; \
   load_archive() { wget ${1} -T 30 -O - | tar ${2:-xmz} -C /tmp; }; \
   \
   apk add --no-cache --virtual .memcached-build \
+    autoconf \
     g++ \
     gcc \
     libevent-dev \
