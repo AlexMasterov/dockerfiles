@@ -55,7 +55,7 @@ RUN set -eux; \
   NUM_JOBS=${NUM_JOBS:-$(getconf _NPROCESSORS_ONLN)}; \
   \
   load_archive() { [ -d ${2} ] || mkdir -p "${2}"; wget ${1} -T 30 -O - | tar xmz -C "${2}"; }; \
-  as_ver() { echo ${1//./ } | (read x y z w; y="00${y:-0}" z="00${z:-0}" w="00${w:-0}"; echo "${x}${y:(-3)}${z:(-3)}${w:(-3)}"); }; \
+  as_ver() { set -- ${1//./ }; local y="00${2:-0}" z="00${3:-0}" w="00${4:-0}"; echo "${1}${y:(-3)}${z:(-3)}${w:(-3)}"; }; \
   compare_ver() { test $(as_ver ${1}) -${2} $(as_ver ${3}); }; \
   if_v8_ver() { if compare_ver ${V8_VERSION} ${1} ${2}; then shift 2; echo "${*:-}"; fi; }; \
   if_yes() { if [ ${1} = 'YES' ]; then shift 1; echo "${*:-}"; fi; }; \
@@ -111,7 +111,7 @@ https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories; \
   if [ ${USE_GN_SOURCE} = 'YES' ]; then \
     GN_SOURCE=/tmp/gn; \
     gn_rev=${GN_SOURCE_REV:-$(sed -rn "/['\"]gn_version['\"]:\s*/{N;s/.*['\"]git_revision:(.*)['\"],?/\1/p}" ${V8_DEPS})}; \
-    gn_rev=${GN_REV:?GN_SOURCE_REV is required}; \
+    gn_rev=${gn_rev:?GN_SOURCE_REV is required}; \
     : "-- GN SOURCE: download"; \
     load_archive "${GN_SOURCE_REPO}/+archive/${gn_rev}.tar.gz" ${GN_SOURCE}; \
     : "-- GN SOURCE: stop regen config and speedup build"; \
