@@ -5,7 +5,7 @@ LABEL repository.hub="alexmasterov/alpine-v8" \
       maintainer="Alex Masterov <alex.masterow@gmail.com>"
 
 # >= 6.1.211
-ARG V8_VERSION=9.2.11
+ARG V8_VERSION=9.2.15
 
 ARG V8_SHELL=NO
 ARG V8_STATIC=NO
@@ -54,9 +54,10 @@ RUN set -eux; \
   V8_DEPS=${V8_SOURCE}/DEPS; \
   NUM_JOBS=${NUM_JOBS:-$(getconf _NPROCESSORS_ONLN)}; \
   case $(cat /etc/apk/arch) in \
-    x86_64)      ARCH="x64" ;; \
-    x86)         ARCH="x86" ;; \
-    armhf|armv7) ARCH="arm" ;; \
+    x86_64)      ARCH="x64"   ;; \
+    x86)         ARCH="x86"   ;; \
+    armhf|armv7) ARCH="arm"   ;; \
+    aarch64)     ARCH="arm64" ;; \
   esac; \
   \
   load_archive() { [ -d ${2} ] || mkdir -p "${2}"; wget ${1} -T 30 -O - | tar xmz -C "${2}"; }; \
@@ -173,12 +174,19 @@ https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories; \
     sed -ri "s/(set_sources_assignment_filter)\(.*\)/\1([])/" build/config/BUILDCONFIG.gn; \
   fi; \
   if [ ${ARCH} = 'arm' ]; then \
-    sed -ri "s/(V8_HOST_ARCH)_PPC \|\| V8_HOST_ARCH_PPC64/& || \1_ARM/" src/base/cpu.cc; \
-    sed -ri "s/\"(--target)=arm-linux-gnueabihf\"/\"\1=$(g++ -dumpmachine)\"/" build/config/compiler/BUILD.gn; \
+    sed -ri "s/\"(--target)=arm-.*\"/\"\1=$(g++ -dumpmachine)\"/" build/config/compiler/BUILD.gn; \
+  fi; \
+  if [ ${ARCH} = 'arm64' ]; then \
+    dumpmachine=$(g++ -dumpmachine); \
+    sed -ri "s/\"(--target)=aarch64-.*\"/\"\1=${dumpmachine}\"/" build/config/compiler/BUILD.gn; \
+    sed -ri "s/(toolprefix) = \"aarch64-.*\"/\1 = \"\/usr\/${dumpmachine}\/bin\/\"/" build/toolchain/linux/BUILD.gn; \
   fi; \
   \
   : "-- Patch: compiler"; \
   if [ ${USE_CLANG} = 'NO' ]; then \
+    if contains ${ARCH} 'arm' && compare_ver ${V8_VERSION} ge 8.0.365; then \
+      sed -ri "s/if \(arm_use_neon/& \&\& is_clang/" third_party/zlib/BUILD.gn; \
+    fi; \
     : "-- Patch: V8 is not -fsanitize=null clean (issue 3782)"; \
     sed -ri "s/(cflags)\s*=\s*\[(.*)\]/\1 = [\"-fno-delete-null-pointer-checks\", \2]/" BUILD.gn; \
   fi; \
@@ -206,6 +214,9 @@ https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories; \
     -e "s/^#if V8_LIBC_GLIBC.*/#if 0/" \
     -e "/const char k(MangledSymbolPrefix|SymbolCharacters).*/{N;s/.*\";//}" \
     src/base/debug/stack_trace_posix.cc; \
+  if contains ${ARCH} 'arm'; then \
+    sed -ri "s/(V8_HOST_ARCH)_PPC \|\| V8_HOST_ARCH_PPC64/& \|\| \1_ARM \|\| \1_ARM64/" src/base/cpu.cc; \
+  fi; \
   : "-- GN: generate instructions"; \
   gn gen out \
     --script-executable=/usr/bin/python2 \
