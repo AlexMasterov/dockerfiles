@@ -5,7 +5,7 @@ LABEL repository.hub="alexmasterov/alpine-v8" \
       maintainer="Alex Masterov <alex.masterow@gmail.com>"
 
 # >= 6.1.211
-ARG V8_VERSION=9.2.2
+ARG V8_VERSION=9.2.5
 
 ARG V8_SHELL=NO
 ARG V8_STATIC=NO
@@ -119,7 +119,7 @@ https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories; \
     : "-- GN SOURCE: stop regen config and speedup build"; \
     sed -ri \
       -e "s/(generator\s*=).*',/\1 0'/" \
-      -e "s/executables\['gn_unittests'\].*//g" \
+      -e "/executables\['gn_unittests'\]/d" \
       -e "s/[^def] WriteGenericNinja/  del executables['gn_unittests']\n\n&/" \
       ${GN_SOURCE}/build/gen.py; \
     : "-- GN SOURCE: build"; \
@@ -131,7 +131,7 @@ https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories; \
     \n#ifndef OUT_LAST_COMMIT_POSITION_H_ \
     \n#define OUT_LAST_COMMIT_POSITION_H_ \
     \n#define LAST_COMMIT_POSITION_NUM 0 \
-    \n#define LAST_COMMIT_POSITION \"${GN_REV::8}\" \
+    \n#define LAST_COMMIT_POSITION \"${gn_rev::8}\" \
     \n#endif \
     " > ${GN_SOURCE}/out/last_commit_position.h; \
     ninja \
@@ -155,7 +155,7 @@ https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories; \
     sed -i "s/import(\"\/\/third_party\/icu\/config.gni\")/icu_use_data_file = false/" gni/isolate.gni; \
   fi; \
   if compare_ver ${V8_VERSION} le 7.1.165 && compare_ver ${V8_VERSION} ge 7.1.79; then \
-    sed -i "s/import(\"\/\/third_party\/catapult\/devil\/devil_arm\.gni\")//" build/config/arm.gni; \
+    sed -i "/import(\"\/\/third_party\/catapult\/devil\/devil_arm\.gni\")/d" build/config/arm.gni; \
   fi; \
   if compare_ver ${V8_VERSION} le 7.2.505 && compare_ver ${V8_VERSION} ge 7.1.78; then \
     sed -i "s/if (use_atk)/if (false)/" build/config/linux/BUILD.gn; \
@@ -283,15 +283,17 @@ https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories; \
     \
     if [ ${OUT_LIBCXX} = 'YES' ]; then \
       : "-- Out: C++ shared libraries"; \
-      v8_std_libs=$(get_deps ${V8_PATH}/lib | paste -sd "|"); \
-      std_libs="$(find /usr/lib \( -type f -or -type l \) -and -regex ".*\(${v8_std_libs//\|/\\\|}\)")"; \
+      v8_std_libs=$(get_deps ${V8_PATH}/lib | paste -sd '|'); \
+      std_libs=$(find /usr/lib -regex ".*\(${v8_std_libs//\|/\\\|}\)" -and \( -type f -or -type l \)); \
       \
-      for std_lib in ${std_libs}; do { \
-        std_lib_deps=$(ldd ${std_lib} | sed -rn "s/.* => (\/usr\/lib\/.*) \(.*\)/\1/p"); \
-        \
-        cp -f --dereference ${std_lib} ${std_lib_deps} ${V8_PATH}/lib; \
-      } \
+      out_libs=""; \
+      for std_lib in ${std_libs}; do \
+        std_lib_deps=$(ldd ${std_lib} | sed -rn "s/.*=> (\/usr\/lib\/.*) \(.*\)/\1/p"); \
+        out_libs="${std_lib} ${std_lib_deps} ${out_libs}"; \
       done; \
+      out_libs=$(echo ${out_libs} | tr ' ' '\n' | sort -u); \
+      \
+      cp --dereference ${out_libs} ${V8_PATH}/lib; \
     fi; \
     \
     chmod -R 755 ${V8_PATH}/lib/; \
@@ -303,8 +305,10 @@ https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories; \
     mv ${V8_SOURCE}/out/d8 ${V8_PATH}/bin/d8; \
     ln -f ${V8_PATH}/bin/d8 /usr/local/bin/d8; \
     \
-    d8_std_libs=$(get_deps ${V8_PATH}/bin/d8 | sed "s/^/so:&/"); \
-    apk add --no-cache --virtual .d8-runtime ${d8_std_libs}; \
+    if [[ ${V8_MONOLITHIC} = 'YES' || "${V8_MONOLITHIC}${OUT_LIBCXX}" = 'NONO' ]]; then \
+      d8_std_libs=$(get_deps ${V8_PATH}/bin/d8 | sed "s/^/so:&/"); \
+      apk add --no-cache --virtual .d8-runtime ${d8_std_libs}; \
+    fi; \
   fi; \
   if [ ${OUT_STRIP} = 'YES' ]; then \
     find ${V8_PATH} -type f -executable -not -name "*.a" \
