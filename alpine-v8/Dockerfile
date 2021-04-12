@@ -5,7 +5,7 @@ LABEL repository.hub="alexmasterov/alpine-v8" \
       maintainer="Alex Masterov <alex.masterow@gmail.com>"
 
 # >= 6.1.211
-ARG V8_VERSION=9.1.265
+ARG V8_VERSION=9.2.2
 
 ARG V8_SHELL=NO
 ARG V8_STATIC=NO
@@ -43,6 +43,7 @@ ARG GN_EXTRA_ARGS
 
 ARG SOURCE_REPO=https://chromium.googlesource.com
 
+ARG OUT_LIBCXX=NO
 ARG OUT_HEADERS=YES
 ARG OUT_STRIP=YES
 
@@ -55,6 +56,7 @@ RUN set -eux; \
   NUM_JOBS=${NUM_JOBS:-$(getconf _NPROCESSORS_ONLN)}; \
   \
   load_archive() { [ -d ${2} ] || mkdir -p "${2}"; wget ${1} -T 30 -O - | tar xmz -C "${2}"; }; \
+  get_deps() { scanelf --needed --nobanner -F '%n#p' "${*:-}" | tr ',' '\n' | sed -r "/($(ls -1 ${V8_PATH}/lib | paste -sd '|'))/d" | sort -u; }; \
   as_ver() { set -- ${1//./ }; local y="00${2:-0}" z="00${3:-0}" w="00${4:-0}"; echo "${1}${y:(-3)}${z:(-3)}${w:(-3)}"; }; \
   compare_ver() { test $(as_ver ${1}) -${2} $(as_ver ${3}); }; \
   if_v8_ver() { if compare_ver ${V8_VERSION} ${1} ${2}; then shift 2; echo "${*:-}"; fi; }; \
@@ -210,6 +212,7 @@ https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories; \
       ) \
       use_sysroot=false \
       use_custom_libcxx=false \
+      use_custom_libcxx_for_host=false \
       use_glib=false \
       use_gold=false \
       use_lld=$(to_bool ${USE_LLD}) \
@@ -232,14 +235,12 @@ https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories; \
         is_component_build=true \
         v8_use_external_startup_data=$(to_bool ${V8_EXTERNAL_STARTUP_DATA}) \
       ) \
-      v8_target_cpu=\"x64\" \
       v8_static_library=$(to_bool ${V8_STATIC}) \
       v8_symbol_level=${V8_SYMBOL_LEVEL:-1} \
       \
       v8_use_siphash=$(to_bool ${V8_SIPHASH}) \
       v8_win64_unwinding_info=false \
       v8_enable_backtrace=true \
-      v8_enable_test_features=false \
       v8_enable_gdbjit=false \
       v8_enable_vtunejit=false \
       v8_enable_vtunetracemark=false \
@@ -263,30 +264,47 @@ https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories; \
   \
   mkdir -p ${V8_PATH}; \
   if [ ${OUT_HEADERS} = 'YES' ]; then \
-    : "-- V8: out headers"; \
+    : "-- Out: V8 headers"; \
     find ${V8_SOURCE}/include/ -depth \( -type f -not -name "*.h" -or -type d -empty \) -delete; \
     chmod -R 644 ${V8_SOURCE}/include/; \
     mv include ${V8_PATH}; \
   fi; \
   if [[ ${V8_MONOLITHIC} = 'YES' || ${V8_STATIC} = 'YES' ]]; then \
-    : "-- V8: out static libraries"; \
+    : "-- Out: V8 static libraries"; \
     find ${V8_SOURCE}/out/obj/ -depth \( -type f -not -name "*.a" -or -type d -empty \) -delete; \
     chmod -R 755 ${V8_SOURCE}/out/obj/; \
     mv ${V8_SOURCE}/out/obj ${V8_PATH}; \
   fi; \
   if [ ${V8_MONOLITHIC} = 'NO' ]; then \
-    : "-- V8: out shared libraries"; \
+    : "-- Out: V8 shared libraries"; \
     mkdir -p ${V8_PATH}/lib; \
     find ${V8_SOURCE}/out/ -type f -regex ".*.\(so\|bin\|dat\)" -maxdepth 1 \
-      -exec chmod 755 '{}' + \
       -exec mv '{}' ${V8_PATH}/lib +; \
-    ln -f ${V8_PATH}/lib/*.so /usr/local/lib; \
+    \
+    if [ ${OUT_LIBCXX} = 'YES' ]; then \
+      : "-- Out: C++ shared libraries"; \
+      v8_std_libs=$(get_deps ${V8_PATH}/lib | paste -sd "|"); \
+      std_libs="$(find /usr/lib \( -type f -or -type l \) -and -regex ".*\(${v8_std_libs//\|/\\\|}\)")"; \
+      \
+      for std_lib in ${std_libs}; do { \
+        std_lib_deps=$(ldd ${std_lib} | sed -rn "s/.* => (\/usr\/lib\/.*) \(.*\)/\1/p"); \
+        \
+        cp -f --dereference ${std_lib} ${std_lib_deps} ${V8_PATH}/lib; \
+      } \
+      done; \
+    fi; \
+    \
+    chmod -R 755 ${V8_PATH}/lib/; \
+    ln -f ${V8_PATH}/lib/*.so* /usr/local/lib; \
   fi; \
   if [ ${V8_SHELL} = 'YES' ]; then \
-    : "-- V8: out executables"; \
+    : "-- Out: V8 executables"; \
     mkdir -p ${V8_PATH}/bin; \
     mv ${V8_SOURCE}/out/d8 ${V8_PATH}/bin/d8; \
     ln -f ${V8_PATH}/bin/d8 /usr/local/bin/d8; \
+    \
+    d8_std_libs=$(get_deps ${V8_PATH}/bin/d8 | sed "s/^/so:&/"); \
+    apk add --no-cache --virtual .d8-runtime ${d8_std_libs}; \
   fi; \
   if [ ${OUT_STRIP} = 'YES' ]; then \
     find ${V8_PATH} -type f -executable -not -name "*.a" \
