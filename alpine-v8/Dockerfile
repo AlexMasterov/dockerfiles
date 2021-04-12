@@ -5,7 +5,7 @@ LABEL repository.hub="alexmasterov/alpine-v8" \
       maintainer="Alex Masterov <alex.masterow@gmail.com>"
 
 # >= 6.1.211
-ARG V8_VERSION=9.2.5
+ARG V8_VERSION=9.2.11
 
 ARG V8_SHELL=NO
 ARG V8_STATIC=NO
@@ -25,7 +25,6 @@ ARG V8_31BIT_SMIS_ON_64BIT_ARCH=YES
 ARG V8_UNTRUSTED_CODE_MITIGATIONS=NO
 ARG V8_TYPED_ARRAY_MAX_SIZE_IN_HEAP=64
 
-ARG TARGET_CPU=x64
 ARG SYMBOL_LEVEL=0
 
 ARG USE_CLANG=YES
@@ -54,6 +53,11 @@ RUN set -eux; \
   V8_SOURCE=/tmp/v8; \
   V8_DEPS=${V8_SOURCE}/DEPS; \
   NUM_JOBS=${NUM_JOBS:-$(getconf _NPROCESSORS_ONLN)}; \
+  case $(cat /etc/apk/arch) in \
+    x86_64)      ARCH="x64" ;; \
+    x86)         ARCH="x86" ;; \
+    armhf|armv7) ARCH="arm" ;; \
+  esac; \
   \
   load_archive() { [ -d ${2} ] || mkdir -p "${2}"; wget ${1} -T 30 -O - | tar xmz -C "${2}"; }; \
   get_deps() { scanelf --needed --nobanner -F '%n#p' "${*:-}" | tr ',' '\n' | sed -r "/($(ls -1 ${V8_PATH}/lib | paste -sd '|'))/d" | sort -u; }; \
@@ -63,6 +67,7 @@ RUN set -eux; \
   if_yes() { if [ ${1} = 'YES' ]; then shift 1; echo "${*:-}"; fi; }; \
   if_no() { if [ ${1} = 'NO' ]; then shift 1; echo "${*:-}"; fi; }; \
   to_bool() { if [ ${1} = 'YES' ]; then echo true; else echo false; fi; }; \
+  contains() { if [ -z ${1##*${2}*} ]; then shift 2; echo "${*:-}"; fi; }; \
   \
   echo -e "\
 https://dl-cdn.alpinelinux.org/alpine/edge/main\n\
@@ -126,6 +131,7 @@ https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories; \
     python2 ${GN_SOURCE}/build/gen.py \
       --host=linux \
       --platform=linux \
+      --no-static-libstdc++ \
       --no-last-commit-position; \
     echo -e "\
     \n#ifndef OUT_LAST_COMMIT_POSITION_H_ \
@@ -166,6 +172,10 @@ https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories; \
   if compare_ver ${V8_VERSION} le 8.7.209; then \
     sed -ri "s/(set_sources_assignment_filter)\(.*\)/\1([])/" build/config/BUILDCONFIG.gn; \
   fi; \
+  if [ ${ARCH} = 'arm' ]; then \
+    sed -ri "s/(V8_HOST_ARCH)_PPC \|\| V8_HOST_ARCH_PPC64/& || \1_ARM/" src/base/cpu.cc; \
+    sed -ri "s/\"(--target)=arm-linux-gnueabihf\"/\"\1=$(g++ -dumpmachine)\"/" build/config/compiler/BUILD.gn; \
+  fi; \
   \
   : "-- Patch: compiler"; \
   if [ ${USE_CLANG} = 'NO' ]; then \
@@ -200,7 +210,7 @@ https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories; \
   gn gen out \
     --script-executable=/usr/bin/python2 \
     --args=" \
-      target_cpu=\"${TARGET_CPU:-x64}\" \
+      target_cpu=\"${ARCH}\" \
       target_os=\"linux\" \
       symbol_level=${SYMBOL_LEVEL:-1} \
       \
@@ -238,6 +248,7 @@ https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories; \
       v8_static_library=$(to_bool ${V8_STATIC}) \
       v8_symbol_level=${V8_SYMBOL_LEVEL:-1} \
       \
+      v8_target_cpu=\"${ARCH}\" \
       v8_use_siphash=$(to_bool ${V8_SIPHASH}) \
       v8_win64_unwinding_info=false \
       v8_enable_backtrace=true \
@@ -248,10 +259,12 @@ https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories; \
       v8_enable_google_benchmark=false \
       v8_enable_i18n_support=$(to_bool ${V8_INTL}) \
       v8_enable_object_print=$(to_bool ${V8_OBJECT_PRINT}) \
-      v8_enable_pointer_compression=$(to_bool ${V8_POINTER_COMPRESSION}) \
-      v8_enable_31bit_smis_on_64bit_arch=$(to_bool ${V8_31BIT_SMIS_ON_64BIT_ARCH}) \
-      v8_untrusted_code_mitigations=$(to_bool ${V8_UNTRUSTED_CODE_MITIGATIONS}) \
       v8_typed_array_max_size_in_heap=${V8_TYPED_ARRAY_MAX_SIZE_IN_HEAP:-64} \
+      v8_untrusted_code_mitigations=$(to_bool ${V8_UNTRUSTED_CODE_MITIGATIONS}) \
+      $(contains ${ARCH} '64' \
+        v8_enable_pointer_compression=$(to_bool ${V8_POINTER_COMPRESSION}) \
+        v8_enable_31bit_smis_on_64bit_arch=$(to_bool ${V8_31BIT_SMIS_ON_64BIT_ARCH}) \
+      ) \
       ${GN_EXTRA_ARGS:-} \
     "; \
   : "-- Ninja: build V8"; \
@@ -316,7 +329,7 @@ https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories; \
   fi; \
   \
   : "-- Remove build dependencies, clean temporary files"; \
-  apk del --no-network .v8-build*; \
+  apk del --no-network .v8-build; \
   rm -rf /tmp/* /var/tmp/*
 
 WORKDIR ${V8_PATH}
