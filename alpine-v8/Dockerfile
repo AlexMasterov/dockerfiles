@@ -5,11 +5,12 @@ LABEL repository.hub="alexmasterov/alpine-v8" \
       maintainer="Alex Masterov <alex.masterow@gmail.com>"
 
 # >= 6.1.211
-ARG V8_VERSION=9.2.15
+ARG V8_VERSION=9.2.24
 
 ARG V8_SHELL=NO
-ARG V8_STATIC=NO
 ARG V8_MONOLITHIC=NO
+ARG V8_STATIC_LIB=NO
+ARG V8_SHARED_LIB=YES
 
 ARG V8_DEBUG=NO
 ARG V8_DEBUG_OPT=NO
@@ -50,15 +51,15 @@ ENV V8_VERSION=${V8_VERSION} \
     V8_PATH=/usr/local/v8
 
 RUN set -eux; \
-  V8_SOURCE=/tmp/v8; \
-  V8_DEPS=${V8_SOURCE}/DEPS; \
-  NUM_JOBS=${NUM_JOBS:-$(getconf _NPROCESSORS_ONLN)}; \
   case $(cat /etc/apk/arch) in \
     x86_64)      ARCH="x64"   ;; \
     x86)         ARCH="x86"   ;; \
     armhf|armv7) ARCH="arm"   ;; \
     aarch64)     ARCH="arm64" ;; \
   esac; \
+  V8_SOURCE=/tmp/v8; \
+  V8_DEPS=${V8_SOURCE}/DEPS; \
+  NUM_JOBS=${NUM_JOBS:-$(getconf _NPROCESSORS_ONLN)}; \
   \
   load_archive() { [ -d ${2} ] || mkdir -p "${2}"; wget ${1} -T 30 -O - | tar xmz -C "${2}"; }; \
   get_deps() { scanelf --needed --nobanner -F '%n#p' "${*:-}" | tr ',' '\n' | sed -r "/($(ls -1 ${V8_PATH}/lib | paste -sd '|'))/d" | sort -u; }; \
@@ -201,6 +202,9 @@ https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories; \
   fi; \
   \
   : "-- Patch: V8"; \
+  if contains ${ARCH} 'arm'; then \
+    sed -ri "s/(V8_HOST_ARCH)_PPC \|\| V8_HOST_ARCH_PPC64/& \|\| \1_ARM \|\| \1_ARM64/" src/base/cpu.cc; \
+  fi; \
   if compare_ver ${V8_VERSION} le 7.4.221; then \
     : "-- Patch: fix deadlock in OptimizingCompileDispatcher (issue 935358)"; \
     sed -ri "/.*access_output_queue_.*;\s*/{N;s/(.*output_queue_\.push.*)/{\n\1\n}/}" \
@@ -214,9 +218,6 @@ https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories; \
     -e "s/^#if V8_LIBC_GLIBC.*/#if 0/" \
     -e "/const char k(MangledSymbolPrefix|SymbolCharacters).*/{N;s/.*\";//}" \
     src/base/debug/stack_trace_posix.cc; \
-  if contains ${ARCH} 'arm'; then \
-    sed -ri "s/(V8_HOST_ARCH)_PPC \|\| V8_HOST_ARCH_PPC64/& \|\| \1_ARM \|\| \1_ARM64/" src/base/cpu.cc; \
-  fi; \
   : "-- GN: generate instructions"; \
   gn gen out \
     --script-executable=/usr/bin/python2 \
@@ -244,22 +245,23 @@ https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories; \
       fatal_linker_warnings=false \
       treat_warnings_as_errors=false \
       \
+      v8_target_cpu=\"${ARCH}\" \
       is_debug=$(to_bool ${V8_DEBUG}) \
       $(if_yes ${V8_DEBUG} v8_optimized_debug=$(to_bool ${V8_DEBUG_OPT})) \
       $(if_no  ${V8_DEBUG} v8_enable_disassembler=$(to_bool ${V8_DISASSEMBLER})) \
+      v8_symbol_level=${V8_SYMBOL_LEVEL:-1} \
+      \
+      v8_static_library=$(to_bool ${V8_STATIC_LIB}) \
       $(if_yes ${V8_MONOLITHIC} \
         is_component_build=false \
         v8_monolithic=true \
         v8_use_external_startup_data=false \
       ) \
       $(if_no ${V8_MONOLITHIC} \
-        is_component_build=true \
+        is_component_build=$(to_bool ${V8_SHARED_LIB}) \
         v8_use_external_startup_data=$(to_bool ${V8_EXTERNAL_STARTUP_DATA}) \
       ) \
-      v8_static_library=$(to_bool ${V8_STATIC}) \
-      v8_symbol_level=${V8_SYMBOL_LEVEL:-1} \
       \
-      v8_target_cpu=\"${ARCH}\" \
       v8_use_siphash=$(to_bool ${V8_SIPHASH}) \
       v8_win64_unwinding_info=false \
       v8_enable_backtrace=true \
@@ -283,8 +285,10 @@ https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories; \
     -C ${V8_SOURCE}/out \
     -j ${NUM_JOBS} \
     $(if_yes ${V8_SHELL}      d8) \
-    $(if_no  ${V8_MONOLITHIC} v8) \
-    $(if_yes ${V8_MONOLITHIC} v8_monolith); \
+    $(if_yes ${V8_MONOLITHIC} v8_monolith) \
+    $(if_no  ${V8_MONOLITHIC} \
+      $(if_yes ${V8_SHARED_LIB} v8) \
+    ); \
   \
   mkdir -p ${V8_PATH}; \
   if [ ${OUT_HEADERS} = 'YES' ]; then \
@@ -293,13 +297,13 @@ https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories; \
     chmod -R 644 ${V8_SOURCE}/include/; \
     mv include ${V8_PATH}; \
   fi; \
-  if [[ ${V8_MONOLITHIC} = 'YES' || ${V8_STATIC} = 'YES' ]]; then \
+  if [[ ${V8_STATIC_LIB} = 'YES' || ${V8_MONOLITHIC} = 'YES' ]]; then \
     : "-- Out: V8 static libraries"; \
     find ${V8_SOURCE}/out/obj/ -depth \( -type f -not -name "*.a" -or -type d -empty \) -delete; \
     chmod -R 755 ${V8_SOURCE}/out/obj/; \
     mv ${V8_SOURCE}/out/obj ${V8_PATH}; \
   fi; \
-  if [ ${V8_MONOLITHIC} = 'NO' ]; then \
+  if [[ ${V8_SHARED_LIB} = 'YES' && ${V8_MONOLITHIC} = 'NO' ]]; then \
     : "-- Out: V8 shared libraries"; \
     mkdir -p ${V8_PATH}/lib; \
     find ${V8_SOURCE}/out/ -type f -regex ".*.\(so\|bin\|dat\)" -maxdepth 1 \
@@ -329,7 +333,7 @@ https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories; \
     mv ${V8_SOURCE}/out/d8 ${V8_PATH}/bin/d8; \
     ln -f ${V8_PATH}/bin/d8 /usr/local/bin/d8; \
     \
-    if [[ ${V8_MONOLITHIC} = 'YES' || "${V8_MONOLITHIC}${OUT_LIBCXX}" = 'NONO' ]]; then \
+    if [[ ${V8_MONOLITHIC} = 'YES' || "${V8_SHARED_LIB}${OUT_LIBCXX}" = 'YESNO' ]]; then \
       d8_std_libs=$(get_deps ${V8_PATH}/bin/d8 | sed "s/^/so:&/"); \
       apk add --no-cache --virtual .d8-runtime ${d8_std_libs}; \
     fi; \
