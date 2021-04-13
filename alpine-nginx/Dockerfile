@@ -1,15 +1,13 @@
 FROM alpine:3.13
 
-LABEL repository.hub="alexmasterov/alpine-nginx:1.19" \
+LABEL repository.hub="alexmasterov/alpine-nginx" \
       repository.url="https://github.com/AlexMasterov/dockerfiles" \
       maintainer="Alex Masterov <alex.masterow@gmail.com>"
 
-ARG NGINX_VERSION=1.19.9
+ARG NGINX_VERSION=1.19.10
 ARG NGINX_CONFIG=/etc/nginx
-ARG NGINX_EXTRA_CCFLAGS="-march=native -O2 -fstack-protector-strong -flto -fPIC -fpie"
+ARG NGINX_EXTRA_CCFLAGS="-O2 -fstack-protector-strong -flto -fPIC -fpie"
 ARG NGINX_EXTRA_LDFLAGS="-O2 -pie"
-
-ARG LIB_SSL=OPENSSL
 
 ARG HTTP_DEGRADATION=NO
 ARG HTTP_GUNZIP=NO
@@ -45,18 +43,20 @@ ARG TARANTOOL_UPSTREAM_VERSION=2.7.1
 ARG MSGPUCK_VERSION=2.0
 ARG YAJL_VERSION=2.1.0
 
-RUN set -eux; \
-  apk add --no-cache \
-    tzdata; \
-  addgroup -g 82 -S nginx; \
-  adduser -u 82 -S -D -h /var/cache/nginx -s /sbin/nologin -G nginx nginx
+ARG USE_TZ=YES
+ARG LIB_SSL=OPENSSL
+
+ARG OUT_STRIP=YES
 
 RUN set -eux; \
-  if_no() { [ ${1} = 'NO' ] && shift 1 && echo ${*:-}; }; \
-  if_yes() { [ ${1} = 'YES' ] && shift 1 && echo ${*:-}; }; \
-  contains() { [ -z ${1##*${2}*} ] && shift 2 && echo ${*:-}; }; \
+  if_no() { [ ${1} = 'NO' ] && shift 1 && echo "${*:-}"; }; \
+  if_yes() { [ ${1} = 'YES' ] && shift 1 && echo "${*:-}"; }; \
+  contains() { [ -z ${1##*${2}*} ] && shift 2 && echo "${*:-}"; }; \
   to_lowercase() { echo ${1:-} | tr '[:upper:]' '[:lower:]'; }; \
   load_archive() { wget ${1} -T 30 -O - | tar ${2:-xmz} -C /tmp; }; \
+  \
+  addgroup -g 82 -S nginx; \
+  adduser -u 82 -S -D -h /var/local/cache/nginx -s /sbin/nologin -G nginx nginx; \
   \
   apk add --no-cache --virtual .nginx-build \
     g++ \
@@ -70,7 +70,10 @@ RUN set -eux; \
     $(if_yes ${BROTLI}             brotli-dev) \
     $(if_yes ${TARANTOOL_UPSTREAM} cmake) \
     ; \
-  : "-- Setup make flags"; \
+  if [ ${USE_TZ} = 'YES' ]; then \
+    apk add --no-cache --virtual .nginx-tz tzdata; \
+  fi; \
+  : "-- make: setup flags"; \
   export MAKEFLAGS="-j $(( $(getconf _NPROCESSORS_ONLN) - 1 ))"; \
   : "-- Nginx: setup modules"; \
   if [ ${BROTLI} = 'YES' ]; then \
@@ -107,7 +110,7 @@ RUN set -eux; \
         --with-lua-include=${LUAJIT_INC} \
         --force-config \
         --disable-incdir-check; \
-      make build; \
+      make luarocks; \
       make install; \
     fi; \
   fi; \
@@ -116,8 +119,9 @@ RUN set -eux; \
     : "-- msgpuck: build"; \
     load_archive "https://github.com/rtsisyk/msgpuck/archive/${MSGPUCK_VERSION}.tar.gz"; \
     cd /tmp/msgpuck-${MSGPUCK_VERSION}; \
+    sed -i "s/if (NOT \${PROJECT_SOURCE_DIR}.*)/if (TRUE)/" CMakeLists.txt; \
     cmake -DCMAKE_BUILD_TYPE=Release .; \
-    make; \
+    make msgpuck; \
     : "-- yajl: build"; \
     load_archive "https://github.com/lloyd/yajl/archive/${YAJL_VERSION}.tar.gz"; \
     cd /tmp/yajl-${YAJL_VERSION}; \
@@ -129,24 +133,24 @@ RUN set -eux; \
     NGINX_EXTRA_CCFLAGS="${NGINX_EXTRA_CCFLAGS} -I${MSGPUCK_DIR} -I${YAJL_DIR}/include"; \
     NGINX_EXTRA_LDFLAGS="${NGINX_EXTRA_LDFLAGS} -L${MSGPUCK_DIR} -L${YAJL_DIR}/lib"; \
   fi; \
-  : "-- Nginx: download"; \
+  : "-- Nginx: download source"; \
   load_archive "https://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz"; \
   : "-- Nginx: build"; \
   cd /tmp/nginx-${NGINX_VERSION}; \
   ./configure \
     --prefix=${NGINX_CONFIG} \
     --conf-path="${NGINX_CONFIG}/nginx.conf" \
-    --modules-path="/usr/lib/nginx/modules" \
-    --sbin-path="/usr/sbin/nginx" \
-    --pid-path="/var/run/nginx.pid" \
-    --lock-path="/var/run/nginx.lock" \
-    --error-log-path="/var/log/nginx/error.log" \
-    --http-log-path="/var/log/nginx/access.log" \
-    --http-client-body-temp-path="/var/cache/nginx/client_temp" \
-    --http-proxy-temp-path="/var/cache/nginx/proxy_temp" \
-    --http-fastcgi-temp-path="/var/cache/nginx/fastcgi_temp" \
-    --http-uwsgi-temp-path="/var/cache/nginx/uwsgi_temp" \
-    --http-scgi-temp-path="/var/cache/nginx/scgi_temp" \
+    --modules-path="/usr/local/lib/nginx/modules" \
+    --sbin-path="/usr/local/bin/nginx" \
+    --pid-path="/var/local/run/nginx.pid" \
+    --lock-path="/var/local/run/nginx.lock" \
+    --error-log-path="/var/local/log/nginx/error.log" \
+    --http-log-path="/var/local/log/nginx/access.log" \
+    --http-client-body-temp-path="/var/local/cache/nginx/client_temp" \
+    --http-proxy-temp-path="/var/local/cache/nginx/proxy_temp" \
+    --http-fastcgi-temp-path="/var/local/cache/nginx/fastcgi_temp" \
+    --http-uwsgi-temp-path="/var/local/cache/nginx/uwsgi_temp" \
+    --http-scgi-temp-path="/var/local/cache/nginx/scgi_temp" \
     --user="nginx" \
     --group="nginx" \
     --without-http_auth_basic_module \
@@ -192,19 +196,21 @@ RUN set -eux; \
     ); \
   make; \
   make install; \
+  \
+  if [ ${OUT_STRIP} = 'YES' ]; then \
+    : "-- Out: strip executables"; \
+    find /usr/local -type f -executable \
+      -exec strip --strip-unneeded '{}' + || true; \
+  fi; \
+  \
   runtime_deps="$( \
-    scanelf --needed --nobanner -F '%n#p' /usr/sbin/nginx \
+    scanelf --nobanner --needed --recursive -F '%n#p' /usr/local/bin /usr/local/lib \
       | tr ',' '\n' \
       | sort -u \
       | sed 's/^/so:&/' \
     )"; \
   apk add --no-cache --virtual .nginx-runtime ${runtime_deps}; \
-  : "-- Strip files"; \
-  find \
-    /usr/bin \
-    /usr/sbin \
-    /usr/local/bin \
-    -type f -perm +0111 -exec strip --strip-unneeded '{}' + || true; \
+  \
   : "-- Remove build dependencies, clean temporary files"; \
   apk del --no-network .nginx-build; \
   rm -rf /tmp/* /var/tmp/*
