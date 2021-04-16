@@ -14,15 +14,16 @@ ARG MEMCACHED_64BIT=NO
 ARG MEMCACHED_CFLAGS="-O2"
 
 ARG USE_TZ=YES
-ARG SSL_LIB=OPENSSL
+ARG LIB_SSL=OPENSSL
 
 ARG OUT_STRIP=YES
 
 RUN set -eux; \
-  if_yes() { if [ ${1} = 'YES' ]; then shift 1; echo "${*:-}"; fi; }; \
+  get_deps() { scanelf --nobanner --needed --recursive -F '%n#p' ${*:-} | tr ',' '\n' | sort -u; }; \
   if_no() { if [ ${1} = 'NO' ]; then shift 1; echo "${*:-}"; fi; }; \
-  to_lowercase() { echo ${1:-} | tr '[:upper:]' '[:lower:]'; }; \
+  if_yes() { if [ ${1} = 'YES' ]; then shift 1; echo "${*:-}"; fi; }; \
   load_archive() { wget ${1} -T 30 -O - | tar ${2:-xmz} -C /tmp; }; \
+  to_lowercase() { echo ${1:-} | tr '[:upper:]' '[:lower:]'; }; \
   \
   addgroup -g 82 -S memcached; \
   adduser -u 82 -S -D -h /var/local/cache/memcached -s /sbin/nologin -G memcached memcached; \
@@ -60,13 +61,8 @@ RUN set -eux; \
       -exec strip --strip-unneeded '{}' + || true; \
   fi; \
   \
-  runtime_deps=$( \
-    scanelf --needed --nobanner -F '%n#p' /usr/local/bin/ /usr/local/lib/ \
-      | tr ',' '\n' \
-      | sort -u \
-      | sed 's/^/so:&/' \
-    ); \
-  apk add --no-cache --virtual .memcached-runtime ${runtime_deps}; \
+  apk add --no-cache --virtual .memcached-runtime \
+    $(get_deps /usr/local/bin /usr/local/lib | sed "s/^/so:&/"); \
   \
   : "-- Remove build dependencies, clean temporary files"; \
   apk del --no-network .memcached-build; \

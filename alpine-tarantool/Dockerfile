@@ -26,15 +26,16 @@ ARG USE_PPROF=NO
 ARG PPROF_REV
 
 ARG USE_TZ=YES
-ARG SSL_LIB=OPENSSL
+ARG LIB_SSL=OPENSSL
 
 ARG OUT_STRIP=YES
 
 RUN set -eux; \
+  get_deps() { scanelf --nobanner --needed --recursive -F '%n#p' ${*:-} | tr ',' '\n' | sort -u; }; \
+  if_no() { if [ ${1} = 'NO' ]; then shift 1; echo "${*:-}"; fi; }; \
+  if_yes() { if [ ${1} = 'YES' ]; then shift 1; echo "${*:-}"; fi; }; \
   load_archive() { wget ${1} -T 30 -O - | tar ${2:-xmz} -C /tmp; }; \
   to_lowercase() { echo "${1:-}" | tr '[:upper:]' '[:lower:]'; }; \
-  if_yes() { if [ ${1} = 'YES' ]; then shift 1; echo "${*:-}"; fi; }; \
-  if_no() { if [ ${1} = 'NO' ]; then shift 1; echo "${*:-}"; fi; }; \
   \
   addgroup -g 82 -S tarantool; \
   adduser -u 82 -S -D -h /var/cache/tarantool -s /sbin/nologin -G tarantool tarantool; \
@@ -143,7 +144,9 @@ RUN set -eux; \
       | sort -u \
       | sed 's/^/so:&/' \
     ); \
-  apk add --no-cache --virtual .tarantool-runtime ${runtime_deps}; \
+  \
+  apk add --no-cache --virtual .tarantool-runtime \
+    $(get_deps /usr/local/bin /usr/local/lib | sed "s/^/so:&/"); \
   \
   : "-- Remove build dependencies, clean temporary files"; \
   apk del --no-network .tarantool-build; \

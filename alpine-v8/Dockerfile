@@ -5,7 +5,7 @@ LABEL repository.hub="alexmasterov/alpine-v8" \
       maintainer="Alex Masterov <alex.masterow@gmail.com>"
 
 # >= 6.1.211
-ARG V8_VERSION=9.2.24
+ARG V8_VERSION=9.2.53
 
 ARG V8_SHELL=NO
 ARG V8_MONOLITHIC=NO
@@ -61,15 +61,15 @@ RUN set -eux; \
   V8_DEPS=${V8_SOURCE}/DEPS; \
   NUM_JOBS=${NUM_JOBS:-$(getconf _NPROCESSORS_ONLN)}; \
   \
-  load_archive() { [ -d ${2} ] || mkdir -p "${2}"; wget ${1} -T 30 -O - | tar xmz -C "${2}"; }; \
-  get_deps() { scanelf --needed --nobanner -F '%n#p' "${*:-}" | tr ',' '\n' | sed -r "/($(ls -1 ${V8_PATH}/lib | paste -sd '|'))/d" | sort -u; }; \
   as_ver() { set -- ${1//./ }; local y="00${2:-0}" z="00${3:-0}" w="00${4:-0}"; echo "${1}${y:(-3)}${z:(-3)}${w:(-3)}"; }; \
   compare_ver() { test $(as_ver ${1}) -${2} $(as_ver ${3}); }; \
+  contains() { if [ -z ${1##*${2}*} ]; then shift 2; echo "${*:-}"; fi; }; \
+  get_deps() { scanelf --needed --nobanner -F '%n#p' ${*:-} | tr ',' '\n' | sed -r "/($(ls -1 ${V8_PATH}/lib | paste -sd '|'))/d" | sort -u; }; \
+  if_no() { if [ ${1} = 'NO' ]; then shift 1; echo "${*:-}"; fi; }; \
   if_v8_ver() { if compare_ver ${V8_VERSION} ${1} ${2}; then shift 2; echo "${*:-}"; fi; }; \
   if_yes() { if [ ${1} = 'YES' ]; then shift 1; echo "${*:-}"; fi; }; \
-  if_no() { if [ ${1} = 'NO' ]; then shift 1; echo "${*:-}"; fi; }; \
+  load_archive() { [ -d ${2} ] || mkdir -p "${2}"; wget ${1} -T 30 -O - | tar xmz -C "${2}"; }; \
   to_bool() { if [ ${1} = 'YES' ]; then echo true; else echo false; fi; }; \
-  contains() { if [ -z ${1##*${2}*} ]; then shift 2; echo "${*:-}"; fi; }; \
   \
   echo -e "\
 https://dl-cdn.alpinelinux.org/alpine/edge/main\n\
@@ -90,7 +90,7 @@ https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories; \
     $(if_no  ${USE_GN_SOURCE} gn) \
     $(if_yes ${V8_INTL}       icu-dev) \
     ; \
-  : "-- V8: download"; \
+  : "-- V8: download source"; \
   load_archive "${SOURCE_REPO}/v8/v8/+archive/${V8_VERSION}.tar.gz" ${V8_SOURCE}; \
   : "-- V8: download deps."; \
   deps=" \
@@ -339,6 +339,7 @@ https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories; \
     fi; \
   fi; \
   if [ ${OUT_STRIP} = 'YES' ]; then \
+    : "-- Out: strip executables"; \
     find ${V8_PATH} -type f -executable -not -name "*.a" \
       -exec strip --strip-unneeded '{}' + || true; \
   fi; \

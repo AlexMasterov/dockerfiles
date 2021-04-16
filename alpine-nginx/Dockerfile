@@ -49,11 +49,12 @@ ARG LIB_SSL=OPENSSL
 ARG OUT_STRIP=YES
 
 RUN set -eux; \
+  contains() { [ -z ${1##*${2}*} ] && shift 2 && echo "${*:-}"; }; \
+  get_deps() { scanelf --nobanner --needed --recursive -F '%n#p' ${*:-} | tr ',' '\n' | sort -u; }; \
   if_no() { [ ${1} = 'NO' ] && shift 1 && echo "${*:-}"; }; \
   if_yes() { [ ${1} = 'YES' ] && shift 1 && echo "${*:-}"; }; \
-  contains() { [ -z ${1##*${2}*} ] && shift 2 && echo "${*:-}"; }; \
-  to_lowercase() { echo ${1:-} | tr '[:upper:]' '[:lower:]'; }; \
   load_archive() { wget ${1} -T 30 -O - | tar ${2:-xmz} -C /tmp; }; \
+  to_lowercase() { echo ${1:-} | tr '[:upper:]' '[:lower:]'; }; \
   \
   addgroup -g 82 -S nginx; \
   adduser -u 82 -S -D -h /var/local/cache/nginx -s /sbin/nologin -G nginx nginx; \
@@ -194,7 +195,7 @@ RUN set -eux; \
       --add-module="/tmp/ngx_devel_kit-${DEVEL_KIT_VERSION}" \
       --add-module="/tmp/lua-nginx-module-${LUA_VERSION}" \
     ); \
-  make; \
+  make build; \
   make install; \
   \
   if [ ${OUT_STRIP} = 'YES' ]; then \
@@ -203,13 +204,8 @@ RUN set -eux; \
       -exec strip --strip-unneeded '{}' + || true; \
   fi; \
   \
-  runtime_deps="$( \
-    scanelf --nobanner --needed --recursive -F '%n#p' /usr/local/bin /usr/local/lib \
-      | tr ',' '\n' \
-      | sort -u \
-      | sed 's/^/so:&/' \
-    )"; \
-  apk add --no-cache --virtual .nginx-runtime ${runtime_deps}; \
+  apk add --no-cache --virtual .nginx-runtime \
+    $(get_deps /usr/local/bin /usr/local/lib | sed "s/^/so:&/"); \
   \
   : "-- Remove build dependencies, clean temporary files"; \
   apk del --no-network .nginx-build; \
