@@ -4,6 +4,7 @@ LABEL repository.hub="alexmasterov/alpine-memcached" \
       repository.url="https://github.com/AlexMasterov/dockerfiles" \
       maintainer="Alex Masterov <alex.masterow@gmail.com>"
 
+# >= 1.6.0
 ARG MEMCACHED_VERSION=1.6.9
 
 ARG MEMCACHED_TLS=YES
@@ -44,10 +45,10 @@ RUN set -eux; \
   ./configure \
     --disable-docs \
     --disable-coverage \
-    --$(if_yes ${MEMCACHED_TLS}      enable $(if_no ${MEMCACHED_TLS}      disable))-tls \
-    --$(if_yes ${MEMCACHED_EXTSTORE} enable $(if_no ${MEMCACHED_EXTSTORE} disable))-extstore \
-    --$(if_yes ${MEMCACHED_SECCOMP}  enable $(if_no ${MEMCACHED_SECCOMP}  disable))-seccomp \
-    --$(if_yes ${MEMCACHED_64BIT}    enable $(if_no ${MEMCACHED_64BIT}    disable))-64bit \
+    --$(if_yes ${MEMCACHED_TLS}      enable)$(if_no ${MEMCACHED_TLS}      disable)-tls \
+    --$(if_yes ${MEMCACHED_EXTSTORE} enable)$(if_no ${MEMCACHED_EXTSTORE} disable)-extstore \
+    --$(if_yes ${MEMCACHED_SECCOMP}  enable)$(if_no ${MEMCACHED_SECCOMP}  disable)-seccomp \
+    --$(if_yes ${MEMCACHED_64BIT}    enable)$(if_no ${MEMCACHED_64BIT}    disable)-64bit \
     CFLAGS="${MEMCACHED_CFLAGS:-}" \
     CPPFLAGS="${MEMCACHED_CFLAGS:-}"; \
   make memcached -j $(getconf _NPROCESSORS_ONLN); \
