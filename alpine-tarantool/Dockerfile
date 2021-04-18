@@ -4,7 +4,8 @@ LABEL repository.hub="alexmasterov/alpine-tarantool" \
       repository.url="https://github.com/AlexMasterov/dockerfiles" \
       maintainer="Alex Masterov <alex.masterow@gmail.com>"
 
-ARG TARANTOOL_TAG=2.6.2-0-g34d504d
+ARG TARANTOOL_TAG=2.7.1-0-g3ac498c9f
+
 ARG TARANTOOL_BUILD_TYPE=RelWithDebInfo
 ARG TARANTOOL_AVX=YES
 ARG TARANTOOL_BACKTRACE=YES
@@ -16,6 +17,7 @@ ARG TARANTOOL_DIST=NO
 
 ARG LUAJIT_GC64=YES
 
+# Dynamically linked musl does not support (issue 693)
 ARG USE_GPERFTOOLS=NO
 ARG GPERFTOOLS_VERSION=2.9.1
 ARG GPERFTOOLS_CPU_PROFILER=YES
@@ -25,7 +27,7 @@ ARG GPERFTOOLS_HEAP_CHECKER=YES
 ARG USE_PPROF=NO
 ARG PPROF_REV
 
-ARG USE_TZ=YES
+ARG USE_TZ=NO
 ARG LIB_SSL=OPENSSL
 
 ARG OUT_STRIP=YES
@@ -138,14 +140,8 @@ RUN set -eux; \
       -exec strip --strip-unneeded '{}' + || true; \
   fi; \
   \
-  runtime_deps=$( \
-    scanelf --nobanner --needed --recursive -F '%n#p' /usr/local/bin/ /usr/local/lib/ \
-      | tr ',' '\n' \
-      | sort -u \
-      | sed 's/^/so:&/' \
-    ); \
-  \
   apk add --no-cache --virtual .tarantool-runtime \
+    $(if_yes ${TARANTOOL_DIST} curl git) \
     $(get_deps /usr/local/bin /usr/local/lib | sed "s/^/so:&/"); \
   \
   : "-- Remove build dependencies, clean temporary files"; \
