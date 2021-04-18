@@ -3,6 +3,7 @@
 Common Dockerfiles, used for _development_.
 
 - [alpine-v8](#alpine-v8)
+- [alpine-php](#alpine-php)
 
 #### alpine-v8
 
@@ -57,3 +58,9 @@ docker build \
   --rm -t v8 github.com/AlexMasterov/dockerfiles.git#:alpine-v8
 ```
 </details>
+
+#### alpine-php
+```sh
+docker build --build-arg PHP_VERSION=8.0.3 --rm -t php github.com/AlexMasterov/dockerfiles.git#:alpine-php
+```
+> PHP_VERSION >= 7.0.0
