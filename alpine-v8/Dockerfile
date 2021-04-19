@@ -5,7 +5,7 @@ LABEL repository.hub="alexmasterov/alpine-v8" \
       maintainer="Alex Masterov <alex.masterow@gmail.com>"
 
 # >= 6.1.211
-ARG V8_VERSION=9.2.53
+ARG V8_VERSION=9.2.57
 
 ARG V8_SHELL=NO
 ARG V8_MONOLITHIC=NO
@@ -63,12 +63,12 @@ RUN set -eux; \
   \
   as_ver() { set -- ${1//./ }; local y="00${2:-0}" z="00${3:-0}" w="00${4:-0}"; echo "${1}${y:(-3)}${z:(-3)}${w:(-3)}"; }; \
   compare_ver() { test $(as_ver ${1}) -${2} $(as_ver ${3}); }; \
-  contains() { if [ -z ${1##*${2}*} ]; then shift 2; echo "${*:-}"; fi; }; \
-  get_deps() { scanelf --needed --nobanner -F '%n#p' ${*:-} | tr ',' '\n' | sed -r "/($(ls -1 ${V8_PATH}/lib | paste -sd '|'))/d" | sort -u; }; \
-  if_no() { if [ ${1} = 'NO' ]; then shift 1; echo "${*:-}"; fi; }; \
-  if_v8_ver() { if compare_ver ${V8_VERSION} ${1} ${2}; then shift 2; echo "${*:-}"; fi; }; \
-  if_yes() { if [ ${1} = 'YES' ]; then shift 1; echo "${*:-}"; fi; }; \
-  load_archive() { [ -d ${2} ] || mkdir -p "${2}"; wget ${1} -T 30 -O - | tar xmz -C "${2}"; }; \
+  contains() { if [ -z ${1##*${2}*} ]; then shift 2; echo ${*:-}; fi; }; \
+  get_deps() { find ${*:-} \( -type f -and -executable -or -name "*.so*" \) -exec ldd '{}' ';' | sed -rn "s/\s*(.* => )?(.*) \(.*/\2/p" | sort -u; }; \
+  if_no() { if [ ${1} = 'NO' ]; then shift 1; echo ${*:-}; fi; }; \
+  if_v8_ver() { if compare_ver ${V8_VERSION} ${1} ${2}; then shift 2; echo ${*:-}; fi; }; \
+  if_yes() { if [ ${1} = 'YES' ]; then shift 1; echo ${*:-}; fi; }; \
+  load_archive() { [ -d ${2} ] || mkdir -p ${2}; wget ${1} -T 30 -O - | tar xmz -C ${2}; }; \
   to_bool() { if [ ${1} = 'YES' ]; then echo true; else echo false; fi; }; \
   \
   echo -e "\
@@ -119,7 +119,8 @@ https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories; \
   \
   if [ ${USE_GN_SOURCE} = 'YES' ]; then \
     GN_SOURCE=/tmp/gn; \
-    gn_rev=${GN_SOURCE_REV:-$(sed -rn "/['\"]gn_version['\"]:\s*/{N;s/.*['\"]git_revision:(.*)['\"],?/\1/p}" ${V8_DEPS})}; \
+    gn_rev=${GN_SOURCE_REV:-$(cat ${V8_SOURCE}/buildtools/linux64/gn.sha1)}; \
+    gn_rev=${gn_rev:-$(sed -rn "/['\"]gn_version['\"]:\s*/{N;s/.*['\"]git_revision:(.*)['\"],?/\1/p}" ${V8_DEPS})}; \
     gn_rev=${gn_rev:?GN_SOURCE_REV is required}; \
     : "-- GN SOURCE: download"; \
     load_archive "${GN_SOURCE_REPO}/+archive/${gn_rev}.tar.gz" ${GN_SOURCE}; \
@@ -133,8 +134,8 @@ https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories; \
     python2 ${GN_SOURCE}/build/gen.py \
       --host=linux \
       --platform=linux \
-      --no-static-libstdc++ \
-      --no-last-commit-position; \
+      --no-last-commit-position \
+      $(if_v8_ver ge 7.9.35 --no-static-libstdc++); \
     echo -e "\
     \n#ifndef OUT_LAST_COMMIT_POSITION_H_ \
     \n#define OUT_LAST_COMMIT_POSITION_H_ \
@@ -311,16 +312,7 @@ https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories; \
     \
     if [ ${OUT_LIBCXX} = 'YES' ]; then \
       : "-- Out: C++ shared libraries"; \
-      v8_std_libs=$(get_deps ${V8_PATH}/lib | paste -sd '|'); \
-      std_libs=$(find /usr/lib -regex ".*\(${v8_std_libs//\|/\\\|}\)" -and \( -type f -or -type l \)); \
-      \
-      out_libs=""; \
-      for std_lib in ${std_libs}; do \
-        std_lib_deps=$(ldd ${std_lib} | sed -rn "s/.*=> (\/usr\/lib\/.*) \(.*\)/\1/p"); \
-        out_libs="${std_lib} ${std_lib_deps} ${out_libs}"; \
-      done; \
-      out_libs=$(echo ${out_libs} | tr ' ' '\n' | sort -u); \
-      \
+      out_libs=$(get_deps ${V8_PATH}/lib | sed -rn "s/^\/usr\/lib\//&/p"); \
       cp --dereference ${out_libs} ${V8_PATH}/lib; \
     fi; \
     \
@@ -334,7 +326,7 @@ https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories; \
     ln -f ${V8_PATH}/bin/d8 /usr/local/bin/d8; \
     \
     if [[ ${V8_MONOLITHIC} = 'YES' || "${V8_SHARED_LIB}${OUT_LIBCXX}" = 'YESNO' ]]; then \
-      d8_std_libs=$(get_deps ${V8_PATH}/bin/d8 | sed "s/^/so:&/"); \
+      d8_std_libs=$(get_deps ${V8_PATH}/bin/d8 | sed -rn "s/\/usr\/lib\/(.*)/so:\1/p"); \
       apk add --no-cache --virtual .d8-runtime ${d8_std_libs}; \
     fi; \
   fi; \
