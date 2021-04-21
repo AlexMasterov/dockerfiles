@@ -1,4 +1,4 @@
-FROM golang:1.16-alpine3.13 as build
+FROM alpine:3.13 as build
 
 LABEL repository.hub="alexmasterov/alpine-mailhog" \
       repository.url="https://github.com/AlexMasterov/dockerfiles" \
@@ -6,18 +6,22 @@ LABEL repository.hub="alexmasterov/alpine-mailhog" \
 
 RUN set -eux; \
   apk add --no-cache \
-    git; \
-  : "-- MailHog: download"; \
-  go get github.com/mailhog/MailHog;
+    gcc \
+    git \
+    go \
+    upx \
+    ; \
+  : "-- MailHog: download source & build"; \
+  go get \
+    -gcflags=all='-l -B' \
+    -ldflags '-s -w -linkmode external -extldflags -static' \
+    github.com/mailhog/MailHog; \
+  \
+  upx --no-color --no-progress --best --lzma \
+    /root/go/bin/MailHog
 
-FROM alpine:3.13
-COPY --from=build /go/bin/MailHog /usr/local/bin
+FROM scratch as runtime
 
-RUN set -eux; \
-  addgroup -g 82 -S mailhog; \
-  adduser -u 82 -S -D -h /var/cache/mailhog -s /sbin/nologin -G mailhog mailhog;
+COPY --from=build /root/go/bin/MailHog /MailHog
 
-USER mailhog
-EXPOSE 8025/tcp
-
-CMD ["MailHog"]
+ENTRYPOINT ["/MailHog"]
