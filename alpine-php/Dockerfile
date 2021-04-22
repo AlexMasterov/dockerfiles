@@ -23,7 +23,7 @@ ARG EXT_FILEINFO=NO
 ARG EXT_FILTER=YES
 ARG EXT_FTP=NO
 ARG EXT_GD=NO
-ARG EXT_GD_BUNDLED=NO
+ARG EXT_GD_BUNDLED=YES
 ARG EXT_GD_FREETYPE=YES
 ARG EXT_GD_JPEG=YES
 ARG EXT_GD_WEBP=YES
@@ -106,12 +106,12 @@ RUN set -eux; \
   \
   as_ver() { set -- ${1//./ }; local y="00${2:-0}" z="00${3:-0}"; echo "${1}${y:(-3)}${z:(-3)}"; }; \
   compare_ver() { test $(as_ver ${1}) -${2} $(as_ver ${3}); }; \
-  contains() { if [ -z ${1##*${2}*} ]; then shift 2; echo "${*:-}"; fi; }; \
-  get_deps() { scanelf --nobanner --needed --recursive -F '%n#p' ${*:-} | tr ',' '\n' | sort -u; }; \
-  if_eq() { if [ ${1} = ${2} ]; then shift 2; echo "${*:-}"; fi; }; \
-  if_no() { if [ ${1} = 'NO' ]; then shift 1; echo "${*:-}"; fi; }; \
-  if_php_ver() { if compare_ver ${PHP_VERSION} ${1} ${2}; then shift 2; echo "${*:-}"; fi; }; \
-  if_yes() { if [ ${1} = 'YES' ]; then shift 1; echo "${*:-}"; fi; }; \
+  contains() { if [ -z ${1##*${2}*} ]; then shift 2; echo ${*:-}; fi; }; \
+  get_deps() { find ${*:-} -type f -and \( -executable -or -name '*.so*' \) -exec ldd '{}' ';' | sed -rn "s/\s*(.* => )?(.*) \(.*/\2/p" | sort -u; }; \
+  if_eq() { if [ ${1} = ${2} ]; then shift 2; echo ${*:-}; fi; }; \
+  if_no() { if [ ${1} = 'NO' ]; then shift 1; echo ${*:-}; fi; }; \
+  if_php_ver() { if compare_ver ${PHP_VERSION} ${1} ${2}; then shift 2; echo ${*:-}; fi; }; \
+  if_yes() { if [ ${1} = 'YES' ]; then shift 1; echo ${*:-}; fi; }; \
   load_archive() { wget ${1} -T 30 -O - | tar ${2:-xmz} -C /tmp; }; \
   make_ext() { phpize; ./configure --build=$(g++ -dumpmachine) ${*:-}; make; make install; }; \
   \
@@ -347,36 +347,44 @@ RUN set -eux; \
       ) \
       --enable-mbstring \
     ) \
-    CFLAGS="${PHP_CFLAGS}" \
-    CPPFLAGS="${PHP_CFLAGS}" \
-    LDFLAGS="${PHP_LDFLAGS}" \
+    CFLAGS="${PHP_CFLAGS:-}" \
+    CPPFLAGS="${PHP_CFLAGS:-}" \
+    LDFLAGS="${PHP_LDFLAGS:-}" \
     ; \
   make; \
   make install; \
+  \
+  ext_config_dir=$(php --ini | sed -rn "s/.*\.ini files in:\s*(.*)/\1/p"); \
+  [ -d ${ext_config_dir} ] || mkdir -p ${ext_config_dir}; \
+  \
+  echo "zend_extension=opcache.so" >> ${ext_config_dir}/01-opcache.ini; \
   \
   if [ ${EXT_XDEBUG} = 'YES' ]; then \
     case 1 in \
       $(if_php_ver lt 7.1.0 1)) EXT_XDEBUG_VERSION=2.7.2 ;; \
       $(if_php_ver lt 7.2.0 1)) EXT_XDEBUG_VERSION=2.9.8 ;; \
     esac; \
-    load_archive https://github.com/xdebug/xdebug/archive/${EXT_XDEBUG_VERSION}.tar.gz; \
+    load_archive "https://github.com/xdebug/xdebug/archive/${EXT_XDEBUG_VERSION}.tar.gz"; \
     cd /tmp/xdebug-${EXT_XDEBUG_VERSION}; \
     make_ext; \
+    echo "zend_extension=xdebug.so" >> ${ext_config_dir}/01-xdebug.ini; \
   fi; \
   if [ ${EXT_MSGPACK} = 'YES' ]; then \
-    load_archive https://github.com/msgpack/msgpack-php/archive/msgpack-${EXT_MSGPACK_VERSION}.tar.gz; \
+    load_archive "https://github.com/msgpack/msgpack-php/archive/msgpack-${EXT_MSGPACK_VERSION}.tar.gz"; \
     cd /tmp/msgpack-php-msgpack-${EXT_MSGPACK_VERSION}; \
     make_ext; \
+    echo "extension=msgpack.so" >> ${ext_config_dir}/02-msgpack.ini; \
   fi; \
   if [ ${EXT_APCU} = 'YES' ]; then \
-    load_archive https://github.com/krakjoe/apcu/archive/v${EXT_APCU_VERSION}.tar.gz; \
+    load_archive "https://github.com/krakjoe/apcu/archive/v${EXT_APCU_VERSION}.tar.gz"; \
     cd /tmp/apcu-${EXT_APCU_VERSION}; \
     make_ext \
       --$(if_yes ${EXT_APCU_RWLOCKS}   enable)$(if_no ${EXT_APCU_RWLOCKS}   disable)-apcu-rwlocks \
       --$(if_yes ${EXT_APCU_SPINLOCKS} enable)$(if_no ${EXT_APCU_SPINLOCKS} disable)-apcu-spinlocks; \
+    echo "extension=apcu.so" >> ${ext_config_dir}/03-apcu.ini; \
   fi; \
   if [ ${EXT_PHPREDIS} = 'YES' ]; then \
-    load_archive https://github.com/phpredis/phpredis/archive/${EXT_PHPREDIS_VERSION}.tar.gz; \
+    load_archive "https://github.com/phpredis/phpredis/archive/${EXT_PHPREDIS_VERSION}.tar.gz"; \
     cd /tmp/phpredis-${EXT_PHPREDIS_VERSION}; \
     make_ext \
       $(if_yes ${EXT_PHPREDIS_LZ4}  --enable-redis-lz4  --with-liblz4=/usr) \
@@ -386,12 +394,12 @@ RUN set -eux; \
       $(if_yes ${EXT_PHPREDIS_MSGPACK} \
         $(if_yes ${EXT_MSGPACK} --enable-redis-msgpack) \
       ); \
+    echo "extension=redis.so" >> ${ext_config_dir}/03-redis.ini; \
   fi; \
   if [ ${EXT_MEMCACHED} = 'YES' ]; then \
-    load_archive https://github.com/php-memcached-dev/php-memcached/archive/v${EXT_MEMCACHED_VERSION}.tar.gz; \
+    load_archive "https://github.com/php-memcached-dev/php-memcached/archive/v${EXT_MEMCACHED_VERSION}.tar.gz"; \
     cd /tmp/php-memcached-${EXT_MEMCACHED_VERSION}; \
     make_ext \
-      EXTRA_LDFLAGS="-lpthread" \
       --disable-memcached-sasl \
       --with-zlib-dir=/usr \
       --$(if_yes ${EXT_MEMCACHED_SESSION} enable)$(if_no ${EXT_MEMCACHED_SESSION} disable)-memcached-session \
@@ -399,10 +407,11 @@ RUN set -eux; \
       $(if_yes ${EXT_MEMCACHED_MSGPACK} \
         $(if_yes ${EXT_MSGPACK} --enable-memcached-msgpack) \
       ); \
+    echo "extension=memcached.so" >> ${ext_config_dir}/03-memcached.ini; \
   fi; \
   if [ ${EXT_MONGODB} = 'YES' ]; then \
     MONGODB_ARCHIVE="mongodb-${EXT_MONGODB_VERSION}"; \
-    load_archive https://github.com/mongodb/mongo-php-driver/releases/download/${EXT_MONGODB_VERSION}/${MONGODB_ARCHIVE}.tgz; \
+    load_archive "https://github.com/mongodb/mongo-php-driver/releases/download/${EXT_MONGODB_VERSION}/${MONGODB_ARCHIVE}.tgz"; \
     cd /tmp/${MONGODB_ARCHIVE}; \
     make_ext \
       --with-mongodb-sasl=no \
@@ -410,22 +419,18 @@ RUN set -eux; \
       $(if_eq "${EXT_MONGODB_TLS}${lib_ssl}${EXT_OPENSSL_SYSTEM_CIPHERS}" 'YESopensslYES' \
         --enable-mongodb-crypto-system-profile=on; \
       ); \
+    echo "extension=mongodb.so" >> ${ext_config_dir}/03-mongodb.ini; \
   fi; \
   if [ ${EXT_AMQP} = 'YES' ]; then \
-    load_archive https://github.com/php-amqp/php-amqp/archive/v${EXT_AMQP_VERSION}.tar.gz; \
+    load_archive "https://github.com/php-amqp/php-amqp/archive/v${EXT_AMQP_VERSION}.tar.gz"; \
     cd /tmp/php-amqp-${EXT_AMQP_VERSION}; \
     make_ext \
       --with-librabbitmq-dir=/usr; \
+    echo "extension=amqp.so" >> ${ext_config_dir}/03-amqp.ini; \
   fi; \
   \
   : "-- Out: clean up"; \
-  cd /usr/local/; \
-  rm -rf \
-    include/* \
-    lib/php/build/ \
-    lib/php/**/*.a \
-    bin/phpize \
-    bin/php-config; \
+  find /usr/local/lib/php -depth \( -type f -not -name '*.so' -or -type d -empty \) -delete; \
   \
   if [ ${OUT_STRIP} = 'YES' ]; then \
     : "-- Out: strip executables"; \
@@ -433,8 +438,8 @@ RUN set -eux; \
       -exec strip --strip-unneeded '{}' + || true; \
   fi; \
   \
-  apk add --no-cache --virtual .php-runtime \
-    $(get_deps /usr/local/bin /usr/local/lib | sed "s/^/so:&/"); \
+  runtime_deps=$(get_deps /usr/local/bin /usr/local/lib | sed -rn "s/\/usr\/lib\/(.*)/so:\1/p"); \
+  apk add --no-cache --virtual .php-runtime ${runtime_deps}; \
   : "-- Remove build dependencies, clean temporary files"; \
   apk del --no-network .php-build*; \
   rm -rf /tmp/* /var/tmp/*
