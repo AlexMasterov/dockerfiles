@@ -5,7 +5,7 @@ LABEL repository.hub="alexmasterov/alpine-v8" \
       maintainer="Alex Masterov <alex.masterow@gmail.com>"
 
 # >= 6.1.211
-ARG V8_VERSION=9.2.57
+ARG V8_VERSION=9.2.94
 
 ARG V8_SHELL=NO
 ARG V8_MONOLITHIC=NO
@@ -26,22 +26,18 @@ ARG V8_31BIT_SMIS_ON_64BIT_ARCH=YES
 ARG V8_UNTRUSTED_CODE_MITIGATIONS=NO
 ARG V8_TYPED_ARRAY_MAX_SIZE_IN_HEAP=64
 
+ARG NUM_JOBS
 ARG SYMBOL_LEVEL=0
 
 ARG USE_CLANG=YES
 ARG USE_LLD=YES
 ARG USE_LLD_THIN_LTO=NO
 ARG USE_LLD_THIN_LTO_OPT=NO
-
-ARG NUM_JOBS
 ARG LLD_THIN_LTO_JOBS
 
 ARG USE_GN_SOURCE=NO
 ARG GN_SOURCE_REV
-ARG GN_SOURCE_REPO=https://gn.googlesource.com/gn
 ARG GN_EXTRA_ARGS
-
-ARG SOURCE_REPO=https://chromium.googlesource.com
 
 ARG OUT_LIBCXX=NO
 ARG OUT_HEADERS=YES
@@ -51,20 +47,21 @@ ENV V8_VERSION=${V8_VERSION} \
     V8_PATH=/usr/local/v8
 
 RUN set -eux; \
-  case $(cat /etc/apk/arch) in \
+  case $(uname -m) in \
     x86_64)      ARCH="x64"   ;; \
     x86)         ARCH="x86"   ;; \
     armhf|armv7) ARCH="arm"   ;; \
     aarch64)     ARCH="arm64" ;; \
   esac; \
+  NUM_JOBS=${NUM_JOBS:-$(getconf _NPROCESSORS_ONLN)}; \
+  SOURCE_REPO=https://chromium.googlesource.com; \
   V8_SOURCE=/tmp/v8; \
   V8_DEPS=${V8_SOURCE}/DEPS; \
-  NUM_JOBS=${NUM_JOBS:-$(getconf _NPROCESSORS_ONLN)}; \
   \
   as_ver() { set -- ${1//./ }; local y="00${2:-0}" z="00${3:-0}" w="00${4:-0}"; echo "${1}${y:(-3)}${z:(-3)}${w:(-3)}"; }; \
   compare_ver() { test $(as_ver ${1}) -${2} $(as_ver ${3}); }; \
   contains() { if [ -z ${1##*${2}*} ]; then shift 2; echo ${*:-}; fi; }; \
-  get_deps() { find ${*:-} \( -type f -and -executable -or -name "*.so*" \) -exec ldd '{}' ';' | sed -rn "s/\s*(.* => )?(.*) \(.*/\2/p" | sort -u; }; \
+  get_deps() { find ${*:-} -type f -and \( -executable -or -name '*.so*' \) -exec ldd '{}' ';' | sed -rn "s/\s*(.* => )?(.*) \(.*/\2/p" | sort -u; }; \
   if_no() { if [ ${1} = 'NO' ]; then shift 1; echo ${*:-}; fi; }; \
   if_v8_ver() { if compare_ver ${V8_VERSION} ${1} ${2}; then shift 2; echo ${*:-}; fi; }; \
   if_yes() { if [ ${1} = 'YES' ]; then shift 1; echo ${*:-}; fi; }; \
@@ -119,11 +116,11 @@ https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories; \
   \
   if [ ${USE_GN_SOURCE} = 'YES' ]; then \
     GN_SOURCE=/tmp/gn; \
-    gn_rev=${GN_SOURCE_REV:-$(cat ${V8_SOURCE}/buildtools/linux64/gn.sha1)}; \
-    gn_rev=${gn_rev:-$(sed -rn "/['\"]gn_version['\"]:\s*/{N;s/.*['\"]git_revision:(.*)['\"],?/\1/p}" ${V8_DEPS})}; \
+    gn_rev=${GN_SOURCE_REV:-$(cat ${V8_SOURCE}/buildtools/linux64/gn.sha1 || true)}; \
+    gn_rev=${gn_rev:-$(sed -rn "/['\"]gn_version['\"]:\s*/{N;s/.*['\"]git_revision:(.*)['\"],?\s*/\1/p}" ${V8_DEPS})}; \
     gn_rev=${gn_rev:?GN_SOURCE_REV is required}; \
-    : "-- GN SOURCE: download"; \
-    load_archive "${GN_SOURCE_REPO}/+archive/${gn_rev}.tar.gz" ${GN_SOURCE}; \
+    : "-- GN SOURCE: download source"; \
+    load_archive "https://gn.googlesource.com/gn/+archive/${gn_rev}.tar.gz" ${GN_SOURCE}; \
     : "-- GN SOURCE: stop regen config and speedup build"; \
     sed -ri \
       -e "s/(generator\s*=).*',/\1 0'/" \
@@ -146,7 +143,7 @@ https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories; \
     ninja \
       -C ${GN_SOURCE}/out \
       -j ${NUM_JOBS}; \
-    ln -f ${GN_SOURCE}/out/gn /usr/bin/gn; \
+    ln -fs ${GN_SOURCE}/out/gn /usr/bin/gn; \
   fi; \
   \
   cd ${V8_SOURCE}; \
@@ -294,20 +291,20 @@ https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories; \
   mkdir -p ${V8_PATH}; \
   if [ ${OUT_HEADERS} = 'YES' ]; then \
     : "-- Out: V8 headers"; \
-    find ${V8_SOURCE}/include/ -depth \( -type f -not -name "*.h" -or -type d -empty \) -delete; \
+    find ${V8_SOURCE}/include/ -depth \( -type f -not -name '*.h' -or -type d -empty \) -delete; \
     chmod -R 644 ${V8_SOURCE}/include/; \
     mv include ${V8_PATH}; \
   fi; \
   if [[ ${V8_STATIC_LIB} = 'YES' || ${V8_MONOLITHIC} = 'YES' ]]; then \
     : "-- Out: V8 static libraries"; \
-    find ${V8_SOURCE}/out/obj/ -depth \( -type f -not -name "*.a" -or -type d -empty \) -delete; \
+    find ${V8_SOURCE}/out/obj/ -depth \( -type f -not -name '*.a' -or -type d -empty \) -delete; \
     chmod -R 755 ${V8_SOURCE}/out/obj/; \
     mv ${V8_SOURCE}/out/obj ${V8_PATH}; \
   fi; \
   if [[ ${V8_SHARED_LIB} = 'YES' && ${V8_MONOLITHIC} = 'NO' ]]; then \
     : "-- Out: V8 shared libraries"; \
     mkdir -p ${V8_PATH}/lib; \
-    find ${V8_SOURCE}/out/ -type f -regex ".*.\(so\|bin\|dat\)" -maxdepth 1 \
+    find ${V8_SOURCE}/out/ -maxdepth 1 -type f -regex '.*.\(so\|bin\|dat\)' \
       -exec mv '{}' ${V8_PATH}/lib +; \
     \
     if [ ${OUT_LIBCXX} = 'YES' ]; then \
@@ -317,13 +314,13 @@ https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories; \
     fi; \
     \
     chmod -R 755 ${V8_PATH}/lib/; \
-    ln -f ${V8_PATH}/lib/*.so* /usr/local/lib; \
+    ln -fs ${V8_PATH}/lib/*.so* /usr/local/lib; \
   fi; \
   if [ ${V8_SHELL} = 'YES' ]; then \
     : "-- Out: V8 executables"; \
     mkdir -p ${V8_PATH}/bin; \
     mv ${V8_SOURCE}/out/d8 ${V8_PATH}/bin/d8; \
-    ln -f ${V8_PATH}/bin/d8 /usr/local/bin/d8; \
+    ln -fs ${V8_PATH}/bin/d8 /usr/local/bin/d8; \
     \
     if [[ ${V8_MONOLITHIC} = 'YES' || "${V8_SHARED_LIB}${OUT_LIBCXX}" = 'YESNO' ]]; then \
       d8_std_libs=$(get_deps ${V8_PATH}/bin/d8 | sed -rn "s/\/usr\/lib\/(.*)/so:\1/p"); \
@@ -332,7 +329,7 @@ https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories; \
   fi; \
   if [ ${OUT_STRIP} = 'YES' ]; then \
     : "-- Out: strip executables"; \
-    find ${V8_PATH} -type f -executable -not -name "*.a" \
+    find ${V8_PATH} -type f -executable -not -name '*.a' \
       -exec strip --strip-unneeded '{}' + || true; \
   fi; \
   \
