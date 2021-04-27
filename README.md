@@ -10,26 +10,9 @@ Common Dockerfiles, used for _development_.
 ```sh
 docker build --build-arg V8_VERSION=9.2 --rm -t v8 github.com/AlexMasterov/dockerfiles.git#:alpine-v8
 ```
-> V8_VERSION >= 6.1.211
+> V8_VERSION >= 6.1.211 | 6.1 | dev | beta | stable | latest
 
 ##### FAQ
-
-
-<details>
-<summary>how do I get the latest version?</summary>
-
-```sh
-docker build --build-arg V8_VERSION=latest --rm -t v8 github.com/AlexMasterov/dockerfiles.git#:alpine-v8
-```
-</details>
-
-<details>
-<summary>how do I get the latest major version? (X.Y)</summary>
-
-```sh
-docker build --build-arg V8_VERSION=9.2 --rm -t v8 github.com/AlexMasterov/dockerfiles.git#:alpine-v8
-```
-</details>
 
 <details>
 <summary>How do I get an archive with V8?</summary>

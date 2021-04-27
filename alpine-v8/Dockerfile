@@ -47,12 +47,23 @@ ENV V8_VERSION=${V8_VERSION} \
     V8_PATH=/usr/local/v8
 
 RUN set -eux; \
+  as_ver() { set -- ${1//./ }; local y="00${2:-0}" z="00${3:-0}" w="00${4:-0}"; echo "${1}${y:(-3)}${z:(-3)}${w:(-3)}"; }; \
+  compare_ver() { test $(as_ver ${1}) -${2} $(as_ver ${3}); }; \
+  contains() { if [ -z ${1##*${2}*} ]; then shift 2; echo ${*:-}; fi; }; \
+  get_deps() { find ${*:-} -type f -and \( -executable -or -name '*.so*' \) -exec ldd '{}' ';' | sed -rn "s/\s*(.* => )?(.*) \(.*/\2/p" | sort -u; }; \
+  if_no() { if [ ${1} = 'NO' ]; then shift 1; echo ${*:-}; fi; }; \
+  if_v8_ver() { if compare_ver ${V8_VERSION} ${1} ${2}; then shift 2; echo ${*:-}; fi; }; \
+  if_yes() { if [ ${1} = 'YES' ]; then shift 1; echo ${*:-}; fi; }; \
+  load_archive() { [ -d ${2} ] || mkdir -p ${2}; wget ${1} -T 30 -O - | tar xmz -C ${2}; }; \
+  to_bool() { if [ ${1} = 'YES' ]; then echo true; else echo false; fi; }; \
+  \
   case $(uname -m) in \
     x86_64)      ARCH="x64"   ;; \
     x86)         ARCH="x86"   ;; \
     armhf|armv7) ARCH="arm"   ;; \
     aarch64)     ARCH="arm64" ;; \
   esac; \
+  \
   NUM_JOBS=${NUM_JOBS:-$(getconf _NPROCESSORS_ONLN)}; \
   SOURCE_REPO="https://chromium.googlesource.com"; \
   V8_SOURCE=/tmp/v8; \
@@ -64,21 +75,17 @@ RUN set -eux; \
     V8_VERSION=${v8_build_ver:+"${V8_VERSION}.${v8_build_ver//.0}"}; \
     V8_VERSION=${V8_VERSION:-latest}; \
   fi; \
-  if [ ${V8_VERSION} = 'latest' ]; then \
-    v8_latest_url="https://storage.googleapis.com/chromium-v8/official/canary/v8-linux64-rel-latest.json"; \
-    V8_VERSION=$(wget ${v8_latest_url} -T 30 -O - | sed -rn "s/.*\"version\":\s*?\"(.*\d+)\".*/\1/p"); \
-    V8_VERSION=${V8_VERSION:?V8_VERSION is required}; \
+  if contains "dev beta stable latest" ${V8_VERSION} 1; then \
+    if [ ${V8_VERSION} = 'latest' ]; then \
+      v8_version_url="https://storage.googleapis.com/chromium-v8/official/canary/v8-linux64-rel-latest.json"; \
+      v8_version_regexp="s/.*\"version\":\s*?\"(.*\d+)\".*/\1/p"; \
+    else \
+      v8_version_url="https://omahaproxy.appspot.com/all"; \
+      v8_version_regexp="s/linux,${V8_VERSION}.*,(.*)$/\1/p"; \
+    fi; \
+    \
+    V8_VERSION=$(wget ${v8_version_url} -T 30 -O - | sed -rn "${v8_version_regexp}"); \
   fi; \
-  \
-  as_ver() { set -- ${1//./ }; local y="00${2:-0}" z="00${3:-0}" w="00${4:-0}"; echo "${1}${y:(-3)}${z:(-3)}${w:(-3)}"; }; \
-  compare_ver() { test $(as_ver ${1}) -${2} $(as_ver ${3}); }; \
-  contains() { if [ -z ${1##*${2}*} ]; then shift 2; echo ${*:-}; fi; }; \
-  get_deps() { find ${*:-} -type f -and \( -executable -or -name '*.so*' \) -exec ldd '{}' ';' | sed -rn "s/\s*(.* => )?(.*) \(.*/\2/p" | sort -u; }; \
-  if_no() { if [ ${1} = 'NO' ]; then shift 1; echo ${*:-}; fi; }; \
-  if_v8_ver() { if compare_ver ${V8_VERSION} ${1} ${2}; then shift 2; echo ${*:-}; fi; }; \
-  if_yes() { if [ ${1} = 'YES' ]; then shift 1; echo ${*:-}; fi; }; \
-  load_archive() { [ -d ${2} ] || mkdir -p ${2}; wget ${1} -T 30 -O - | tar xmz -C ${2}; }; \
-  to_bool() { if [ ${1} = 'YES' ]; then echo true; else echo false; fi; }; \
   \
   echo -e "\
 https://dl-cdn.alpinelinux.org/alpine/edge/main\n\
