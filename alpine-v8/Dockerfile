@@ -5,7 +5,7 @@ LABEL repository.hub="alexmasterov/alpine-v8" \
       maintainer="Alex Masterov <alex.masterow@gmail.com>"
 
 # >= 6.1.211
-ARG V8_VERSION=9.2.94
+ARG V8_VERSION=9.2.106
 
 ARG V8_SHELL=NO
 ARG V8_MONOLITHIC=NO
@@ -54,9 +54,21 @@ RUN set -eux; \
     aarch64)     ARCH="arm64" ;; \
   esac; \
   NUM_JOBS=${NUM_JOBS:-$(getconf _NPROCESSORS_ONLN)}; \
-  SOURCE_REPO=https://chromium.googlesource.com; \
+  SOURCE_REPO="https://chromium.googlesource.com"; \
   V8_SOURCE=/tmp/v8; \
   V8_DEPS=${V8_SOURCE}/DEPS; \
+  \
+  if [ ${V8_VERSION//[^.]} = '.' ]; then \
+    v8_version_url="https://raw.githubusercontent.com/v8/v8/${V8_VERSION}-lkgr/include/v8-version.h"; \
+    v8_build_ver=$(wget "${v8_version_url}" -T 30 -O - | sed -rn "/#.*V8_BUILD_NUMBER/N;s/#.*_NUMBER (\d+).*_LEVEL (\d+)/\1.\2/p"); \
+    V8_VERSION=${v8_build_ver:+"${V8_VERSION}.${v8_build_ver//.0}"}; \
+    V8_VERSION=${V8_VERSION:-latest}; \
+  fi; \
+  if [ ${V8_VERSION} = 'latest' ]; then \
+    v8_latest_url="https://storage.googleapis.com/chromium-v8/official/canary/v8-linux64-rel-latest.json"; \
+    V8_VERSION=$(wget ${v8_latest_url} -T 30 -O - | sed -rn "s/.*\"version\":\s*?\"(.*\d+)\".*/\1/p"); \
+    V8_VERSION=${V8_VERSION:?V8_VERSION is required}; \
+  fi; \
   \
   as_ver() { set -- ${1//./ }; local y="00${2:-0}" z="00${3:-0}" w="00${4:-0}"; echo "${1}${y:(-3)}${z:(-3)}${w:(-3)}"; }; \
   compare_ver() { test $(as_ver ${1}) -${2} $(as_ver ${3}); }; \
@@ -117,11 +129,11 @@ https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories; \
   if [ ${USE_GN_SOURCE} = 'YES' ]; then \
     GN_SOURCE=/tmp/gn; \
     gn_rev=${GN_SOURCE_REV:-$(cat ${V8_SOURCE}/buildtools/linux64/gn.sha1 || true)}; \
-    gn_rev=${gn_rev:-$(sed -rn "/['\"]gn_version['\"]:\s*/{N;s/.*['\"]git_revision:(.*)['\"],?\s*/\1/p}" ${V8_DEPS})}; \
+    gn_rev=${gn_rev:-$(sed -rn "/['\"]gn_version['\"]:\s*/{N;s/.*['\"]git_revision:(.*)['\"],?\s*?/\1/p}" ${V8_DEPS})}; \
     gn_rev=${gn_rev:?GN_SOURCE_REV is required}; \
     : "-- GN SOURCE: download source"; \
     load_archive "https://gn.googlesource.com/gn/+archive/${gn_rev}.tar.gz" ${GN_SOURCE}; \
-    : "-- GN SOURCE: stop regen config and speedup build"; \
+    : "-- GN SOURCE: stop regen config and speed up build"; \
     sed -ri \
       -e "s/(generator\s*=).*',/\1 0'/" \
       -e "/executables\['gn_unittests'\]/d" \
@@ -190,11 +202,11 @@ https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories; \
     sed -ri "s/(cflags)\s*=\s*\[(.*)\]/\1 = [\"-fno-delete-null-pointer-checks\", \2]/" BUILD.gn; \
   fi; \
   if [ ${USE_CLANG} = 'YES' ] && compare_ver ${V8_VERSION} le 6.6.164; then \
-    sed -ri "/(update_args|(\":|\\$|\s+)clang_revision)/s/.*//" build/config/compiler/BUILD.gn; \
+    sed -ri "/(update_args|(\":|\\$|\s+)clang_revision)/{/.*/d}" build/config/compiler/BUILD.gn; \
   fi; \
   if [ "${USE_LLD}${USE_LLD_THIN_LTO}" = 'YESYES' ]; then \
     sed -ri \
-      -e "s/(cache_policy =.*\"|.*(lld|thin)lto-?cache.*,?)//" \
+      -e "/(cache_policy =.*\"|.*(lld|thin)lto-?cache.*,?)/d" \
       -e "s/(thinlto-jobs=).*(\",?)/\1${USE_LLD_THIN_LTO_JOBS:-${NUM_JOBS}}\2/" \
       build/config/compiler/BUILD.gn; \
   fi; \
@@ -214,7 +226,7 @@ https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories; \
   sed -ri "s/^#if defined\(DEBUG\).*/#if 0/" src/$(if_v8_ver ge 7.6.234 codegen/)/external-reference-table.cc; \
   sed -ri \
     -e "s/^#if V8_LIBC_GLIBC.*/#if 0/" \
-    -e "/const char k(MangledSymbolPrefix|SymbolCharacters).*/{N;s/.*\";//}" \
+    -e "/const char k(MangledSymbolPrefix|SymbolCharacters).*/{N;/.*\";/d}" \
     src/base/debug/stack_trace_posix.cc; \
   : "-- GN: generate instructions"; \
   gn gen out \

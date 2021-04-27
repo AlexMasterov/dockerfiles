@@ -8,11 +8,28 @@ Common Dockerfiles, used for _development_.
 #### alpine-v8
 
 ```sh
-docker build --build-arg V8_VERSION=9.2.24 --rm -t v8 github.com/AlexMasterov/dockerfiles.git#:alpine-v8
+docker build --build-arg V8_VERSION=9.2 --rm -t v8 github.com/AlexMasterov/dockerfiles.git#:alpine-v8
 ```
 > V8_VERSION >= 6.1.211
 
 ##### FAQ
+
+
+<details>
+<summary>how do I get the latest version?</summary>
+
+```sh
+docker build --build-arg V8_VERSION=latest --rm -t v8 github.com/AlexMasterov/dockerfiles.git#:alpine-v8
+```
+</details>
+
+<details>
+<summary>how do I get the latest major version? (X.Y)</summary>
+
+```sh
+docker build --build-arg V8_VERSION=9.2 --rm -t v8 github.com/AlexMasterov/dockerfiles.git#:alpine-v8
+```
+</details>
 
 <details>
 <summary>How do I get an archive with V8?</summary>
@@ -27,7 +44,7 @@ docker run --rm -v "$(pwd)/:/archive" v8 sh -c 'tar cvzf /archive/libv8-${V8_VER
 
 ```sh
 docker build \
-  --build-arg V8_VERSION=9.2.24 \
+  --build-arg V8_VERSION=9.2 \
   --build-arg V8_SHELL=YES \
   --rm -t v8 github.com/AlexMasterov/dockerfiles.git#:alpine-v8
 ```
@@ -41,7 +58,7 @@ docker run --rm -it v8 d8
 
 ```sh
 docker build \
-  --build-arg V8_VERSION=9.2.24 \
+  --build-arg V8_VERSION=9.2 \
   --build-arg V8_STATIC_LIB=YES \
   --rm -t v8 github.com/AlexMasterov/dockerfiles.git#:alpine-v8
 ```
@@ -52,7 +69,7 @@ docker build \
 
 ```sh
 docker build \
-  --build-arg V8_VERSION=9.2.24 \
+  --build-arg V8_VERSION=9.2 \
   --build-arg V8_STATIC_LIB=YES \
   --build-arg V8_MONOLITHIC=YES \
   --rm -t v8 github.com/AlexMasterov/dockerfiles.git#:alpine-v8
