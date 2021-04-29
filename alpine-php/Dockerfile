@@ -4,8 +4,8 @@ LABEL repository.hub="alexmasterov/alpine-php" \
       repository.url="https://github.com/AlexMasterov/dockerfiles" \
       maintainer="Alex Masterov <alex.masterow@gmail.com>"
 
-# >= 7.0.0
-ARG PHP_VERSION=8.0.3
+# >= 7.0.0 | 7.0
+ARG PHP_VERSION=8.0
 ARG PHP_CONFIG=/etc/php
 ARG PHP_CFLAGS="-O2 -fPIC -fpie -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64"
 ARG PHP_LDFLAGS="-Wl,-O1 -Wl,--hash-style=both -pie"
@@ -103,6 +103,11 @@ ARG OUT_STRIP=YES
 
 RUN set -eux; \
   lib_ssl=$(echo ${LIB_SSL:-} | tr '[:upper:]' '[:lower:]'); \
+  \
+  if [ "${PHP_VERSION//[^.]}" = '.' ]; then \
+    PHP_VERSION=$(wget "https://php.net/releases/index.php?json&version=${PHP_VERSION}" -T 30 -O - | sed -rn "s/.*\"version\":\s*?\"(.*\d+)\".*/\1/p"); \
+    PHP_VERSION=${PHP_VERSION:?"Unknown PHP version: ${PHP_VERSION}"}; \
+  fi; \
   \
   as_ver() { set -- ${1//./ }; local y="00${2:-0}" z="00${3:-0}"; echo "${1}${y:(-3)}${z:(-3)}"; }; \
   compare_ver() { test $(as_ver ${1}) -${2} $(as_ver ${3}); }; \

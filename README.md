@@ -53,7 +53,6 @@ docker build \
 ```sh
 docker build \
   --build-arg V8_VERSION=9.2 \
-  --build-arg V8_STATIC_LIB=YES \
   --build-arg V8_MONOLITHIC=YES \
   --rm -t v8 github.com/AlexMasterov/dockerfiles.git#:alpine-v8
 ```
@@ -61,6 +60,6 @@ docker build \
 
 #### alpine-php
 ```sh
-docker build --build-arg PHP_VERSION=8.0.3 --rm -t php github.com/AlexMasterov/dockerfiles.git#:alpine-php
+docker build --build-arg PHP_VERSION=8.0 --rm -t php github.com/AlexMasterov/dockerfiles.git#:alpine-php
 ```
-> PHP_VERSION >= 7.0.0
+> PHP_VERSION >= 7.0.0 | 7.0
