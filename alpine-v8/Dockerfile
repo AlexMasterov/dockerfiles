@@ -4,8 +4,8 @@ LABEL repository.hub="alexmasterov/alpine-v8" \
       repository.url="https://github.com/AlexMasterov/dockerfiles" \
       maintainer="Alex Masterov <alex.masterow@gmail.com>"
 
-# >= 6.1.211
-ARG V8_VERSION=9.2.106
+# >= 6.1.211 | 6.1 | dev | beta | stable | latest
+ARG V8_VERSION=9.2.131
 
 ARG V8_SHELL=NO
 ARG V8_MONOLITHIC=NO
@@ -69,7 +69,7 @@ RUN set -eux; \
   V8_SOURCE=/tmp/v8; \
   V8_DEPS=${V8_SOURCE}/DEPS; \
   \
-  if [ ${V8_VERSION//[^.]} = '.' ]; then \
+  if [ "${V8_VERSION//[^.]}" = '.' ]; then \
     v8_version_url="https://raw.githubusercontent.com/v8/v8/${V8_VERSION}-lkgr/include/v8-version.h"; \
     v8_build_ver=$(wget "${v8_version_url}" -T 30 -O - | sed -rn "/#.*V8_BUILD_NUMBER/N;s/#.*_NUMBER (\d+).*_LEVEL (\d+)/\1.\2/p"); \
     V8_VERSION=${v8_build_ver:+"${V8_VERSION}.${v8_build_ver//.0}"}; \
@@ -78,13 +78,13 @@ RUN set -eux; \
   if contains "dev beta stable latest" ${V8_VERSION} 1; then \
     if [ ${V8_VERSION} = 'latest' ]; then \
       v8_version_url="https://storage.googleapis.com/chromium-v8/official/canary/v8-linux64-rel-latest.json"; \
-      v8_version_regexp="s/.*\"version\":\s*?\"(.*\d+)\".*/\1/p"; \
+      v8_version_regexp=".*\"version\":\s*?\"(.*\d+)\".*"; \
     else \
       v8_version_url="https://omahaproxy.appspot.com/all"; \
-      v8_version_regexp="s/linux,${V8_VERSION}.*,(.*)$/\1/p"; \
+      v8_version_regexp="linux,${V8_VERSION}.*,(.*)$"; \
     fi; \
     \
-    V8_VERSION=$(wget ${v8_version_url} -T 30 -O - | sed -rn "${v8_version_regexp}"); \
+    V8_VERSION=$(wget ${v8_version_url} -T 30 -O - | sed -rn "s/${v8_version_regexp}/\1/p"); \
   fi; \
   \
   echo -e "\
@@ -207,6 +207,8 @@ https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories; \
     fi; \
     : "-- Patch: V8 is not -fsanitize=null clean (issue 3782)"; \
     sed -ri "s/(cflags)\s*=\s*\[(.*)\]/\1 = [\"-fno-delete-null-pointer-checks\", \2]/" BUILD.gn; \
+    : "-- Patch: don't use the attribute [[nodiscard]]"; \
+    sed -ri "s/(define V8_HAS_CPP_ATTRIBUTE_NODISCARD).*/\1 0/" include/v8config.h; \
   fi; \
   if [ ${USE_CLANG} = 'YES' ] && compare_ver ${V8_VERSION} le 6.6.164; then \
     sed -ri "/(update_args|(\":|\\$|\s+)clang_revision)/{/.*/d}" build/config/compiler/BUILD.gn; \
