@@ -75,7 +75,7 @@ RUN set -eux; \
     V8_VERSION=${v8_build_ver:+${V8_VERSION}.${v8_build_ver//.0}}; \
     V8_VERSION=${V8_VERSION:-latest}; \
   fi; \
-  if [ $(contains "dev beta stable latest" ${V8_VERSION} 1) ]; then \
+  if test $(contains "dev beta stable latest" ${V8_VERSION} 1); then \
     if [ ${V8_VERSION} = 'latest' ]; then \
       v8_version_url="https://storage.googleapis.com/chromium-v8/official/canary/v8-linux64-rel-latest.json"; \
       v8_version_regexp=".*\"version\":\s*?\"(.*\d+)\".*"; \
@@ -203,7 +203,7 @@ https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories; \
   \
   : "-- Patch: compiler"; \
   if [ ${USE_CLANG} = 'NO' ]; then \
-    if contains ${ARCH} 'arm' && compare_ver ${V8_VERSION} ge 8.0.365; then \
+    if test $(contains ${ARCH} 'arm' 1) && compare_ver ${V8_VERSION} ge 8.0.365; then \
       sed -ri "s/if \(arm_use_neon/& \&\& is_clang/" third_party/zlib/BUILD.gn; \
     fi; \
     : "-- Patch: V8 is not -fsanitize=null clean (issue 3782)"; \
@@ -222,7 +222,7 @@ https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories; \
   fi; \
   \
   : "-- Patch: V8"; \
-  if contains ${ARCH} 'arm'; then \
+  if test $(contains ${ARCH} 'arm' 1); then \
     sed -ri "s/(V8_HOST_ARCH)_PPC \|\| V8_HOST_ARCH_PPC64/& \|\| \1_ARM \|\| \1_ARM64/" src/base/cpu.cc; \
   fi; \
   if compare_ver ${V8_VERSION} le 7.4.221; then \
