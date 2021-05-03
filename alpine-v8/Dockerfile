@@ -49,7 +49,7 @@ ENV V8_VERSION=${V8_VERSION} \
 RUN set -eux; \
   as_ver() { set -- ${1//./ }; local y="00${2:-0}" z="00${3:-0}" w="00${4:-0}"; echo "${1}${y:(-3)}${z:(-3)}${w:(-3)}"; }; \
   compare_ver() { test $(as_ver ${1}) -${2} $(as_ver ${3}); }; \
-  contains() { if [ -z ${1##*${2}*} ]; then shift 2; echo ${*:-}; fi; }; \
+  contains() { if [ -z "${1##*${2}*}" ]; then shift 2; echo ${*:-}; fi; }; \
   get_deps() { find ${*:-} -type f -and \( -executable -or -name '*.so*' \) -exec ldd '{}' ';' | sed -rn "s/\s*(.* => )?(.*) \(.*/\2/p" | sort -u; }; \
   if_no() { if [ ${1} = 'NO' ]; then shift 1; echo ${*:-}; fi; }; \
   if_v8_ver() { if compare_ver ${V8_VERSION} ${1} ${2}; then shift 2; echo ${*:-}; fi; }; \
@@ -72,10 +72,10 @@ RUN set -eux; \
   if [ "${V8_VERSION//[^.]}" = '.' ]; then \
     v8_version_url="https://raw.githubusercontent.com/v8/v8/${V8_VERSION}-lkgr/include/v8-version.h"; \
     v8_build_ver=$(wget "${v8_version_url}" -T 30 -O - | sed -rn "/#.*V8_BUILD_NUMBER/N;s/#.*_NUMBER (\d+).*_LEVEL (\d+)/\1.\2/p"); \
-    V8_VERSION=${v8_build_ver:+"${V8_VERSION}.${v8_build_ver//.0}"}; \
+    V8_VERSION=${v8_build_ver:+${V8_VERSION}.${v8_build_ver//.0}}; \
     V8_VERSION=${V8_VERSION:-latest}; \
   fi; \
-  if contains "dev beta stable latest" ${V8_VERSION} 1; then \
+  if [ $(contains "dev beta stable latest" ${V8_VERSION} 1) ]; then \
     if [ ${V8_VERSION} = 'latest' ]; then \
       v8_version_url="https://storage.googleapis.com/chromium-v8/official/canary/v8-linux64-rel-latest.json"; \
       v8_version_regexp=".*\"version\":\s*?\"(.*\d+)\".*"; \
@@ -93,6 +93,7 @@ https://dl-cdn.alpinelinux.org/alpine/edge/community\n\
 https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories; \
   apk add --no-cache --virtual .v8-build \
     g++ \
+    libexecinfo-dev \
     linux-headers \
     python2 \
     samurai \
@@ -208,7 +209,7 @@ https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories; \
     : "-- Patch: V8 is not -fsanitize=null clean (issue 3782)"; \
     sed -ri "s/(cflags)\s*=\s*\[(.*)\]/\1 = [\"-fno-delete-null-pointer-checks\", \2]/" BUILD.gn; \
     : "-- Patch: don't use the attribute [[nodiscard]]"; \
-    sed -ri "s/(define V8_HAS_CPP_ATTRIBUTE_NODISCARD).*/\1 0/" include/v8config.h; \
+    sed -ri "s/(define V8_HAS_CPP_ATTRIBUTE_NODISCARD).*/\1 0/g" include/v8config.h; \
   fi; \
   if [ ${USE_CLANG} = 'YES' ] && compare_ver ${V8_VERSION} le 6.6.164; then \
     sed -ri "/(update_args|(\":|\\$|\s+)clang_revision)/{/.*/d}" build/config/compiler/BUILD.gn; \
@@ -232,11 +233,7 @@ https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories; \
   : "-- Patch: use monotonic clock for 'pthread_cond_timedwait' with musl"; \
   sed -i "s/(V8_OS_LINUX && V8_LIBC_GLIBC)/V8_OS_LINUX/g" src/base/platform/condition-variable.cc; \
   : "-- Patch: fix undefined symbol: backtrace_symbols (execinfo.h)"; \
-  sed -ri "s/^#if defined\(DEBUG\).*/#if 0/" src/$(if_v8_ver ge 7.6.234 codegen/)/external-reference-table.cc; \
-  sed -ri \
-    -e "s/^#if V8_LIBC_GLIBC.*/#if 0/" \
-    -e "/const char k(MangledSymbolPrefix|SymbolCharacters).*/{N;/.*\";/d}" \
-    src/base/debug/stack_trace_posix.cc; \
+  sed -ri "/config\(\"libbase_config\"\)/{;:a;N;/libs/!ba;s/(libs) = \[(.*)\]/\1 = \[\"execinfo\", \2\]/}" BUILD.gn; \
   : "-- GN: generate instructions"; \
   gn gen out \
     --script-executable=/usr/bin/python2 \
@@ -343,7 +340,7 @@ https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories; \
     mv ${V8_SOURCE}/out/d8 ${V8_PATH}/bin/d8; \
     ln -fs ${V8_PATH}/bin/d8 /usr/local/bin/d8; \
     \
-    if [[ ${V8_MONOLITHIC} = 'YES' || "${V8_SHARED_LIB}${OUT_LIBCXX}" = 'YESNO' ]]; then \
+    if [[ ${V8_SHARED_LIB} = 'NO' || "${V8_SHARED_LIB}${OUT_LIBCXX}" = 'YESNO' ]]; then \
       d8_std_libs=$(get_deps ${V8_PATH}/bin/d8 | sed -rn "s/\/usr\/lib\/(.*)/so:\1/p"); \
       apk add --no-cache --virtual .d8-runtime ${d8_std_libs}; \
     fi; \
