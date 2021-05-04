@@ -5,7 +5,7 @@ LABEL repository.hub="alexmasterov/alpine-redis" \
       maintainer="Alex Masterov <alex.masterow@gmail.com>"
 
 # >= 3.2.0
-ARG REDIS_VERSION=6.2.2
+ARG REDIS_VERSION=6.2.3
 
 ARG REDIS_CLI=NO
 ARG REDIS_SERVER=YES
@@ -28,7 +28,7 @@ RUN set -eux; \
   as_ver() { set -- ${1//./ }; local y="00${2:-0}" z="00${3:-0}"; echo "${1}${y:(-3)}${z:(-3)}"; }; \
   compare_ver() { test $(as_ver ${1}) -${2} $(as_ver ${3}); }; \
   if_redis_ver() { if compare_ver ${REDIS_VERSION} ${1} ${2}; then shift 2; echo "${*:-}"; fi; }; \
-  if_yes() { if [ ${1} = 'YES' ]; then shift 1; echo "${*:-}"; fi; }; \
+  if_yes() { if [ ${1} = 'YES' ]; then shift 1; echo ${*:-}; fi; }; \
   load_archive() { wget ${1} -T 30 -O - | tar ${2:-xmz} -C /tmp; }; \
   \
   apk add --no-cache --virtual .redis-build \
