@@ -5,7 +5,7 @@ LABEL repository.hub="alexmasterov/alpine-v8" \
       maintainer="Alex Masterov <alex.masterow@gmail.com>"
 
 # >= 6.1.211 | 6.1 | dev | beta | stable | latest
-ARG V8_VERSION=9.2.131
+ARG V8_VERSION=9.2.159
 
 ARG V8_SHELL=NO
 ARG V8_MONOLITHIC=NO
@@ -34,6 +34,8 @@ ARG USE_LLD=YES
 ARG USE_LLD_THIN_LTO=NO
 ARG USE_LLD_THIN_LTO_OPT=NO
 ARG LLD_THIN_LTO_JOBS
+# GNU libc backtrace facility
+ARG USE_EXECINFO=NO
 
 ARG USE_GN_SOURCE=NO
 ARG GN_SOURCE_REV
@@ -93,7 +95,6 @@ https://dl-cdn.alpinelinux.org/alpine/edge/community\n\
 https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories; \
   apk add --no-cache --virtual .v8-build \
     g++ \
-    libexecinfo-dev \
     linux-headers \
     python2 \
     samurai \
@@ -105,6 +106,7 @@ https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories; \
     $(if_yes ${USE_LLD}       lld=~11) \
     $(if_yes ${USE_GN_SOURCE} clang=~11) \
     $(if_no  ${USE_GN_SOURCE} gn) \
+    $(if_yes ${USE_EXECINFO}  libexecinfo-dev) \
     $(if_yes ${V8_INTL}       icu-dev) \
     ; \
   : "-- V8: download source"; \
@@ -126,8 +128,8 @@ https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories; \
   for dep in ${deps}; do { \
     target="${dep//\//\\/}"; \
     target="${target//+/\\+}"; \
-    repo=$(sed -rn "/['\"].*${target}['\"]:\s*/{N;s/.*['\"](.*).git['\"].*,?/\1/p}" ${V8_DEPS}); \
-    rev=$(sed -rn "/['\"].*${target}['\"]:\s*/{N;s/.*['\"](.*)['\"],?/\1/p}" ${V8_DEPS}); \
+    repo=$(sed -rn "/['\"].*${target}['\"]:/{;:a;N;/,/!ba;s/.*['\"](.*)\.git['\"].*/\1/p}" ${V8_DEPS}); \
+    rev=$(sed -rn "/['\"].*${target}['\"]:/{;:a;N;/,/!ba;s/.*['\"](.*)['\"],.*/\1/p}" ${V8_DEPS}); \
     \
     load_archive "${SOURCE_REPO}${repo}/+archive/${rev}.tar.gz" ${V8_SOURCE}/${dep}; \
   } & \
@@ -223,7 +225,7 @@ https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories; \
   \
   : "-- Patch: V8"; \
   if test $(contains ${ARCH} 'arm' 1); then \
-    sed -ri "s/(V8_HOST_ARCH)_PPC \|\| V8_HOST_ARCH_PPC64/& \|\| \1_ARM \|\| \1_ARM64/" src/base/cpu.cc; \
+    sed -i "s/\(V8_HOST_ARCH\)_PPC || V8_HOST_ARCH_PPC64/& || \1_ARM || \1_ARM64/" src/base/cpu.cc; \
   fi; \
   if compare_ver ${V8_VERSION} le 7.4.221; then \
     : "-- Patch: fix deadlock in OptimizingCompileDispatcher (issue 935358)"; \
@@ -231,9 +233,18 @@ https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories; \
       src/compiler-dispatcher/optimizing-compile-dispatcher.cc; \
   fi; \
   : "-- Patch: use monotonic clock for 'pthread_cond_timedwait' with musl"; \
-  sed -i "s/(V8_OS_LINUX && V8_LIBC_GLIBC)/V8_OS_LINUX/g" src/base/platform/condition-variable.cc; \
+  sed -ri "s/\((V8_OS_LINUX).*[^=\)]\)?/\1/g" src/base/platform/condition-variable.cc; \
   : "-- Patch: fix undefined symbol: backtrace_symbols (execinfo.h)"; \
-  sed -ri "/config\(\"libbase_config\"\)/{;:a;N;/libs/!ba;s/(libs) = \[(.*)\]/\1 = \[\"execinfo\", \2\]/}" BUILD.gn; \
+  if [ ${USE_EXECINFO} = 'YES' ]; then \
+    sed -ri "/config\(\"libbase_config\"\)/{;:a;N;/libs/!ba;s/(libs) = \[(.*)\]/\1 = \[\"execinfo\", \2\]/}" BUILD.gn; \
+    sed -i "s/^\(#if\) V8_LIBC_GLIBC.*/\1 V8_OS_LINUX/" src/base/debug/stack_trace_posix.cc; \
+  else \
+    sed -i "s/^\(#if\) defined(DEBUG).*/\1 0/" src/$(if_v8_ver ge 7.6.234 codegen/)/external-reference-table.cc; \
+    sed -ri \
+      -e "s/^(#if) V8_LIBC_GLIBC.*/\1 0/" \
+      -e "/const char k(MangledSymbolPrefix|SymbolCharacters)/{N;/;/d}" \
+      src/base/debug/stack_trace_posix.cc; \
+  fi; \
   : "-- GN: generate instructions"; \
   gn gen out \
     --script-executable=/usr/bin/python2 \
