@@ -5,7 +5,7 @@ LABEL repository.hub="alexmasterov/alpine-redis" \
       maintainer="Alex Masterov <alex.masterow@gmail.com>"
 
 # >= 3.2.0
-ARG REDIS_VERSION=6.2.3
+ARG REDIS_VERSION=6.2.4
 
 ARG REDIS_CLI=NO
 ARG REDIS_SERVER=YES
