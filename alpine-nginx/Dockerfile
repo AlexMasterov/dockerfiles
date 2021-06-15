@@ -4,7 +4,7 @@ LABEL repository.hub="alexmasterov/alpine-nginx" \
       repository.url="https://github.com/AlexMasterov/dockerfiles" \
       maintainer="Alex Masterov <alex.masterow@gmail.com>"
 
-ARG NGINX_VERSION=1.20.0
+ARG NGINX_VERSION=1.21.0
 
 ARG NGINX_CONFIG=/etc/nginx
 ARG NGINX_EXTRA_CCFLAGS="-O2 -fstack-protector-strong -flto -fPIC -fpie"
@@ -30,13 +30,13 @@ ARG HEADERS_MORE=NO
 ARG HEADERS_MORE_VERSION=0.33
 
 ARG NJS=NO
-ARG NJS_VERSION=0.5.3
+ARG NJS_VERSION=0.6.0
 
 ARG LUA=NO
-ARG LUA_VERSION=0.10.19
-ARG LUA_JIT_VERSION=2.1-20201229
+ARG LUA_VERSION=0.10.20rc1
+ARG LUA_JIT_VERSION=2.1-20210510
 ARG LUA_ROCKS=NO
-ARG LUA_ROCKS_VERSION=3.6.0
+ARG LUA_ROCKS_VERSION=3.7.0
 ARG DEVEL_KIT_VERSION=0.3.1
 
 ARG TARANTOOL_UPSTREAM=NO
@@ -56,16 +56,6 @@ RUN set -eux; \
   if_yes() { if [ ${1} = 'YES' ]; then shift 1; echo ${*:-}; fi; }; \
   load_archive() { wget ${1} -T 30 -O - | tar ${2:-xmz} -C /tmp; }; \
   to_lowercase() { echo ${1:-} | tr '[:upper:]' '[:lower:]'; }; \
-  \
-  user_dirs=" \
-    /var/run/nginx \
-    /var/log/nginx \
-    /var/cache/nginx \
-  "; \
-  addgroup -g 101 -S nginx; \
-  adduser -u 101 -S -D -h /var/cache/nginx -s /sbin/nologin -G nginx nginx; \
-  mkdir -p -m 755 ${user_dirs}; \
-  chown nginx:nginx ${user_dirs}; \
   \
   apk add --no-cache --virtual .nginx-build \
     g++ \
@@ -217,7 +207,6 @@ RUN set -eux; \
   apk del --no-network .nginx-build; \
   rm -rf /tmp/* /var/tmp/*
 
-USER nginx
 STOPSIGNAL SIGQUIT
 
 CMD ["nginx"]
