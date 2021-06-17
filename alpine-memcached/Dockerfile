@@ -1,4 +1,4 @@
-FROM alpine:3.13
+FROM alpine:3.14
 
 LABEL repository.hub="alexmasterov/alpine-memcached" \
       repository.url="https://github.com/AlexMasterov/dockerfiles" \
@@ -19,14 +19,14 @@ ARG LIB_SSL=OPENSSL
 ARG OUT_STRIP=YES
 
 RUN set -eux; \
-  get_deps() { scanelf --nobanner --needed --recursive -F '%n#p' ${*:-} | tr ',' '\n' | sort -u; }; \
-  if_no() { if [ ${1} = 'NO' ]; then shift 1; echo "${*:-}"; fi; }; \
-  if_yes() { if [ ${1} = 'YES' ]; then shift 1; echo "${*:-}"; fi; }; \
+  get_deps() { find ${*:-} -type f -and \( -executable -or -name '*.so*' \) -exec ldd '{}' ';' | sed -rn "s/\s*(.* => )?(.*) \(.*/\2/p" | sort -u; }; \
+  if_no() { if [ ${1} = 'NO' ]; then shift 1; echo ${*:-}; fi; }; \
+  if_yes() { if [ ${1} = 'YES' ]; then shift 1; echo ${*:-}; fi; }; \
   load_archive() { wget ${1} -T 30 -O - | tar ${2:-xmz} -C /tmp; }; \
   to_lowercase() { echo ${1:-} | tr '[:upper:]' '[:lower:]'; }; \
   \
-  addgroup -g 82 -S memcached; \
-  adduser -u 82 -S -D -h /var/local/cache/memcached -s /sbin/nologin -G memcached memcached; \
+  addgroup -g 1000 -S memcached; \
+  adduser -u 1000 -S -D -h /var/local/cache/memcached -s /sbin/nologin -G memcached memcached; \
   \
   apk add --no-cache --virtual .memcached-build \
     autoconf \
@@ -61,8 +61,8 @@ RUN set -eux; \
       -exec strip --strip-unneeded '{}' + || true; \
   fi; \
   \
-  apk add --no-cache --virtual .memcached-runtime \
-    $(get_deps /usr/local/bin /usr/local/lib | sed "s/^/so:&/"); \
+  runtime_deps=$(get_deps /usr/local/bin /usr/local/lib | sed -rn "s/\/usr\/lib\/(.*)/so:\1/p"); \
+  apk add --no-cache --virtual .memcached-runtime ${runtime_deps}; \
   \
   : "-- Remove build dependencies, clean temporary files"; \
   apk del --no-network .memcached-build; \

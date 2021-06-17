@@ -1,11 +1,11 @@
-FROM alpine:3.13
+FROM alpine:3.14
 
 LABEL repository.hub="alexmasterov/alpine-v8" \
       repository.url="https://github.com/AlexMasterov/dockerfiles" \
       maintainer="Alex Masterov <alex.masterow@gmail.com>"
 
 # >= 6.1.211 | 6.1 | dev | beta | stable | latest
-ARG V8_VERSION=9.2.159
+ARG V8_VERSION=stable
 
 ARG V8_SHELL=NO
 ARG V8_MONOLITHIC=NO
@@ -89,10 +89,7 @@ RUN set -eux; \
     V8_VERSION=$(wget ${v8_version_url} -T 30 -O - | sed -rn "s/${v8_version_regexp}/\1/p"); \
   fi; \
   \
-  echo -e "\
-https://dl-cdn.alpinelinux.org/alpine/edge/main\n\
-https://dl-cdn.alpinelinux.org/alpine/edge/community\n\
-https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories; \
+  echo "https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories; \
   apk add --no-cache --virtual .v8-build \
     g++ \
     linux-headers \
@@ -128,8 +125,8 @@ https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories; \
   for dep in ${deps}; do { \
     target="${dep//\//\\/}"; \
     target="${target//+/\\+}"; \
-    repo=$(sed -rn "/['\"].*${target}['\"]:/{;:a;N;/,/!ba;s/.*['\"](.*)\.git['\"].*/\1/p}" ${V8_DEPS}); \
-    rev=$(sed -rn "/['\"].*${target}['\"]:/{;:a;N;/,/!ba;s/.*['\"](.*)['\"],.*/\1/p}" ${V8_DEPS}); \
+    repo=$(sed -rn "/['\"].*${target}['\"]:/{;:a;N/\.git/!ba;s/.*['\"](.*)\.git['\"].*/\1/p}" ${V8_DEPS}); \
+    rev=$(sed -rn "/['\"].*${target}['\"]:/{;:a;N/@/!ba;s/.*['\"](.*)['\"].*/\1/p}" ${V8_DEPS}); \
     \
     load_archive "${SOURCE_REPO}${repo}/+archive/${rev}.tar.gz" ${V8_SOURCE}/${dep}; \
   } & \

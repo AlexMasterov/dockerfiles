@@ -1,4 +1,4 @@
-FROM alpine:3.13
+FROM alpine:3.14
 
 LABEL repository.hub="alexmasterov/alpine-php" \
       repository.url="https://github.com/AlexMasterov/dockerfiles" \
@@ -6,6 +6,7 @@ LABEL repository.hub="alexmasterov/alpine-php" \
 
 # >= 7.0.0 | 7.0
 ARG PHP_VERSION=8.0
+
 ARG PHP_CONFIG=/etc/php
 ARG PHP_CFLAGS="-O2 -fPIC -fpie -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64"
 ARG PHP_LDFLAGS="-Wl,-O1 -Wl,--hash-style=both -pie"
@@ -119,9 +120,6 @@ RUN set -eux; \
   if_yes() { if [ ${1} = 'YES' ]; then shift 1; echo ${*:-}; fi; }; \
   load_archive() { wget ${1} -T 30 -O - | tar ${2:-xmz} -C /tmp; }; \
   make_ext() { phpize; ./configure --build=$(g++ -dumpmachine) ${*:-}; make; make install; }; \
-  \
-  addgroup -g 82 -S www-data; \
-  adduser -u 82 -S -D -h /var/cache/www-data -s /sbin/nologin -G www-data www-data; \
   \
   apk add --no-cache --virtual .php-build \
     autoconf \
@@ -445,11 +443,11 @@ RUN set -eux; \
   \
   runtime_deps=$(get_deps /usr/local/bin /usr/local/lib | sed -rn "s/\/usr\/lib\/(.*)/so:\1/p"); \
   apk add --no-cache --virtual .php-runtime ${runtime_deps}; \
+  \
   : "-- Remove build dependencies, clean temporary files"; \
   apk del --no-network .php-build*; \
   rm -rf /tmp/* /var/tmp/*
 
-USER www-data
 STOPSIGNAL SIGQUIT
 
 CMD ["php"]
