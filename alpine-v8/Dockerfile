@@ -198,6 +198,11 @@ RUN set -eux; \
     dumpmachine=$(g++ -dumpmachine); \
     sed -ri "s/\"(--target)=aarch64-.*\"/\"\1=${dumpmachine}\"/" build/config/compiler/BUILD.gn; \
     sed -ri "s/(toolprefix) = \"aarch64-.*\"/\1 = \"\/usr\/${dumpmachine}\/bin\/\"/" build/toolchain/linux/BUILD.gn; \
+    if ${USE_CLANG} = 'NO' && compare_ver ${V8_VERSION} le 9.3.50 \
+      : "-- GCC build fails trying to use a non constexpr function from a constexpr function"; \
+      header=$(if_v8_ver le 7.3.200 assembler-arm64.h); \
+      sed -ri "s/VRegister from_code/constexpr &/" src/$(if_v8_ver ge 7.6.234 codegen/)arm64/${header:-register-arm64.h}; \
+    fi; \
   fi; \
   \
   : "-- Patch: compiler"; \
@@ -236,7 +241,7 @@ RUN set -eux; \
     sed -ri "/config\(\"libbase_config\"\)/{;:a;N;/libs/!ba;s/(libs) = \[(.*)\]/\1 = \[\"execinfo\", \2\]/}" BUILD.gn; \
     sed -i "s/^\(#if\) V8_LIBC_GLIBC.*/\1 V8_OS_LINUX/" src/base/debug/stack_trace_posix.cc; \
   else \
-    sed -i "s/^\(#if\) defined(DEBUG).*/\1 0/" src/$(if_v8_ver ge 7.6.234 codegen/)/external-reference-table.cc; \
+    sed -i "s/^\(#if\) defined(DEBUG).*/\1 0/" src/$(if_v8_ver ge 7.6.234 codegen/)external-reference-table.cc; \
     sed -ri \
       -e "s/^(#if) V8_LIBC_GLIBC.*/\1 0/" \
       -e "/const char k(MangledSymbolPrefix|SymbolCharacters)/{N;/;/d}" \
