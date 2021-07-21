@@ -198,7 +198,7 @@ RUN set -eux; \
     dumpmachine=$(g++ -dumpmachine); \
     sed -ri "s/\"(--target)=aarch64-.*\"/\"\1=${dumpmachine}\"/" build/config/compiler/BUILD.gn; \
     sed -ri "s/(toolprefix) = \"aarch64-.*\"/\1 = \"\/usr\/${dumpmachine}\/bin\/\"/" build/toolchain/linux/BUILD.gn; \
-    if ${USE_CLANG} = 'NO' && compare_ver ${V8_VERSION} le 9.3.50 \
+    if ${USE_CLANG} = 'NO' && compare_ver ${V8_VERSION} le 9.3.50; then \
       : "-- GCC build fails trying to use a non constexpr function from a constexpr function"; \
       header=$(if_v8_ver le 7.3.200 assembler-arm64.h); \
       sed -ri "s/VRegister from_code/constexpr &/" src/$(if_v8_ver ge 7.6.234 codegen/)arm64/${header:-register-arm64.h}; \
@@ -216,7 +216,7 @@ RUN set -eux; \
     sed -ri "s/(define V8_HAS_CPP_ATTRIBUTE_NODISCARD).*/\1 0/g" include/v8config.h; \
   fi; \
   if [ ${USE_CLANG} = 'YES' ] && compare_ver ${V8_VERSION} le 6.6.164; then \
-    sed -ri "/(update_args|(\":|\\$|\s+)clang_revision)/{/.*/d}" build/config/compiler/BUILD.gn; \
+    sed -i "/(update_args|(\":|\\$|\s+)clang_revision)/{/.*/d}" build/config/compiler/BUILD.gn; \
   fi; \
   if [ "${USE_LLD}${USE_LLD_THIN_LTO}" = 'YESYES' ]; then \
     sed -ri \
