@@ -5,7 +5,7 @@ LABEL repository.hub="alexmasterov/alpine-memcached" \
       maintainer="Alex Masterov <alex.masterow@gmail.com>"
 
 # >= 1.6.0
-ARG MEMCACHED_VERSION=1.6.9
+ARG MEMCACHED_VERSION=1.6.10
 
 ARG MEMCACHED_TLS=YES
 ARG MEMCACHED_EXTSTORE=YES
@@ -24,9 +24,6 @@ RUN set -eux; \
   if_yes() { if [ ${1} = 'YES' ]; then shift 1; echo ${*:-}; fi; }; \
   load_archive() { wget ${1} -T 30 -O - | tar ${2:-xmz} -C /tmp; }; \
   to_lowercase() { echo ${1:-} | tr '[:upper:]' '[:lower:]'; }; \
-  \
-  addgroup -g 1000 -S memcached; \
-  adduser -u 1000 -S -D -h /var/local/cache/memcached -s /sbin/nologin -G memcached memcached; \
   \
   apk add --no-cache --virtual .memcached-build \
     autoconf \
@@ -67,7 +64,5 @@ RUN set -eux; \
   : "-- Remove build dependencies, clean temporary files"; \
   apk del --no-network .memcached-build; \
   rm -rf /tmp/* /var/tmp/*
-
-USER memcached
 
 CMD ["memcached"]
