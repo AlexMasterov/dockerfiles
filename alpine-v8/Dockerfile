@@ -215,8 +215,16 @@ RUN set -eux; \
     : "-- Patch: don't use the attribute [[nodiscard]]"; \
     sed -ri "s/(define V8_HAS_CPP_ATTRIBUTE_NODISCARD).*/\1 0/g" include/v8config.h; \
   fi; \
-  if [ ${USE_CLANG} = 'YES' ] && compare_ver ${V8_VERSION} le 6.6.164; then \
-    sed -i "/(update_args|(\":|\\$|\s+)clang_revision)/{/.*/d}" build/config/compiler/BUILD.gn; \
+  if [ ${USE_CLANG} = 'YES' ]; then \
+    if compare_ver ${V8_VERSION} le 6.6.164; then \
+      sed -ri "/(update_args|(\":|\\$|\s+)clang_revision)/{/.*/d}" build/config/compiler/BUILD.gn; \
+    fi; \
+    if compare_ver ${V8_VERSION} ge 9.3.72; then \
+      sed -ri "/\"-Wno-unused-but-set-(variable|parameter)\",?/d" build/config/compiler/BUILD.gn; \
+    fi; \
+    if compare_ver ${V8_VERSION} ge 9.4.22; then \
+      sed -ri "/\"(-Wa,)?-f(debug|file)-compilation-dir(.|=).*\",?/d" build/config/compiler/BUILD.gn; \
+    fi; \
   fi; \
   if [ "${USE_LLD}${USE_LLD_THIN_LTO}" = 'YESYES' ]; then \
     sed -ri \
