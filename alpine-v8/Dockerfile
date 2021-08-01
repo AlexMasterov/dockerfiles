@@ -247,13 +247,19 @@ RUN set -eux; \
   : "-- Patch: fix undefined symbol: backtrace_symbols (execinfo.h)"; \
   if [ ${USE_EXECINFO} = 'YES' ]; then \
     sed -ri "/config\(\"libbase_config\"\)/{;:a;N;/libs/!ba;s/(libs) = \[(.*)\]/\1 = \[\"execinfo\", \2\]/}" BUILD.gn; \
-    sed -i "s/^\(#if\) V8_LIBC_GLIBC.*/\1 V8_OS_LINUX/" src/base/debug/stack_trace_posix.cc; \
+    sed -ri \
+      -e "s/^(#if) V8_LIBC_GLIBC.*/\1 V8_OS_LINUX/" \
+      -e "s/(count_) = .*backtrace\(.*;/\1 = 0;/" \
+      src/base/debug/stack_trace_posix.cc; \
   else \
-    sed -i "s/^\(#if\) defined(DEBUG).*/\1 0/" src/$(if_v8_ver ge 7.6.234 codegen/)external-reference-table.cc; \
     sed -ri \
       -e "s/^(#if) V8_LIBC_GLIBC.*/\1 0/" \
       -e "/const char k(MangledSymbolPrefix|SymbolCharacters)/{N;/;/d}" \
       src/base/debug/stack_trace_posix.cc; \
+    sed -i \
+      -e "/^#include <execinfo.h>s*/d" \
+      -e "s/^#ifdef SYMBOLIZE_FUNCTION.*/#if 0/" \
+      src/$(if_v8_ver ge 7.6.234 codegen/)external-reference-table.cc; \
   fi; \
   : "-- GN: generate instructions"; \
   gn gen out \
