@@ -168,13 +168,13 @@ RUN set -eux; \
   cd ${V8_SOURCE}; \
   : "-- Patch: build"; \
   sed -ri \
-    -e "$(if_no ${V8_SHELL} "s/\"(src|test)\/inspector:.*\",?//")" \
-    -e "s/\"(tools|test):gn_all\",?//g" \
-    -e "s/\"test\/(cctest|unittests):.*\",?//g" \
-    -e "s/\"\/\/build\/(win:default_exe_manifest|config:exe_and_shlib_deps)\",?//" \
+    -e "$(if_no ${V8_SHELL} "/\"(src|test)\/inspector:.*\",?/d")" \
+    -e "/\"(tools|test):gn_all\",?/d" \
+    -e "/\"test\/(cctest|unittests):.*\",?/d" \
+    -e "/\"\/\/build\/(win:default_exe_manifest|config:exe_and_shlib_deps)\",?/d" \
     BUILD.gn; \
   if compare_ver ${V8_VERSION} le 6.7.197; then \
-    sed -ri "s/\"\/\/test\/test262\/BUILD.gn\",?//" .gn; \
+    sed -ri "/\"\/\/test\/test262\/BUILD.gn\",?/d" .gn; \
   fi; \
   if [ ${V8_INTL} = 'NO' ] && compare_ver ${V8_VERSION} le 6.7.196; then \
     sed -i "s/import(\"\/\/third_party\/icu\/config.gni\")/icu_use_data_file = false/" gni/isolate.gni; \
@@ -216,15 +216,11 @@ RUN set -eux; \
     sed -ri "s/(define V8_HAS_CPP_ATTRIBUTE_NODISCARD).*/\1 0/g" include/v8config.h; \
   fi; \
   if [ ${USE_CLANG} = 'YES' ]; then \
-    if compare_ver ${V8_VERSION} le 6.6.164; then \
-      sed -ri "/(update_args|(\":|\\$|\s+)clang_revision)/{/.*/d}" build/config/compiler/BUILD.gn; \
-    fi; \
-    if compare_ver ${V8_VERSION} ge 9.3.72; then \
-      sed -ri "/\"-Wno-unused-but-set-(variable|parameter)\",?/d" build/config/compiler/BUILD.gn; \
-    fi; \
-    if compare_ver ${V8_VERSION} ge 9.4.22; then \
-      sed -ri "/\"(-Wa,)?-f(debug|file)-compilation-dir(.|=).*\",?/d" build/config/compiler/BUILD.gn; \
-    fi; \
+    sed -ri \
+      -e "$(if_v8_ver le 6.6.164 "/(update_args|(\":|\\$|\s+)clang_revision)/{/.*/d}")" \
+      -e "$(if_v8_ver ge 9.3.72  "/\"-Wno-unused-but-set-(variable|parameter)\",?/d")" \
+      -e "$(if_v8_ver ge 9.4.22  "/\"(-Wa,)?-f(debug|file)-compilation-dir(.|=).*\",?/d")" \
+      build/config/compiler/BUILD.gn; \
   fi; \
   if [ "${USE_LLD}${USE_LLD_THIN_LTO}" = 'YESYES' ]; then \
     sed -ri \
@@ -256,7 +252,7 @@ RUN set -eux; \
       -e "s/^(#if) V8_LIBC_GLIBC.*/\1 0/" \
       -e "/const char k(MangledSymbolPrefix|SymbolCharacters)/{N;/;/d}" \
       src/base/debug/stack_trace_posix.cc; \
-    sed -i \
+    sed -ri \
       -e "/^#include <execinfo.h>s*/d" \
       -e "s/^#ifdef SYMBOLIZE_FUNCTION.*/#if 0/" \
       src/$(if_v8_ver ge 7.6.234 codegen/)external-reference-table.cc; \
