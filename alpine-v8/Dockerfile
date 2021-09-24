@@ -59,18 +59,6 @@ RUN set -eux; \
   load_archive() { [ -d ${2} ] || mkdir -p ${2}; wget ${1} -T 30 -O - | tar xmz -C ${2}; }; \
   to_bool() { if [ ${1} = 'YES' ]; then echo true; else echo false; fi; }; \
   \
-  case $(uname -m) in \
-    x86_64)      ARCH="x64"   ;; \
-    x86)         ARCH="x86"   ;; \
-    armhf|armv7) ARCH="arm"   ;; \
-    aarch64)     ARCH="arm64" ;; \
-  esac; \
-  \
-  NUM_JOBS=${NUM_JOBS:-$(getconf _NPROCESSORS_ONLN)}; \
-  SOURCE_REPO="https://chromium.googlesource.com"; \
-  V8_SOURCE=/tmp/v8; \
-  V8_DEPS=${V8_SOURCE}/DEPS; \
-  \
   if [ "${V8_VERSION//[^.]}" = '.' ]; then \
     v8_version_url="https://raw.githubusercontent.com/v8/v8/${V8_VERSION}-lkgr/include/v8-version.h"; \
     v8_build_ver=$(wget "${v8_version_url}" -T 30 -O - | sed -rn "/#.*V8_BUILD_NUMBER/N;s/#.*_NUMBER (\d+).*_LEVEL (\d+)/\1.\2/p"); \
@@ -89,11 +77,24 @@ RUN set -eux; \
     V8_VERSION=$(wget ${v8_version_url} -T 30 -O - | sed -rn "s/${v8_version_regexp}/\1/p"); \
   fi; \
   \
+  case $(uname -m) in \
+    x86_64)      ARCH="x64"   ;; \
+    x86)         ARCH="x86"   ;; \
+    armhf|armv7) ARCH="arm"   ;; \
+    aarch64)     ARCH="arm64" ;; \
+  esac; \
+  \
+  NUM_JOBS=${NUM_JOBS:-$(getconf _NPROCESSORS_ONLN)}; \
+  SOURCE_REPO="https://chromium.googlesource.com"; \
+  V8_SOURCE=/tmp/v8; \
+  V8_DEPS=${V8_SOURCE}/DEPS; \
+  PY_VER=$(if_v8_ver ge 7.9 3); PY_VER=${PY_VER:-2}; \
+  \
   echo "https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories; \
   apk add --no-cache --virtual .v8-build \
     g++ \
     linux-headers \
-    python2 \
+    python${PY_VER} \
     samurai \
     $(if_yes ${USE_CLANG} \
       clang=~11 \
@@ -147,7 +148,7 @@ RUN set -eux; \
       -e "s/[^def] WriteGenericNinja/  del executables['gn_unittests']\n\n&/" \
       ${GN_SOURCE}/build/gen.py; \
     : "-- GN SOURCE: build"; \
-    python2 ${GN_SOURCE}/build/gen.py \
+    python${PY_VER} ${GN_SOURCE}/build/gen.py \
       --host=linux \
       --platform=linux \
       --no-last-commit-position \
@@ -259,7 +260,7 @@ RUN set -eux; \
   fi; \
   : "-- GN: generate instructions"; \
   gn gen out \
-    --script-executable=/usr/bin/python2 \
+    --script-executable=python${PY_VER} \
     --args=" \
       target_cpu=\"${ARCH}\" \
       target_os=\"linux\" \
