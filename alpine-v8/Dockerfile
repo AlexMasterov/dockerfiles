@@ -122,6 +122,7 @@ RUN set -eux; \
     $(if_v8_ver le 6.7.148 testing/gtest) \
     $(if_v8_ver ge 6.7.149 third_party/googletest/src) \
     $(if_v8_ver ge 8.0.365 third_party/zlib) \
+    $(if_v8_ver ge 9.6.53  third_party/abseil-cpp) \
   "; \
   for dep in ${deps}; do { \
     target="${dep//\//\\/}"; \
