@@ -23,7 +23,6 @@ ARG V8_DISASSEMBLER=NO
 ARG V8_POINTER_COMPRESSION=YES
 ARG V8_EXTERNAL_STARTUP_DATA=NO
 ARG V8_31BIT_SMIS_ON_64BIT_ARCH=YES
-ARG V8_UNTRUSTED_CODE_MITIGATIONS=NO
 ARG V8_TYPED_ARRAY_MAX_SIZE_IN_HEAP=64
 
 ARG NUM_JOBS
@@ -314,7 +313,6 @@ RUN set -eux; \
       v8_enable_i18n_support=$(to_bool ${V8_INTL}) \
       v8_enable_object_print=$(to_bool ${V8_OBJECT_PRINT}) \
       v8_typed_array_max_size_in_heap=${V8_TYPED_ARRAY_MAX_SIZE_IN_HEAP:-64} \
-      v8_untrusted_code_mitigations=$(to_bool ${V8_UNTRUSTED_CODE_MITIGATIONS}) \
       $(contains ${ARCH} '64' \
         v8_enable_pointer_compression=$(to_bool ${V8_POINTER_COMPRESSION}) \
         v8_enable_31bit_smis_on_64bit_arch=$(to_bool ${V8_31BIT_SMIS_ON_64BIT_ARCH}) \
