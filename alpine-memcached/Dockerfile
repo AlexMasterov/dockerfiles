@@ -4,8 +4,8 @@ LABEL repository.hub="alexmasterov/alpine-memcached" \
       repository.url="https://github.com/AlexMasterov/dockerfiles" \
       maintainer="Alex Masterov <alex.masterow@gmail.com>"
 
-# >= 1.6.0
-ARG MEMCACHED_VERSION=1.6.10
+# >= 1.6.1
+ARG MEMCACHED_VERSION=1.6.12
 
 ARG MEMCACHED_TLS=YES
 ARG MEMCACHED_EXTSTORE=YES
@@ -19,7 +19,10 @@ ARG LIB_SSL=OPENSSL
 ARG OUT_STRIP=YES
 
 RUN set -eux; \
+  as_ver() { set -- ${1//./ }; local y="00${2:-0}" z="00${3:-0}"; echo "${1}${y:(-3)}${z:(-3)}"; }; \
+  compare_ver() { test $(as_ver ${1}) -${2} $(as_ver ${3}); }; \
   get_deps() { find ${*:-} -type f -and \( -executable -or -name '*.so*' \) -exec ldd '{}' ';' | sed -rn "s/\s*(.* => )?(.*) \(.*/\2/p" | sort -u; }; \
+  if_memcached_ver() { if compare_ver ${MEMCACHED_VERSION} ${1} ${2}; then shift 2; echo "${*:-}"; fi; }; \
   if_no() { if [ ${1} = 'NO' ]; then shift 1; echo ${*:-}; fi; }; \
   if_yes() { if [ ${1} = 'YES' ]; then shift 1; echo ${*:-}; fi; }; \
   load_archive() { wget ${1} -T 30 -O - | tar ${2:-xmz} -C /tmp; }; \
@@ -27,11 +30,14 @@ RUN set -eux; \
   \
   apk add --no-cache --virtual .memcached-build \
     autoconf \
+    automake \
     g++ \
     gcc \
     libevent-dev \
     make \
+    $(if_memcached_ver ge 1.6.11 bsd-compat-headers) \
     $(if_yes ${MEMCACHED_TLS} $(to_lowercase ${LIB_SSL:-OPENSSL})-dev) \
+    $(if_yes ${MEMCACHED_SECCOMP} libseccomp-dev) \
     ; \
   if [ ${USE_TZ} = 'YES' ]; then \
     apk add --no-cache --virtual .memcached-tz tzdata; \
@@ -39,7 +45,15 @@ RUN set -eux; \
   : "-- Memcached: download source"; \
   load_archive "https://memcached.org/files/memcached-${MEMCACHED_VERSION}.tar.gz"; \
   cd /tmp/memcached-${MEMCACHED_VERSION}; \
+  : "-- Memcached: patch"; \
+  if compare_ver ${MEMCACHED_VERSION} ge 1.6.11; then \
+    : "-- Fix BSD header include (queue)"; \
+    sed -ri "s/(#include) \"queue.h\"/\1 <sys\/queue.h>/" thread.c cache.h; \
+  fi; \
   : "-- Memcached: build"; \
+  if compare_ver ${MEMCACHED_VERSION} le 1.6.10; then \
+    autoreconf; \
+  fi; \
   ./configure \
     --disable-docs \
     --disable-coverage \
