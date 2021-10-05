@@ -5,7 +5,7 @@ LABEL repository.hub="alexmasterov/alpine-redis" \
       maintainer="Alex Masterov <alex.masterow@gmail.com>"
 
 # >= 3.2.0
-ARG REDIS_VERSION=6.2.5
+ARG REDIS_VERSION=6.2.6
 
 ARG REDIS_CLI=NO
 ARG REDIS_SERVER=YES
@@ -36,13 +36,13 @@ RUN set -eux; \
     make \
     musl-dev \
     pkgconf \
-    upx \
     $(if_redis_ver le 6.0.11 linux-headers) \
     $(if_redis_ver ge 6.0.0 $(if_yes ${REDIS_TLS} \
       openssl-dev \
       openssl-libs-static \
     )) \
     \
+    upx \
     $(if_yes ${USE_TZ} tzdata) \
     ; \
   : "-- Redis: download source"; \
@@ -59,7 +59,7 @@ RUN set -eux; \
   sed -ri "s/(pthread_create_fptr) = dlsym.*;/\1 = pthread_create;/" ../deps/jemalloc/src/background_thread.c; \
   sed -ri \
     -e "s/\s?--with-lg-(page|hugepage|quantum)=\d+//g" \
-    -e "s/cd jemalloc && .\/configure /&${jemalloc_extra_configure// [[:space:]]/}/" \
+    -e "s/cd jemalloc && .\/configure.*/& ${jemalloc_extra_configure// [[:space:]]/}/" \
     ../deps/Makefile; \
   \
   : "-- Redis: disable protected mode"; \
