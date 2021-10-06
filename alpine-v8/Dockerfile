@@ -169,13 +169,13 @@ RUN set -eux; \
   cd ${V8_SOURCE}; \
   : "-- Patch: build"; \
   sed -ri \
-    -e "$(if_no ${V8_SHELL} "/\"(src|test)\/inspector:.*\",?/d")" \
-    -e "/\"(tools|test):gn_all\",?/d" \
-    -e "/\"test\/(cctest|unittests):.*\",?/d" \
-    -e "/\"\/\/build\/(win:default_exe_manifest|config:exe_and_shlib_deps)\",?/d" \
+    -e "$(if_no ${V8_SHELL} "s/\"(src|test)\/inspector:.*\",?//")" \
+    -e "s/\"(tools|test):gn_all\",?//" \
+    -e "s/\"test\/(cctest|unittests):.*\",?//" \
+    -e "s/\"\/\/build\/(win:default_exe_manifest|config:exe_and_shlib_deps)\",?//" \
     BUILD.gn; \
   if compare_ver ${V8_VERSION} le 6.7.197; then \
-    sed -ri "/\"\/\/test\/test262\/BUILD.gn\",?/d" .gn; \
+    sed -ri "s/\"\/\/test\/test262\/BUILD.gn\",?//" .gn; \
   fi; \
   if [ ${V8_INTL} = 'NO' ] && compare_ver ${V8_VERSION} le 6.7.196; then \
     sed -i "s/import(\"\/\/third_party\/icu\/config.gni\")/icu_use_data_file = false/" gni/isolate.gni; \
@@ -219,13 +219,14 @@ RUN set -eux; \
   if [ ${USE_CLANG} = 'YES' ]; then \
     sed -ri \
       -e "$(if_v8_ver le 6.6.164 "/(update_args|(\":|\\$|\s+)clang_revision)/{/.*/d}")" \
-      -e "$(if_v8_ver ge 9.3.72  "/\"-Wno-unused-but-set-(variable|parameter)\",?/d")" \
-      -e "$(if_v8_ver ge 9.4.22  "/\"(-Wa,)?-f(debug|file)-compilation-dir(.|=).*\",?/d")" \
+      -e "$(if_v8_ver ge 9.3.72  "s/\"-Wno-unused-but-set-(variable|parameter)\",?//")" \
+      -e "$(if_v8_ver ge 9.4.22  "s/\"(-Wa,)?-f(debug|file)-compilation-dir(.|=).*\",?//")" \
       build/config/compiler/BUILD.gn; \
   fi; \
   if [ "${USE_LLD}${USE_LLD_THIN_LTO}" = 'YESYES' ]; then \
     sed -ri \
-      -e "/(cache_policy =.*\"|.*(lld|thin)lto-?cache.*,?)/d" \
+      -e "/(cache_policy =.*\"/d" \
+      -e "/\/lldltocache(policy)?:/{;:a;N/,/!ba;s/.*,//}" \
       -e "s/(thinlto-jobs=).*(\",?)/\1${USE_LLD_THIN_LTO_JOBS:-${NUM_JOBS}}\2/" \
       build/config/compiler/BUILD.gn; \
   fi; \
