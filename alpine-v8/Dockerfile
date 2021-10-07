@@ -211,8 +211,10 @@ RUN set -eux; \
     if test $(contains ${ARCH} 'arm' 1) && compare_ver ${V8_VERSION} ge 8.0.365; then \
       sed -ri "s/if \(arm_use_neon/& \&\& is_clang/" third_party/zlib/BUILD.gn; \
     fi; \
-    : "-- Patch: V8 is not -fsanitize=null clean (issue 3782)"; \
-    sed -ri "s/(cflags)\s*=\s*\[(.*)\]/\1 = [\"-fno-delete-null-pointer-checks\", \2]/" BUILD.gn; \
+    if compare_ver ${V8_VERSION} le 8.9.2; then \
+      : "-- Patch: V8 is not -fsanitize=null clean (issue 3782)"; \
+      sed -ri "s/(cflags)\s*=\s*\[(.*)\]/\1 = [\"-fno-delete-null-pointer-checks\", \2]/" BUILD.gn; \
+    fi; \
     : "-- Patch: don't use the attribute [[nodiscard]]"; \
     sed -ri "s/(define V8_HAS_CPP_ATTRIBUTE_NODISCARD).*/\1 0/g" include/v8config.h; \
   fi; \
@@ -225,7 +227,7 @@ RUN set -eux; \
   fi; \
   if [ "${USE_LLD}${USE_LLD_THIN_LTO}" = 'YESYES' ]; then \
     sed -ri \
-      -e "/(cache_policy =.*\"/d" \
+      -e "/cache_policy =.*\"/d" \
       -e "/\/lldltocache(policy)?:/{;:a;N/,/!ba;s/.*,//}" \
       -e "s/(thinlto-jobs=).*(\",?)/\1${USE_LLD_THIN_LTO_JOBS:-${NUM_JOBS}}\2/" \
       build/config/compiler/BUILD.gn; \
