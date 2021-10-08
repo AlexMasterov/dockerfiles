@@ -64,6 +64,8 @@ ARG EXT_SODIUM=YES
 # >= 8.0.0
 ARG EXT_FFI=NO
 ARG EXT_OPCACHE_JIT=YES
+# >= 8.1.0
+ARG EXT_GD_AVIF=NO
 
 ARG EXT_XDEBUG=NO
 ARG EXT_XDEBUG_VERSION=3.1.0
@@ -167,10 +169,11 @@ RUN set -eux; \
       $(if_php_ver ge 7.4.0 \
         $(if_no  ${EXT_GD_BUNDLED} gd-dev) \
         $(if_yes ${EXT_GD_BUNDLED} \
-          $(if_no ${EXT_GD_JPEG}     jpeg-dev) \
-          $(if_no ${EXT_GD_XPM}      libxpm-dev) \
-          $(if_no ${EXT_GD_WEBP}     libwebp-dev) \
-          $(if_no ${EXT_GD_FREETYPE} freetype-dev) \
+          $(if_no  ${EXT_GD_JPEG}     jpeg-dev) \
+          $(if_no  ${EXT_GD_XPM}      libxpm-dev) \
+          $(if_no  ${EXT_GD_WEBP}     libwebp-dev) \
+          $(if_no  ${EXT_GD_FREETYPE} freetype-dev) \
+          $(if_yes ${EXT_GD_AVIF}     libavif-dev) \
           libpng-dev \
         ) \
       ) \
@@ -338,7 +341,10 @@ RUN set -eux; \
         --with-png-dir=/usr \
       ) \
       $(if_php_ver ge 7.4.0 \
-        $(if_no ${EXT_GD_BUNDLED} --with-external-gd=/usr) \
+        $(if_no  ${EXT_GD_BUNDLED} --with-external-gd=/usr) \
+        $(if_yes ${EXT_GD_BUNDLED} \
+          $(if_yes ${EXT_GD_AVIF} --with-avif) \
+        ) \
         --enable-gd \
       ) \
     ) \
