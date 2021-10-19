@@ -89,19 +89,22 @@ RUN set -eux; \
   V8_DEPS=${V8_SOURCE}/DEPS; \
   PY_VER=$(if_v8_ver ge 7.9 3); PY_VER=${PY_VER:-2}; \
   \
-  echo "https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories; \
+  echo -e "\
+https://dl-cdn.alpinelinux.org/alpine/edge/main\n\
+https://dl-cdn.alpinelinux.org/alpine/edge/community\n\
+https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories; \
   apk add --no-cache --virtual .v8-build \
     g++ \
     linux-headers \
     python${PY_VER} \
     samurai \
     $(if_yes ${USE_CLANG} \
-      clang=~11 \
-      llvm11=~11 \
+      clang=~12 \
+      llvm12=~12 \
     ) \
     $(if_no  ${USE_CLANG}     gcc) \
-    $(if_yes ${USE_LLD}       lld=~11) \
-    $(if_yes ${USE_GN_SOURCE} clang=~11) \
+    $(if_yes ${USE_LLD}       lld=~12) \
+    $(if_yes ${USE_GN_SOURCE} clang=~12) \
     $(if_no  ${USE_GN_SOURCE} gn) \
     $(if_yes ${USE_EXECINFO}  libexecinfo-dev) \
     $(if_yes ${V8_INTL}       icu-dev) \
