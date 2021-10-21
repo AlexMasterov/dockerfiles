@@ -107,7 +107,7 @@ https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories; \
     $(if_yes ${USE_GN_SOURCE} clang=~12) \
     $(if_no  ${USE_GN_SOURCE} gn) \
     $(if_yes ${USE_EXECINFO}  libexecinfo-dev) \
-    $(if_yes ${V8_INTL}       icu-dev) \
+    $(if_yes ${V8_INTL}       icu-dev=~69) \
     ; \
   : "-- V8: download source"; \
   load_archive "${SOURCE_REPO}/v8/v8/+archive/${V8_VERSION}.tar.gz" ${V8_SOURCE}; \
