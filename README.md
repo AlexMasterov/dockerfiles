@@ -74,9 +74,9 @@ because it is not in //:features's visibility list: [
 ```
 Try to use:
 1.  `--build-arg USE_GN_SOURCE=YES`
-2.  `--build-arg USE_GN_SOURCE=YES GN_SOURCE_REV=9434c3d281eefb5c3764b5a0575feec9c59bd095`
+2.  `--build-arg USE_GN_SOURCE=YES --build-arg GN_SOURCE_REV=9434c3d281eefb5c3764b5a0575feec9c59bd095`
 
-> `GN_SOURCE_REV` can be any revision on the _working_ repository: [https://gn.googlesource.com/gn](gn.googlesource.com/gn).
+> `GN_SOURCE_REV` can be any revision on the _working_ repository: [gn.googlesource.com/gn](https://gn.googlesource.com/gn).
 
 </details>
 
