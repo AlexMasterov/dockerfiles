@@ -4,7 +4,7 @@ LABEL repository.hub="alexmasterov/alpine-nginx" \
       repository.url="https://github.com/AlexMasterov/dockerfiles" \
       maintainer="Alex Masterov <alex.masterow@gmail.com>"
 
-ARG NGINX_VERSION=1.21.3
+ARG NGINX_VERSION=1.21.4
 
 ARG NGINX_CONFIG=/etc/nginx
 ARG NGINX_EXTRA_CCFLAGS="-O2 -fstack-protector-strong -flto -fPIC -fpie"
@@ -33,7 +33,7 @@ ARG NJS=NO
 ARG NJS_VERSION=0.7.0
 
 ARG LUA=NO
-ARG LUA_VERSION=0.10.20rc1
+ARG LUA_VERSION=0.10.20
 ARG LUA_JIT_VERSION=2.1-20210510
 ARG LUA_ROCKS=NO
 ARG LUA_ROCKS_VERSION=3.7.0
