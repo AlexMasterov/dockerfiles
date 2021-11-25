@@ -1,4 +1,4 @@
-FROM alpine:3.14 as build
+FROM alpine:3.15 as build
 
 LABEL repository.hub="alexmasterov/alpine-memcached" \
       repository.url="https://github.com/AlexMasterov/dockerfiles" \

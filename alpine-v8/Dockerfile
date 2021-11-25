@@ -1,4 +1,4 @@
-FROM alpine:3.14
+FROM alpine:3.15
 
 LABEL repository.hub="alexmasterov/alpine-v8" \
       repository.url="https://github.com/AlexMasterov/dockerfiles" \
@@ -89,10 +89,7 @@ RUN set -eux; \
   V8_DEPS=${V8_SOURCE}/DEPS; \
   PY_VER=$(if_v8_ver ge 7.9 3); PY_VER=${PY_VER:-2}; \
   \
-  echo -e "\
-https://dl-cdn.alpinelinux.org/alpine/edge/main\n\
-https://dl-cdn.alpinelinux.org/alpine/edge/community\n\
-https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories; \
+  echo "https://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories; \
   apk add --no-cache --virtual .v8-build \
     g++ \
     linux-headers \

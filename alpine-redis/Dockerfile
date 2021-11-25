@@ -1,4 +1,4 @@
-FROM alpine:3.14 as build
+FROM alpine:3.15 as build
 
 LABEL repository.hub="alexmasterov/alpine-redis" \
       repository.url="https://github.com/AlexMasterov/dockerfiles" \
@@ -102,7 +102,7 @@ RUN set -eux; \
       /etc/timezone \
       /etc/localtime \
       /out; \
-  fi; 
+  fi;
 
 FROM scratch as runtime
 

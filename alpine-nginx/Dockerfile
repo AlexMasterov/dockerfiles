@@ -1,4 +1,4 @@
-FROM alpine:3.14
+FROM alpine:3.15
 
 LABEL repository.hub="alexmasterov/alpine-nginx" \
       repository.url="https://github.com/AlexMasterov/dockerfiles" \
@@ -32,11 +32,14 @@ ARG HEADERS_MORE_VERSION=0.33
 ARG NJS=NO
 ARG NJS_VERSION=0.7.0
 
+# OpenResty
 ARG LUA=NO
 ARG LUA_VERSION=0.10.20
 ARG LUA_JIT_VERSION=2.1-20210510
+ARG LUA_STREAM_VERSION=0.0.10
+ARG LUA_RESTY_LRUCACHE_VERSION=0.11
 ARG LUA_ROCKS=NO
-ARG LUA_ROCKS_VERSION=3.7.0
+ARG LUA_ROCKS_VERSION=3.8.0
 ARG DEVEL_KIT_VERSION=0.3.1
 
 ARG TARANTOOL_UPSTREAM=NO
@@ -89,6 +92,8 @@ RUN set -eux; \
   fi; \
   if [ ${LUA} = 'YES' ]; then \
     load_archive "https://github.com/openresty/lua-nginx-module/archive/v${LUA_VERSION}.tar.gz"; \
+    load_archive "https://github.com/openresty/stream-lua-nginx-module/archive/refs/tags/v${LUA_STREAM_VERSION}.tar.gz"; \
+    load_archive "https://github.com/openresty/lua-resty-lrucache/archive/refs/tags/v${LUA_RESTY_LRUCACHE_VERSION}.tar.gz"; \
     load_archive "https://github.com/vision5/ngx_devel_kit/archive/v${DEVEL_KIT_VERSION}.tar.gz"; \
     load_archive "https://github.com/openresty/luajit2/archive/v${LUA_JIT_VERSION}.tar.gz"; \
     export \
@@ -189,6 +194,7 @@ RUN set -eux; \
     $(if_yes ${LUA} \
       --add-module="/tmp/ngx_devel_kit-${DEVEL_KIT_VERSION}" \
       --add-module="/tmp/lua-nginx-module-${LUA_VERSION}" \
+      --add-module="/tmp/stream-lua-nginx-module-${LUA_STREAM_VERSION}" \
     ); \
   make build; \
   make install; \
