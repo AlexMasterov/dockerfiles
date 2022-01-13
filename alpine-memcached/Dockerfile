@@ -5,7 +5,7 @@ LABEL repository.hub="alexmasterov/alpine-memcached" \
       maintainer="Alex Masterov <alex.masterow@gmail.com>"
 
 # >= 1.6.1
-ARG MEMCACHED_VERSION=1.6.12
+ARG MEMCACHED_VERSION=1.6.13
 
 ARG MEMCACHED_TLS=YES
 ARG MEMCACHED_EXTSTORE=YES
@@ -43,7 +43,7 @@ RUN set -eux; \
       openssl-libs-static \
     ) \
     \
-    upx \
+    $(if_yes ${OUT_STRIP} upx) \
     $(if_yes ${USE_TZ} tzdata) \
     ; \
   : "-- Memcached: download source"; \
@@ -77,10 +77,9 @@ RUN set -eux; \
     : "-- Out: strip executables"; \
     find /usr/local -type f -executable \
       -exec strip --strip-unneeded '{}' + || true; \
+    upx --no-color --no-progress --best --lzma \
+      /usr/local/bin/* || true; \
   fi; \
-  \
-  upx --no-color --no-progress --best --lzma \
-    /usr/local/bin/*; \
   \
   mkdir -p /out; \
   cp --recursive --dereference --link \
@@ -88,8 +87,8 @@ RUN set -eux; \
     /out; \
   \
   if [ ${USE_TZ} = 'YES' ]; then \
-    cp /usr/share/zoneinfo/${TZ} /etc/localtime; \
     echo "${TZ}" > /etc/timezone; \
+    cp /usr/share/zoneinfo/${TZ} /etc/localtime; \
     \
     cp --recursive --parents --dereference --link \
       /etc/timezone \
