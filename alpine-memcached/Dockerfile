@@ -5,7 +5,7 @@ LABEL repository.hub="alexmasterov/alpine-memcached" \
       maintainer="Alex Masterov <alex.masterow@gmail.com>"
 
 # >= 1.6.1
-ARG MEMCACHED_VERSION=1.6.13
+ARG MEMCACHED_VERSION=1.6.14
 
 ARG MEMCACHED_TLS=YES
 ARG MEMCACHED_EXTSTORE=YES
