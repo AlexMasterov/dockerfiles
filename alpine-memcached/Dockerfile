@@ -5,7 +5,7 @@ LABEL repository.hub="alexmasterov/alpine-memcached" \
       maintainer="Alex Masterov <alex.masterow@gmail.com>"
 
 # >= 1.6.1
-ARG MEMCACHED_VERSION=1.6.14
+ARG MEMCACHED_VERSION=1.6.15
 
 ARG MEMCACHED_TLS=YES
 ARG MEMCACHED_EXTSTORE=YES
@@ -51,7 +51,7 @@ RUN set -eux; \
   cd /tmp/memcached-${MEMCACHED_VERSION}; \
   : "-- Memcached: patch"; \
   sed -i "s/if test \"x\$ac_cv_search_pthread_create\".*/if false; then/" configure configure.ac; \
-  if compare_ver ${MEMCACHED_VERSION} ge 1.6.11; then \
+  if compare_ver ${MEMCACHED_VERSION} le 1.6.12 && compare_ver ${MEMCACHED_VERSION} ge 1.6.11; then \
     : "-- Fix BSD header include (queue)"; \
     sed -ri "s/(#include) \"queue.h\"/\1 <sys\/queue.h>/" thread.c cache.h; \
   fi; \
